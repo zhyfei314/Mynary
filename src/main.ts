@@ -56,7 +56,7 @@ export default class MynaryPlugin extends Plugin {
 		this.registerView(VIEW_TYPE_DICTIONARY, (leaf) => new DictionaryView(leaf, this));
 		this.registerEvent(this.app.workspace.on('editor-menu', (menu: Menu, editor: Editor) => {
 			if (!editor.getSelection().trim()) return;
-			menu.addItem((item) => item.setTitle('Lookup selected word').setIcon('search').onClick(() => void this.lookupSelected(editor)));
+			menu.addItem((item) => item.setTitle('Lookup').setIcon('search').onClick(() => void this.lookupSelected(editor)));
 		}));
 
 		this.addRibbonIcon('book-open', 'Open dictionary sidebar', () => this.activateView());
