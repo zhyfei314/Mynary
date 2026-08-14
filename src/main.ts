@@ -16,6 +16,7 @@ import {
 import { DictionaryEntry } from './types';
 import { DictionarySettings, isRecord, migrateTemplates, normalizeSettings } from './settings';
 import { WiktionaryProvider } from './providers/wiktionary';
+import type { WiktionaryHttpResponse, WiktionaryRequester } from './providers/wiktionary';
 import { CacheManager } from './services/cache';
 import { renderEntry } from './utils/format';
 import { createVocabularyNote, renderTemplate } from './templates/template';
@@ -26,6 +27,10 @@ import type { DeclarativeSettingDefinition } from './settings-definitions';
 
 export const VIEW_TYPE_DICTIONARY = 'mynary-dictionary-view';
 const CACHE_FORMAT_VERSION = 'v5';
+const requestWiktionary: WiktionaryRequester = async (url): Promise<WiktionaryHttpResponse> => {
+	const response = await requestUrl(url);
+	return { status: response.status, json: response.json as unknown };
+};
 type LookupStatus = 'idle' | 'loading' | 'success' | 'error';
 type LookupListener = (status: LookupStatus) => void;
 
@@ -47,7 +52,7 @@ export default class MynaryPlugin extends Plugin {
 		if (migrateTemplates(this.settings.templates)) await this.saveSettings();
 		this.cache = new CacheManager(this, this.settings);
 		await this.cache.whenReady();
-		this.provider = new WiktionaryProvider(requestUrl);
+		this.provider = new WiktionaryProvider(requestWiktionary);
 		this.registerView(VIEW_TYPE_DICTIONARY, (leaf) => new DictionaryView(leaf, this));
 		this.registerEvent(this.app.workspace.on('editor-menu', (menu: Menu, editor: Editor) => {
 			if (!editor.getSelection().trim()) return;
