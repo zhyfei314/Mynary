@@ -1,13 +1,14 @@
 import type { Plugin } from 'obsidian';
-import { DictionaryEntry } from '../types';
+import type { DictionaryEntry } from '../types';
+import { isRecord } from '../settings';
 import type { DictionarySettings } from '../settings';
 
-interface CacheEntry { key: string; entry: DictionaryEntry; createdAt: number; expiresAt: number; }
+export interface CacheEntry { key: string; entry: DictionaryEntry; createdAt: number; expiresAt: number; }
 export class CacheManager {
 	private entries: Record<string, CacheEntry> = {};
 	private ready: Promise<void>;
 	constructor(private plugin: Plugin, private settings: DictionarySettings) { this.ready = this.load(); }
-	private async load() { const data = await this.plugin.loadData() as { cache?: Record<string, CacheEntry> } | null; this.entries = data?.cache ?? {}; }
+	private async load() { this.entries = normalizeCacheData(await this.plugin.loadData() as unknown, this.settings.maxCacheEntries); }
 	async get(key: string) {
 		await this.ready;
 		const item = this.entries[key];
@@ -29,5 +30,21 @@ export class CacheManager {
 		await this.persist();
 	}
 	async clear() { await this.ready; this.entries = {}; await this.persist(); }
-	private async persist() { const data = await this.plugin.loadData() as Record<string, unknown> | null ?? {}; await this.plugin.saveData({ ...data, cache: this.entries }); }
+	private async persist() { const raw = await this.plugin.loadData() as unknown; const data = isRecord(raw) ? raw : {}; await this.plugin.saveData({ ...data, cache: this.entries }); }
+}
+
+export function normalizeCacheData(raw: unknown, maxEntries = 100): Record<string, CacheEntry> {
+	const data = isRecord(raw) && isRecord(raw.cache) ? raw.cache : {};
+	const entries = Object.entries(data).map(([key, value]) => parseCacheEntry(key, value)).filter((item): item is CacheEntry => Boolean(item)).sort((left, right) => left.createdAt - right.createdAt);
+	return Object.fromEntries(entries.slice(-Math.max(1, Math.floor(maxEntries))).map((entry) => [entry.key, entry] as const));
+}
+
+function parseCacheEntry(key: string, value: unknown): CacheEntry | undefined {
+	if (!key || !isRecord(value) || typeof value.key !== 'string' || typeof value.createdAt !== 'number' || typeof value.expiresAt !== 'number' || value.expiresAt <= Date.now() || !isDictionaryEntry(value.entry)) return undefined;
+	return { key: value.key, entry: value.entry, createdAt: value.createdAt, expiresAt: value.expiresAt };
+}
+
+function isDictionaryEntry(value: unknown): value is DictionaryEntry {
+	if (!isRecord(value) || typeof value.word !== 'string' || typeof value.language !== 'string' || !Array.isArray(value.phonetics) || !Array.isArray(value.meanings) || !Array.isArray(value.translations) || !Array.isArray(value.synonyms) || !Array.isArray(value.antonyms) || !isRecord(value.source)) return false;
+	return typeof value.source.id === 'string' && typeof value.source.name === 'string' && typeof value.source.url === 'string' && typeof value.fetchedAt === 'number';
 }

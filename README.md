@@ -14,6 +14,10 @@ Mynary is an Obsidian plugin for looking up words with Wiktionary and turning th
 
 The first provider is Wiktionary. The provider layer is designed so additional dictionary sources can be added later.
 
+## Settings compatibility
+
+On Obsidian 1.13 and later, Mynary exposes its core settings through Obsidian's declarative settings API, so language, cache, note and template settings can be found through the global Settings Search. On older Obsidian versions, Mynary keeps the classic settings tab and the same settings remain available there. The Template Manager continues to open as a dedicated editor because it includes a large Markdown editor, live previews and template actions.
+
 ## Installation
 
 ### Manual installation

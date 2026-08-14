@@ -14,7 +14,7 @@ import {
 	WorkspaceLeaf,
 } from 'obsidian';
 import { DictionaryEntry } from './types';
-import { DEFAULT_SETTINGS, DictionarySettings, migrateTemplates } from './settings';
+import { DictionarySettings, isRecord, migrateTemplates, normalizeSettings } from './settings';
 import { WiktionaryProvider } from './providers/wiktionary';
 import { CacheManager } from './services/cache';
 import { renderEntry } from './utils/format';
@@ -22,6 +22,7 @@ import { createVocabularyNote, renderTemplate } from './templates/template';
 import { analyzeSelection, normalizeSelection } from './utils/selection';
 import { openTemplatePicker, TemplateManagerModal } from './ui/template-modals';
 import type { TemplateAction } from './ui/template-modals';
+import type { DeclarativeSettingDefinition } from './settings-definitions';
 
 export const VIEW_TYPE_DICTIONARY = 'mynary-dictionary-view';
 const CACHE_FORMAT_VERSION = 'v5';
@@ -42,7 +43,7 @@ export default class MynaryPlugin extends Plugin {
 	lastLookupWasCached = false;
 
 	async onload() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<DictionarySettings>);
+		this.settings = normalizeSettings(await this.loadData() as unknown);
 		if (migrateTemplates(this.settings.templates)) await this.saveSettings();
 		this.cache = new CacheManager(this, this.settings);
 		this.provider = new WiktionaryProvider(requestUrl);
@@ -62,7 +63,8 @@ export default class MynaryPlugin extends Plugin {
 	}
 
 	async saveSettings() {
-		const existing = await this.loadData() as Record<string, unknown> | null ?? {};
+		const raw = await this.loadData() as unknown;
+		const existing = isRecord(raw) ? raw : {};
 		await this.saveData({ ...existing, ...this.settings });
 	}
 	get activeLanguage() { return this.settings.defaultLanguage; }
@@ -300,6 +302,59 @@ export class DictionaryView extends ItemView {
 
 class DictionarySettingTab extends PluginSettingTab {
 	constructor(app: App, private plugin: MynaryPlugin) { super(app, plugin); }
+
+	/** Obsidian 1.13+ uses this for native settings rendering and Settings Search. */
+	getSettingDefinitions(): DeclarativeSettingDefinition[] {
+		const languageOptions = Object.fromEntries(this.plugin.settings.languages.map((language) => [language.code, language.name]));
+		const templateOptions = Object.fromEntries(this.plugin.settings.templates.map((template) => [template.id, template.name]));
+		return [
+			{
+				name: 'Default language',
+				desc: 'Wiktionary language section to search.',
+				aliases: ['dictionary language', 'lookup language'],
+				control: { type: 'dropdown', key: 'defaultLanguage', options: languageOptions, defaultValue: 'en' },
+			},
+			{
+				name: 'Note folder',
+				desc: 'Folder for vocabulary notes. Leave empty for the vault root.',
+				aliases: ['vocabulary folder', 'notes folder'],
+				control: { type: 'text', key: 'noteFolder', placeholder: 'Vault root' },
+			},
+			{
+				name: 'Filename template',
+				desc: 'Supports {{word}} and {{language}}.',
+				aliases: ['note filename', 'file name'],
+				control: { type: 'text', key: 'filenameTemplate', defaultValue: '{{word}}' },
+			},
+			{
+				name: 'Cache TTL (days)',
+				desc: 'How long lookup results remain cached.',
+				aliases: ['cache duration', 'cache expiration'],
+				control: { type: 'slider', key: 'cacheTtlDays', min: 1, max: 30, step: 1, defaultValue: 7, validate: (value) => typeof value === 'number' && value >= 1 ? undefined : 'Must be at least 1 day.' },
+			},
+			{
+				name: 'Maximum cached entries',
+				desc: 'Maximum number of lookup results stored locally.',
+				aliases: ['cache limit', 'cache size'],
+				control: { type: 'slider', key: 'maxCacheEntries', min: 1, max: 500, step: 1, defaultValue: 100, validate: (value) => typeof value === 'number' && value >= 1 ? undefined : 'Must be at least 1 entry.' },
+			},
+			{
+				name: 'Default template',
+				desc: 'Template selected by default for copy, insert and note actions.',
+				aliases: ['vocabulary template', 'note template'],
+				control: { type: 'dropdown', key: 'defaultTemplateId', options: templateOptions },
+			},
+			{
+				name: 'Existing note behavior',
+				desc: 'What to do when the generated note already exists.',
+				aliases: ['duplicate note', 'overwrite note', 'update note'],
+				control: { type: 'dropdown', key: 'existingNoteBehavior', options: { ask: 'Ask before replacing', overwrite: 'Replace automatically', 'update-section': 'Update managed section' } },
+			},
+			{ name: 'Templates', desc: 'Create, edit, duplicate, preview and restore Markdown templates.', action: () => this.plugin.openTemplateManager() },
+			{ name: 'Clear dictionary cache', desc: 'Remove all locally cached lookup results.', action: () => { void this.plugin.cache.clear().then(() => new Notice('Dictionary cache cleared.')); } },
+		];
+	}
+
 	display() {
 		const el = this.containerEl; el.empty();
 		new Setting(el).setName('Default language').setDesc('Wiktionary language section to search.').addDropdown((dropdown) => { this.plugin.settings.languages.forEach((item) => { dropdown.addOption(item.code, item.name); }); dropdown.setValue(this.plugin.settings.defaultLanguage).onChange((value) => { this.plugin.settings.defaultLanguage = value; void this.plugin.saveSettings(); }); });

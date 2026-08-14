@@ -1,4 +1,4 @@
-import { TemplateDefinition } from './types';
+import type { TemplateDefinition } from './types';
 
 export interface LanguageOption { code: string; name: string; }
 export interface DictionarySettings {
@@ -150,3 +150,54 @@ export function migrateTemplates(templates: TemplateDefinition[]): boolean {
 }
 
 export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask' };
+
+export function normalizeSettings(raw: unknown): DictionarySettings {
+	const data = isRecord(raw) ? raw : {};
+	const languages = normalizeLanguages(data.languages);
+	const templates = normalizeTemplates(data.templates);
+	const defaultLanguage = typeof data.defaultLanguage === 'string' && languages.some((language) => language.code === data.defaultLanguage) ? data.defaultLanguage : languages.find((language) => language.code === 'en')?.code ?? languages[0]?.code ?? 'en';
+	const defaultTemplateId = typeof data.defaultTemplateId === 'string' && templates.some((template) => template.id === data.defaultTemplateId) ? data.defaultTemplateId : templates[0]?.id ?? 'basic';
+	const existingNoteBehavior = data.existingNoteBehavior === 'overwrite' || data.existingNoteBehavior === 'update-section' ? data.existingNoteBehavior : 'ask';
+
+	return {
+		defaultLanguage,
+		languages,
+		noteFolder: typeof data.noteFolder === 'string' ? data.noteFolder : '',
+		filenameTemplate: typeof data.filenameTemplate === 'string' && data.filenameTemplate.trim() ? data.filenameTemplate : '{{word}}',
+		cacheTtlDays: positiveNumber(data.cacheTtlDays, DEFAULT_SETTINGS.cacheTtlDays),
+		maxCacheEntries: Math.floor(positiveNumber(data.maxCacheEntries, DEFAULT_SETTINGS.maxCacheEntries)),
+		defaultTemplateId,
+		templates,
+		existingNoteBehavior,
+	};
+}
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function normalizeLanguages(value: unknown): LanguageOption[] {
+	if (!Array.isArray(value)) return LANGUAGES.map((language) => ({ ...language }));
+	const seen = new Set<string>();
+	const languages = value.filter(isRecord).map((item) => ({ code: typeof item.code === 'string' ? item.code.trim().toLowerCase() : '', name: typeof item.name === 'string' ? item.name.trim() : '' })).filter((item) => item.code && item.name).filter((item) => {
+		if (seen.has(item.code)) return false;
+		seen.add(item.code);
+		return true;
+	});
+	return languages.length ? languages : LANGUAGES.map((language) => ({ ...language }));
+}
+
+function normalizeTemplates(value: unknown): TemplateDefinition[] {
+	if (!Array.isArray(value)) return DEFAULT_TEMPLATES.map((template) => ({ ...template }));
+	const seen = new Set<string>();
+	const templates = value.filter(isRecord).map((item) => ({ id: typeof item.id === 'string' ? item.id.trim() : '', name: typeof item.name === 'string' ? item.name.trim() || 'Untitled template' : 'Untitled template', content: typeof item.content === 'string' ? item.content : '' })).filter((item) => item.id && item.content.trim()).filter((item) => {
+		if (seen.has(item.id)) return false;
+		seen.add(item.id);
+		return true;
+	});
+	return templates.length ? templates : DEFAULT_TEMPLATES.map((template) => ({ ...template }));
+}
+
+function positiveNumber(value: unknown, fallback: number) {
+	return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : fallback;
+}

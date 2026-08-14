@@ -29,6 +29,7 @@ export function renderEntry(container: HTMLElement, entry: DictionaryEntry, plug
 			remaining -= visible.length;
 		});
 	};
+	if (!totalDefinitions) definitions.createDiv({ text: 'No definitions are available for this entry.', cls: 'mynary-empty' });
 	const initialLimit = 5;
 	renderDefinitions(Math.min(initialLimit, totalDefinitions));
 	if (totalDefinitions > initialLimit) {
