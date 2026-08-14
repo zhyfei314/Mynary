@@ -63,6 +63,7 @@ export default class MynaryPlugin extends Plugin {
 		this.addCommand({
 			id: 'lookup-selected-word',
 			name: 'Lookup selected word',
+			icon: 'search',
 			hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'L' }],
 			editorCallback: (editor) => void this.lookupSelected(editor),
 		});
