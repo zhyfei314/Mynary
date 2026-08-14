@@ -1,108 +1,136 @@
 # Mynary Dictionary
 
-Mynary is an Obsidian plugin for looking up words with Wiktionary and turning the result into reusable vocabulary notes.
+Mynary is an Obsidian community plugin for looking up words and short phrases with Wiktionary, then turning the result into reusable Markdown vocabulary notes.
 
-## What it does
+## Features
 
-- Look up selected words or short phrases from the editor.
-- Open a dictionary sidebar for direct search, language selection and recent lookups.
-- Show definitions, part of speech, etymology, pronunciation, examples, translations, synonyms and antonyms when available.
-- Filter large translation results by language, sense or keyword.
-- Copy or insert a formatted result, or create/update a vocabulary note.
-- Use three built-in templates or create your own Markdown templates.
-- Cache results locally with a configurable TTL and entry limit.
-
-The first provider is Wiktionary. The provider layer is designed so additional dictionary sources can be added later.
-
-## Settings compatibility
-
-On Obsidian 1.13 and later, Mynary exposes its core settings through Obsidian's declarative settings API, so language, cache, note and template settings can be found through the global Settings Search. On older Obsidian versions, Mynary keeps the classic settings tab and the same settings remain available there. The Template Manager continues to open as a dedicated editor because it includes a large Markdown editor, live previews and template actions.
+- Look up selected text from the editor or search from the dictionary sidebar.
+- Display definitions, pronunciation, part of speech, examples, translations, synonyms, antonyms and etymology when available.
+- Copy, insert or create a note using a reusable Markdown template.
+- Update only a managed section of an existing note while preserving personal content.
+- Cache results locally with configurable expiration and size limits.
+- Work on desktop and mobile.
 
 ## Installation
 
 ### Manual installation
 
-1. Build the plugin with `npm run build`.
-2. Create `.obsidian/plugins/mynary/` in your vault.
-3. Copy `main.js`, `manifest.json` and `styles.css` into that folder.
-4. Enable **Mynary Dictionary** in **Settings → Community plugins**.
+1. Download or build the plugin files: `main.js`, `manifest.json` and `styles.css`.
+2. Create this folder inside your vault:
 
-### Development
+   ```text
+   <Vault>/.obsidian/plugins/mynary/
+   ```
 
-```bash
-npm install
-npm run dev
-```
+3. Copy the three files into that folder.
+4. Open **Settings → Community plugins**.
+5. Enable **Mynary Dictionary**.
 
-Validation commands:
-
-```bash
-npm test -- --run
-npm run build
-npm run lint
-```
+Reload Obsidian after replacing `main.js` or `styles.css`.
 
 ## Looking up a word
 
-From a Markdown editor, select a word or short phrase and press:
+### Desktop
 
-- **Ctrl+Shift+L** on Windows/Linux
-- **Cmd+Shift+L** on macOS
+Select a word or short phrase in a Markdown note and use one of these options:
 
-You can also right-click the selection and choose **Lookup selected word**, or run the command from the Command Palette.
+- Press **Mod + Shift + L**. `Mod` means **Ctrl** on Windows/Linux and **Cmd** on macOS.
+- Open the editor context menu and select **Lookup**.
+- Run **Mynary Dictionary: Lookup selected word** from the Command Palette.
+- Open the dictionary sidebar and search directly.
 
-Selection handling is deliberately conservative. Mynary accepts up to 80 characters or 8 words. For a longer selection, the popup lets you look up the exact selection, only the first word, or cancel.
+The default selection limit is 80 characters or 8 words. For a longer selection, Mynary lets you look up the exact selection, look up the first word, or cancel.
 
-The sidebar is available from the ribbon icon or the **Open dictionary sidebar** command. Its search button uses the selected language code; hover or focus the language selector to see the full language name.
+### Mobile
 
-Results show whether they came from the local cache or a fresh request. Use **Refresh** to bypass the cache and fetch the current Wiktionary result. **Source: Wiktionary** opens the original page for verification.
+Obsidian supports adding editor commands to the mobile toolbar. To add the lookup action:
+
+1. Open **Settings → Mobile → Configure mobile toolbar**.
+2. Add **Mynary Dictionary: Lookup selected word**.
+3. The command uses the `search` icon.
+
+You can also select text, open the editor selection menu and choose **Lookup**. If the command is placed under the menu's overflow button, use the mobile toolbar command above. The sidebar also provides a **Lookup selected text** button for opening the lookup popup after selecting text in a note.
+
+The sidebar can search independently of the popup. Results indicate whether they came from the local cache or from a fresh Wiktionary request. **Refresh** bypasses the cache.
 
 ## Templates
 
-Open **Settings → Mynary Dictionary → Manage templates** to add, rename, edit, duplicate, delete and restore templates. Copy, Insert and Create note each show the same template picker, so the format can be chosen independently for every action.
+Open **Settings → Mynary Dictionary → Manage templates** to create, edit, duplicate, delete and restore templates. The template picker is available independently for **Copy**, **Insert** and **Create note**.
 
-The manager provides:
+Templates are Markdown strings containing case-insensitive variables such as `{{word}}`. `{{Title}}` is an alias for `{{word}}`.
 
-- A large Markdown editor.
-- Live validation for unknown variables and malformed `{{#if ...}}` blocks.
-- Preview data for rich entries, sparse entries, translation-heavy entries and the current lookup.
-- A default-template selector.
-- Safe migration of untouched legacy built-in and Flashcard templates. User-edited templates are preserved.
+### Available variables
 
-Templates use case-insensitive `{{variable}}` placeholders. `{{Title}}` is an alias for `{{word}}`.
+| Variable | Description |
+| --- | --- |
+| `{{word}}`, `{{Title}}` | Looked-up word or phrase |
+| `{{language}}` | Wiktionary language code |
+| `{{definition}}` | First definition |
+| `{{definitions}}` | Definitions separated by new lines |
+| `{{definitionsMarkdown}}` | Definitions as a Markdown list |
+| `{{meaningsMarkdown}}` | Meanings grouped by part of speech and etymology |
+| `{{IPA}}` | Pronunciation information |
+| `{{partOfSpeech}}` | Part of speech values |
+| `{{example}}` | First usage example |
+| `{{examples}}` | Examples separated by new lines |
+| `{{examplesMarkdown}}` | Examples as a Markdown list |
+| `{{translation}}` | Translated words on one line |
+| `{{translations}}` | Translations separated by new lines |
+| `{{translationsMarkdown}}` | Translations as a Markdown list |
+| `{{synonyms}}` | Synonyms separated by commas |
+| `{{antonyms}}` | Antonyms separated by commas |
+| `{{etymology}}` | Etymology text |
+| `{{source}}` | Source name |
+| `{{sourceUrl}}` | Source URL |
+| `{{lookupDate}}` | Lookup date in `YYYY-MM-DD` format |
 
-Supported variables include:
+Empty or unavailable values render as empty strings. The Template Manager validates unknown variables and malformed conditional blocks before use.
 
-```text
-{{word}}             {{Title}}             {{language}}
-{{definition}}       {{definitions}}       {{definitionsMarkdown}}
-{{meaningsMarkdown}} {{IPA}}               {{partOfSpeech}}
-{{example}}          {{examples}}          {{examplesMarkdown}}
-{{translation}}      {{translations}}      {{translationsMarkdown}}
-{{synonyms}}         {{antonyms}}          {{etymology}}
-{{source}}           {{sourceUrl}}         {{lookupDate}}
-```
+## Conditional blocks
 
-Optional sections use:
+Use `{{#if variable}}` and `{{/if}}` to include a section only when its value is not empty:
 
-```text
+```markdown
 {{#if IPA}}
 ## Pronunciation
+
 {{IPA}}
 {{/if}}
 ```
 
-Empty values omit the conditional section. Unknown variables render as empty strings, while the Template Manager reports them so they can be corrected before use.
+This is useful for optional translations, examples and source links:
+
+```markdown
+{{#if translationsMarkdown}}
+## Translations
+
+{{translationsMarkdown}}
+{{/if}}
+
+{{#if examplesMarkdown}}
+## Examples
+
+{{examplesMarkdown}}
+{{/if}}
+```
+
+Conditional blocks can be nested. Conditions use the same case-insensitive variable names as normal placeholders. If a condition is empty, the entire block—including its contents—is omitted.
 
 ## Creating and updating notes
 
-After a lookup, choose **Create note** and select a template. The note filename is generated from the configurable filename template; unsafe filename characters are replaced automatically. The note folder is created when it does not exist.
+After a lookup, select **Create note** and choose a template. Mynary uses these settings:
 
-When the target note already exists, choose one of these behaviors in Settings:
+- **Note folder** — destination folder; leave empty for the vault root.
+- **Filename template** — for example `{{word}}` or `{{language}}-{{word}}`.
+- **Existing note behavior** — what to do when the target note already exists.
 
-- **Ask before replacing**: confirm before replacing the whole file.
-- **Replace automatically**: replace the whole file without asking.
-- **Update section**: preserve personal content and replace only the managed section.
+Unsafe filename characters are replaced automatically. Missing folders are created when needed.
+
+### Existing note behavior
+
+- **Ask before replacing** — ask for confirmation before replacing the complete note.
+- **Replace automatically** — replace the complete note without confirmation.
+- **Update section** — preserve the rest of the note and replace only the Mynary-managed section.
 
 Managed sections use these markers:
 
@@ -112,26 +140,103 @@ Generated dictionary content
 <!-- mynary:lookup:end -->
 ```
 
-If the markers are missing, Mynary appends them. Keep personal notes outside the managed section so future updates do not overwrite them.
+When the markers are not present, Mynary appends a new managed section. Keep personal notes outside these markers so future updates do not overwrite them.
 
 ## Cache
 
-Results are stored in Obsidian's local plugin data, not in the vault. The default cache policy is 7 days and 100 entries. Both values can be changed in Settings. Use **Clear cache** to remove all cached lookup results.
+Lookup results are stored in Obsidian's local plugin data, not as files in the vault.
 
-Refreshing a result bypasses the existing cache and stores the new result under the same lookup key.
+Default settings:
+
+- Cache lifetime: **7 days**
+- Maximum entries: **100**
+- Request timeout: **15 seconds**
+
+The cache key includes the language and normalized lookup text. **Refresh** bypasses the cached value and stores the new result. Use **Clear cache** in settings to remove all cached results.
 
 ## Privacy and attribution
 
-Mynary has no telemetry, analytics, account system or advertising. It does not scan, index or upload vault contents.
+Mynary is local-first:
 
-Only an explicitly requested word or phrase and the selected language are sent to the corresponding public Wiktionary API. Large entries may also request the public `/translations` subpage. Mynary does not send note content, vault contents, selection context, filenames or personal metadata.
+- No telemetry, analytics, advertising or account system.
+- No vault scanning or indexing.
+- No note content, filenames or personal metadata are uploaded.
+- Only the explicitly requested word or phrase and selected language are sent to the public Wiktionary API.
+- Cached lookup data remains in local Obsidian plugin storage.
 
-Cached data remains in local Obsidian plugin storage and is removed according to the configured TTL or cache limit. Data is written to the vault only when the user chooses to create or update a note.
+Large Wiktionary entries may also request the entry's public `/translations` subpage. Network access is used only to retrieve the requested dictionary result.
 
-Results should be checked against the original source. Mynary displays and links to Wiktionary for attribution and verification.
+Mynary uses and links to [Wiktionary](https://www.wiktionary.org/) as its dictionary source. Results should be checked against the linked original page, especially for translations and usage examples.
 
 ## Supported languages
 
-English (`en`), Vietnamese (`vi`), Japanese (`ja`), Korean (`ko`), Chinese (`zh`), French (`fr`), German (`de`), Spanish (`es`), Italian (`it`) and Russian (`ru`).
+The built-in language options are:
 
-The available fields depend on what Wiktionary provides for a particular word and language. Missing fields are represented as empty values rather than fabricated data.
+- English (`en`)
+- Vietnamese (`vi`)
+- Japanese (`ja`)
+- Korean (`ko`)
+- Chinese (`zh`)
+- French (`fr`)
+- German (`de`)
+- Spanish (`es`)
+- Italian (`it`)
+- Russian (`ru`)
+
+Available fields depend on the selected Wiktionary entry. Mynary does not invent missing data.
+
+## Development
+
+Requirements:
+
+- Node.js 18 or newer
+- npm
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start esbuild in watch mode:
+
+```bash
+npm run dev
+```
+
+Create a production build:
+
+```bash
+npm run build
+```
+
+Run tests:
+
+```bash
+npm test
+```
+
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+The build generates `main.js` at the plugin root. Build artifacts and `node_modules/` should not be committed to source control. For manual testing, reload Obsidian after rebuilding and enable the plugin from **Settings → Community plugins**.
+
+## Project structure
+
+```text
+src/
+  main.ts                    Plugin lifecycle, commands and views
+  providers/                 Wiktionary requests and parsers
+  services/                  Local cache management
+  templates/                 Rendering and note generation
+  ui/                        Modals and confirmation dialogs
+  utils/                     Selection and result formatting
+  settings.ts                Settings, defaults and migration
+```
+
+## License
+
+Mynary is distributed under the MIT License. See [LICENSE](LICENSE).
