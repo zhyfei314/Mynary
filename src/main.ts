@@ -93,6 +93,22 @@ export default class MynaryPlugin extends Plugin {
 		new LookupModal(this.app, this, selection.text, selection.tooLong).open();
 	}
 
+	async lookupCurrentSelection() {
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (activeView?.editor.getSelection().trim()) {
+			await this.lookupSelected(activeView.editor);
+			return;
+		}
+		for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
+			if (!(leaf.view instanceof MarkdownView)) continue;
+			if (leaf.view.editor.getSelection().trim()) {
+				await this.lookupSelected(leaf.view.editor);
+				return;
+			}
+		}
+		new Notice('Select a word in a note first.');
+	}
+
 	async lookup(word: string, language = this.activeLanguage, forceRefresh = false): Promise<DictionaryEntry | undefined> {
 		const normalized = normalizeSelection(word);
 		if (!normalized) return undefined;
@@ -283,6 +299,8 @@ export class DictionaryView extends ItemView {
 		const submitLookup = () => { void this.plugin.lookup(input.value); };
 		input.addEventListener('keydown', (event) => { if (event.key === 'Enter') submitLookup(); });
 		submit.addEventListener('click', submitLookup);
+		const selectionLookup = search.createEl('button', { text: 'Lookup selected text', cls: 'mynary-selection-lookup' });
+		selectionLookup.addEventListener('click', () => void this.plugin.lookupCurrentSelection());
 		const language = search.createEl('select');
 		this.plugin.settings.languages.forEach((item) => language.createEl('option', { value: item.code, text: item.code.toUpperCase(), attr: { 'aria-label': item.name, title: item.name } }));
 		language.setAttribute('aria-label', 'Dictionary language');
