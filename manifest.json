@@ -4,8 +4,8 @@
 	"version": "1.0.0",
 	"minAppVersion": "1.7.2",
 	"description": "Look up words with Wiktionary and create personalized vocabulary notes.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"author": "chan-laife-41",
+	"authorUrl": "https://github.com/chan-laife-41",
+	"fundingUrl": "https://github.com/chan-laife-41/Mynary",
 	"isDesktopOnly": false
 }
