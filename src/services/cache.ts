@@ -8,7 +8,14 @@ export class CacheManager {
 	private entries: Record<string, CacheEntry> = {};
 	private ready: Promise<void>;
 	constructor(private plugin: Plugin, private settings: DictionarySettings) { this.ready = this.load(); }
-	private async load() { this.entries = normalizeCacheData(await this.plugin.loadData() as unknown, this.settings.maxCacheEntries); }
+	private async load() {
+		try {
+			this.entries = normalizeCacheData(await this.plugin.loadData() as unknown, this.settings.maxCacheEntries);
+		} catch {
+			this.entries = {};
+		}
+	}
+	async whenReady() { await this.ready; }
 	async get(key: string) {
 		await this.ready;
 		const item = this.entries[key];

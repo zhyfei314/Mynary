@@ -46,6 +46,7 @@ export default class MynaryPlugin extends Plugin {
 		this.settings = normalizeSettings(await this.loadData() as unknown);
 		if (migrateTemplates(this.settings.templates)) await this.saveSettings();
 		this.cache = new CacheManager(this, this.settings);
+		await this.cache.whenReady();
 		this.provider = new WiktionaryProvider(requestUrl);
 		this.registerView(VIEW_TYPE_DICTIONARY, (leaf) => new DictionaryView(leaf, this));
 		this.registerEvent(this.app.workspace.on('editor-menu', (menu: Menu, editor: Editor) => {
@@ -54,7 +55,12 @@ export default class MynaryPlugin extends Plugin {
 		}));
 
 		this.addRibbonIcon('book-open', 'Open dictionary sidebar', () => this.activateView());
-		this.addCommand({ id: 'lookup-selected-word', name: 'Lookup selected word', hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'L' }], editorCallback: (editor) => void this.lookupSelected(editor) });
+		this.addCommand({
+			id: 'lookup-selected-word',
+			name: 'Lookup selected word',
+			hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'L' }],
+			editorCallback: (editor) => void this.lookupSelected(editor),
+		});
 		this.addCommand({ id: 'open-dictionary-sidebar', name: 'Open dictionary sidebar', callback: () => this.activateView() });
 		this.addCommand({ id: 'create-vocabulary-note', name: 'Create vocabulary note from lookup', checkCallback: (checking) => this.commandWithEntry(checking, () => this.createNote()) });
 		this.addCommand({ id: 'insert-lookup-result', name: 'Insert lookup result', checkCallback: (checking) => this.commandWithEntry(checking, () => this.insertResult()) });
@@ -93,10 +99,10 @@ export default class MynaryPlugin extends Plugin {
 		this.lastLookupWasCached = false;
 		this.notifyLookupListeners();
 		const key = `${CACHE_FORMAT_VERSION}:${language}:${normalized.toLowerCase()}`;
-		const cached = await this.cache.get(key);
-		if (requestId !== this.lookupSequence) return undefined;
-		if (cached && !forceRefresh) { this.lastLookupWasCached = true; this.setEntry(cached, normalized); return cached; }
 		try {
+			const cached = await this.cache.get(key);
+			if (requestId !== this.lookupSequence) return undefined;
+			if (cached && !forceRefresh) { this.lastLookupWasCached = true; this.setEntry(cached, normalized); return cached; }
 			const entry = await this.provider.lookup(normalized, language);
 			if (requestId !== this.lookupSequence) return undefined;
 			await this.cache.set(key, entry);
@@ -201,7 +207,7 @@ export class LookupModal extends Modal {
 		this.modalEl.addClass('mynary-lookup-modal');
 		this.unsubscribe = this.plugin.subscribeLookup(() => this.render());
 		this.render();
-		void this.plugin.lookup(this.word);
+		if (!this.selectionChoice) void this.plugin.lookup(this.word);
 	}
 
 	onClose() {

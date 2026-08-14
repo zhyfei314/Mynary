@@ -3,6 +3,7 @@ import { normalizeEntry, parseWiktionaryHtml } from './wiktionary-html-parser';
 
 export interface WiktionaryHttpResponse { status: number; json: unknown; }
 export type WiktionaryRequester = (url: string) => Promise<WiktionaryHttpResponse>;
+const REQUEST_TIMEOUT_MS = 15_000;
 
 export class WiktionaryProvider {
 	constructor(private readonly request: WiktionaryRequester) {}
@@ -21,7 +22,7 @@ export class WiktionaryProvider {
 		// Wiktionary can keep a lowercase entry such as `hello` while a user
 		// naturally enters `Hello`. Search resolves redirects and title casing.
 		const searchUrl = `${baseUrl}?action=query&list=search&srsearch=${encodeURIComponent(requestedTitle)}&srnamespace=0&srlimit=1&format=json&origin=*`;
-		const searchResponse = await this.request(searchUrl);
+		const searchResponse = await this.requestWithTimeout(searchUrl);
 		this.assertSuccess(searchResponse.status);
 		const searchData = searchResponse.json as { query?: { search?: Array<{ title?: string }> } };
 		const resolvedTitle = searchData.query?.search?.[0]?.title;
@@ -34,10 +35,22 @@ export class WiktionaryProvider {
 
 	private async fetchPage(baseUrl: string, title: string): Promise<{ title?: string; html?: string }> {
 		const url = `${baseUrl}?action=parse&page=${encodeURIComponent(title)}&prop=text%7Cwikitext&format=json&origin=*`;
-		const response = await this.request(url);
+		const response = await this.requestWithTimeout(url);
 		this.assertSuccess(response.status);
 		const data = response.json as { parse?: { title?: string; text?: { '*': string }; wikitext?: { '*': string } }; error?: { code?: string } };
 		return { title: data.parse?.title, html: data.parse?.text?.['*'] };
+	}
+
+	private async requestWithTimeout(url: string): Promise<WiktionaryHttpResponse> {
+		let timeoutId: number | undefined;
+		const timeout = new Promise<never>((_, reject) => {
+			timeoutId = window.setTimeout(() => reject(new Error(`Wiktionary request timed out after ${REQUEST_TIMEOUT_MS / 1000} seconds.`)), REQUEST_TIMEOUT_MS);
+		});
+		try {
+			return await Promise.race([this.request(url), timeout]);
+		} finally {
+			if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+		}
 	}
 
 	private async parsePage(baseUrl: string, word: string, language: string, title: string, html: string) {
