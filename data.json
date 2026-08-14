@@ -1,0 +1,1422 @@
+{
+  "cache": {
+    "v5:en:default": {
+      "key": "v5:en:default",
+      "entry": {
+        "word": "default",
+        "language": "en",
+        "phonetics": [
+          {
+            "text": "/dɪˈfɒlt/"
+          },
+          {
+            "text": "/ˈdiːˌfɒlt/"
+          },
+          {
+            "text": "/dɪˈfɔːlt/"
+          },
+          {
+            "text": "/ˈdiːˌfɔːlt/"
+          },
+          {
+            "text": "/dɪˈfɔlt/"
+          },
+          {
+            "text": "/ˈdiːˌfɔlt/"
+          },
+          {
+            "text": "/dɪˈfɑlt/"
+          },
+          {
+            "text": "/ˈdiːˌfɑlt/"
+          },
+          {
+            "text": "/dəˈfɒːlt/"
+          },
+          {
+            "text": "[dəˈfäl]"
+          },
+          {
+            "text": "[dəˈfälʔ]"
+          },
+          {
+            "text": "-ɒlt"
+          },
+          {
+            "text": "-ɔːlt"
+          }
+        ],
+        "meanings": [
+          {
+            "partOfSpeech": "Noun",
+            "definitions": [
+              {
+                "text": "(finance) The condition of failing to meet an obligation.",
+                "examples": [
+                  "He failed to make payments on time, and he is now in default.",
+                  "You may cure this default by paying the full amount within a week."
+                ]
+              },
+              {
+                "text": "(finance) The condition of being an obligation that has not been met.",
+                "examples": [
+                  "The deadline has passed, so the debt is now in default."
+                ]
+              },
+              {
+                "text": "(electronics, computing) the original software programming settings as set by the factory",
+                "examples": []
+              },
+              {
+                "text": "A loss incurred by failing to compete.",
+                "examples": [
+                  "The team's three losses include one default."
+                ]
+              },
+              {
+                "text": "A selection made in the absence of an alternative.",
+                "examples": [
+                  "The man became the leader of the group as a default.",
+                  "One of the darlings of the early vegetarian movement (particularly in its even sadder form, the cutlet), it was on the menu at John Harvey Kellogg's Battle Creek Sanitarium [sic], and has since become the default Sunday option for vegetarians – and a default source of derision for everyone else.",
+                  "Overall the signage at NIE has the appearance being a top-down artefact driven by institutional policy with English set as the default language."
+                ]
+              },
+              {
+                "text": "(often attributive) A value used when none has been given; a tentative value or standard that is presumed.",
+                "examples": [
+                  "If you don't specify a number of items, the default is 1."
+                ]
+              },
+              {
+                "text": "(law) The failure of a defendant to appear and answer a summons and complaint.",
+                "examples": []
+              },
+              {
+                "text": "(obsolete) A failing or failure; omission of that which ought to be done; neglect to do what duty or law requires.",
+                "examples": [
+                  "This evil has happened through the governor's default."
+                ]
+              },
+              {
+                "text": "(obsolete) Lack; absence.",
+                "examples": [
+                  "one was dragging a great coat from the window, before which it had long hung as a blind, in total default of glass or shutters"
+                ]
+              },
+              {
+                "text": "(obsolete) Fault; offence; wrong act.",
+                "examples": [
+                  "regardless of our merit or default"
+                ]
+              }
+            ]
+          },
+          {
+            "partOfSpeech": "Verb",
+            "definitions": [
+              {
+                "text": "(intransitive) To fail to meet an obligation.",
+                "examples": [
+                  "to default on a loan"
+                ]
+              },
+              {
+                "text": "(intransitive) To lose a competition by failing to compete.",
+                "examples": [
+                  "Synonym: forfeit",
+                  "If you refuse to wear a proper uniform, you will not be allowed to compete and will default this match."
+                ]
+              },
+              {
+                "text": "(ambitransitive, computing) To assume a value when none was given; to presume a tentative value or standard.",
+                "examples": [
+                  "If you don't specify a color, it defaults to red.",
+                  "It defaults your application to Windows authentication mode, and if you want to use forms mode, you can just change it in the authentication section of the file."
+                ]
+              }
+            ]
+          }
+        ],
+        "translations": [
+          {
+            "word": "дэфо́лт",
+            "languageName": "Belarusian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "неустойка",
+            "languageName": "Bulgarian",
+            "languageCode": "bg",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(bg)",
+            "languageName": "Bulgarian",
+            "languageCode": "bg",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "неизпълнение",
+            "languageName": "Bulgarian",
+            "languageCode": "bg",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "дефо́лт",
+            "languageName": "Bulgarian",
+            "languageCode": "bg",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "違約",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "违约",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(zh)",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "暴雷",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "selhání",
+            "languageName": "Czech",
+            "languageCode": "cs",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(cs)",
+            "languageName": "Czech",
+            "languageCode": "cs",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "niet-nakoming",
+            "languageName": "Dutch",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "viivitus",
+            "languageName": "Estonian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "maksukyvyttömyys",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(fi)",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "laiminlyönti",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "défaut",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(fr)",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "non-respect",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Fristversäumnis",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Säumnis",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(de)",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Zahlungseinstellung",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Zahlungsverzug",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Nichtzahlung",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Zahlungsausfall",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Forderungsausfall",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "व्यतिक्रम",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(hi)",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "mulasztás",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(hu)",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "greiðsluþrot",
+            "languageName": "Icelandic",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "mora",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(it)",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "morosità",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "default",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "inadempienza",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "デフォルト",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(ja)",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "дефолт",
+            "languageName": "Kazakh",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "디폴트",
+            "languageName": "Korean",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "hapanga",
+            "languageName": "Māori",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "nieuiszczenie",
+            "languageName": "Polish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "należności",
+            "languageName": "Polish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "inadimplência",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(pt)",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "дефо́лт",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(ru)",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "неплатёж",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "scunchiuta",
+            "languageName": "Sicilian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "scucchiata",
+            "languageName": "Sicilian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "scusuta",
+            "languageName": "Sicilian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "mora",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(es)",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "default",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "betalningsinställelse",
+            "languageName": "Swedish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "temerrüt",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(tr)",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "дефо́лт",
+            "languageName": "Ukrainian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "լռելյայն",
+            "languageName": "Armenian",
+            "languageCode": "hy",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(hy)",
+            "languageName": "Armenian",
+            "languageCode": "hy",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "սկզբնադիր",
+            "languageName": "Armenian",
+            "languageCode": "hy",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "初始設定",
+            "languageName": "Chinese",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "初始设定",
+            "languageName": "Chinese",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standard",
+            "languageName": "Danish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "defaŭlto",
+            "languageName": "Esperanto",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "oletus",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "paramètres",
+            "languageName": "French",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "par défaut",
+            "languageName": "French",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "usine",
+            "languageName": "French",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Voreinstellung",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Grundzustand",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "προεπιλογή",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(el)",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "προεπιλεγμένος",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "ברירת מחדל",
+            "languageName": "Hebrew",
+            "languageCode": "he",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(he)",
+            "languageName": "Hebrew",
+            "languageCode": "he",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "alapértelmezés",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "alapbeállítás",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "gyári",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "beállítás",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "sjálfgildi",
+            "languageName": "Icelandic",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "bawaan",
+            "languageName": "Indonesian",
+            "languageCode": "id",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(id)",
+            "languageName": "Indonesian",
+            "languageCode": "id",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "asali",
+            "languageName": "Indonesian",
+            "languageCode": "id",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "lalai",
+            "languageName": "Malay",
+            "languageCode": "ms",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(ms)",
+            "languageName": "Malay",
+            "languageCode": "ms",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "taunoa",
+            "languageName": "Māori",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standard",
+            "languageName": "Norwegian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standardinnstilling",
+            "languageName": "Norwegian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "default",
+            "languageName": "Norwegian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "defaultverdi",
+            "languageName": "Norwegian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "configuração",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "inicial",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "default",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "padrão",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "predefinição",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "predeterminado",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "по умолчанию",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "mposti",
+            "languageName": "Sicilian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "mpustazziuna di partenza",
+            "languageName": "Sicilian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "configuración",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "original",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "predeterminada",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "preinstalada",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "predefinida",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "preestablecida",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "prefijada",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "por defecto",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "tácita",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "ajustes",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "de",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "fábrica",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "factoría",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "manufacturación",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "preconfiguración",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standard",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(sv)",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standardinställningar",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standardalternativ",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standardinställning",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "skönsvärde",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standart",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "varsayılan",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standart",
+            "languageName": "Turkmen",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "mặc định",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "(vi)",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "既定",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "selección",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "preselección",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standardval",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "стойност по подразбиране",
+            "languageName": "Bulgarian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "valor per defecte",
+            "languageName": "Catalan",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "默认",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "valeur",
+            "languageName": "French",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Standard",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Ausgangswert",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Standardwert",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "kezdeti",
+            "languageName": "Hungarian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "kiindulási",
+            "languageName": "Hungarian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "érték",
+            "languageName": "Hungarian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "predefinito",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standardverdi",
+            "languageName": "Norwegian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "wartość domyślna",
+            "languageName": "Polish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "valor predefinido",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "valor padrão",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "значе́ние по умолча́нию",
+            "languageName": "Russian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "primpustatu",
+            "languageName": "Sicilian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "valor",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "predeterminado",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "preinstalado",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "predefinido",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "preestablecido",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "prefijado",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "tácito",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "prevalor",
+            "languageName": "Spanish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "standart değer",
+            "languageName": "Turkish",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "poissaolo",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Versäumnis",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "Nichterscheinen",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "uteblivelse",
+            "languageName": "Norwegian",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "pagkukulang",
+            "languageName": "Tagalog",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "gıyap",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "yokluk",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "finance: condition of failing to meet an obligation — see also nonpayment,‎ arrears"
+          },
+          {
+            "word": "lyödä laimin",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "laiminlyödä",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "(fi)",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "zahlungsunfähig",
+            "languageName": "German",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "werden",
+            "languageName": "German",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "mulaszt",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "(hu)",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "kötelezettséget",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "nem",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "teljesít",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "verify",
+            "languageName": "Māori",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "hapa",
+            "languageName": "Māori",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "zalegać",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "(pl)",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "zalec",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "faltar",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "(es)",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "no",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "pagar",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "ponerse",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "en",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "mora",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "incurrir",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "morosidad",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "cometer",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "estar",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "moroso",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "defaultear",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "defoltear",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "impagar",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "caer",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "entrar",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "impago",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "käyttää",
+            "languageName": "Finnish",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "oletusarvona",
+            "languageName": "Finnish",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "oletuksena",
+            "languageName": "Finnish",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "zurückfallen",
+            "languageName": "German",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "auf",
+            "languageName": "German",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "alapértelmezett",
+            "languageName": "Hungarian",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "értéket",
+            "languageName": "Hungarian",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "vesz fel",
+            "languageName": "Hungarian",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "kap",
+            "languageName": "Hungarian",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "predeterminar",
+            "languageName": "Portuguese",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "estar",
+            "languageName": "Spanish",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "preconfigurado",
+            "languageName": "Spanish",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "tener",
+            "languageName": "Spanish",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "como",
+            "languageName": "Spanish",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          },
+          {
+            "word": "preconfiguración",
+            "languageName": "Spanish",
+            "sense": "finance: to fail to fulfill a financial obligation"
+          }
+        ],
+        "synonyms": [],
+        "antonyms": [],
+        "etymology": "From Middle English defaut, defaute, from Old French defaute (“fault, defect, failure, culpability, lack”), ultimately from Latin de- (“away”) + fallo (“deceive, cheat, escape notice of”). Pronunciation[edit]",
+        "source": {
+          "id": "wiktionary",
+          "name": "Wiktionary",
+          "url": "https://en.wiktionary.org/wiki/default"
+        },
+        "fetchedAt": 1786691269116
+      },
+      "createdAt": 1786691269135,
+      "expiresAt": 1787296069135
+    }
+  },
+  "defaultLanguage": "en",
+  "languages": [
+    {
+      "code": "en",
+      "name": "English"
+    },
+    {
+      "code": "vi",
+      "name": "Vietnamese"
+    },
+    {
+      "code": "ja",
+      "name": "Japanese"
+    },
+    {
+      "code": "ko",
+      "name": "Korean"
+    },
+    {
+      "code": "zh",
+      "name": "Chinese"
+    },
+    {
+      "code": "fr",
+      "name": "French"
+    },
+    {
+      "code": "de",
+      "name": "German"
+    },
+    {
+      "code": "es",
+      "name": "Spanish"
+    },
+    {
+      "code": "it",
+      "name": "Italian"
+    },
+    {
+      "code": "ru",
+      "name": "Russian"
+    }
+  ],
+  "noteFolder": "",
+  "filenameTemplate": "{{word}}",
+  "cacheTtlDays": 7,
+  "maxCacheEntries": 100,
+  "defaultTemplateId": "custom-1786678778034",
+  "templates": [
+    {
+      "id": "basic",
+      "name": "Basic vocabulary",
+      "content": "---\nword: {{word}}\nlanguage: {{language}}\nsource: {{source}}\nsource_url: {{sourceUrl}}\nlookup_date: {{lookupDate}}\n---\n\n# {{word}}\n\n{{meaningsMarkdown}}\n\n{{#if examplesMarkdown}}## Examples\n{{examplesMarkdown}}\n{{/if}}"
+    },
+    {
+      "id": "detailed",
+      "name": "Detailed vocabulary",
+      "content": "---\nword: {{word}}\nlanguage: {{language}}\n---\n\n# {{word}}\n\n{{#if IPA}}**IPA:** {{IPA}}\n{{/if}}**Part of speech:** {{partOfSpeech}}\n\n## Meanings\n{{meaningsMarkdown}}\n\n{{#if translationsMarkdown}}## Translations\n{{translationsMarkdown}}\n{{/if}}{{#if synonyms}}## Synonyms\n{{synonyms}}\n{{/if}}"
+    },
+    {
+      "id": "learning",
+      "name": "Language-learning vocabulary",
+      "content": "---\nword: {{word}}\nlanguage: {{language}}\n---\n\n# {{word}}\n\n## Meanings\n{{meaningsMarkdown}}\n\n{{#if IPA}}## Pronunciation\n{{IPA}}\n{{/if}}{{#if translationsMarkdown}}## Translations\n{{translationsMarkdown}}\n{{/if}}{{#if examplesMarkdown}}## Source examples\n{{examplesMarkdown}}\n{{/if}}\n## My example\n\n## Notes\n"
+    },
+    {
+      "id": "custom-1786678778034",
+      "name": "Custom template",
+      "content": "# {{word}}\n\n{{definitionsMarkdown}}"
+    },
+    {
+      "id": "flashcard-1786679551437",
+      "name": "Flashcard",
+      "content": "# flashcards/{{language}}_Definition\n\n{{Title}}()::\n\n{{#if IPA}}### Pronunciation\n{{IPA}}\n{{/if}}\n### Usage\n\n**1. Meaning**\n\n{{meaningsMarkdown}}\n\n{{#if translationsMarkdown}}**2. Translation**\n\n{{translationsMarkdown}}\n\n{{/if}}{{#if examplesMarkdown}}**3. Examples**\n\n{{examplesMarkdown}}\n\n{{/if}}{{#if synonyms}}**4. Related words**\n\n{{synonyms}}\n\n{{/if}}**5. My example**\n\n- \n\n{{#if sourceUrl}}[Source]({{sourceUrl}})\n{{/if}}"
+    },
+    {
+      "id": "flashcard-1786682368688",
+      "name": "Flashcard",
+      "content": "# flashcards/{{language}}_Definition\n\n{{Title}}()::\n\n{{#if IPA}}### Pronunciation\n{{IPA}}\n{{/if}}\n### Usage\n\n**1. Meaning**\n\n{{meaningsMarkdown}}\n\n{{#if translationsMarkdown}}**2. Translation**\n\n{{translationsMarkdown}}\n\n{{/if}}{{#if examplesMarkdown}}**3. Examples**\n\n{{examplesMarkdown}}\n\n{{/if}}{{#if synonyms}}**4. Related words**\n\n{{synonyms}}\n\n{{/if}}**5. My example**\n\n- \n\n{{#if sourceUrl}}[Source]({{sourceUrl}})\n{{/if}}"
+    }
+  ],
+  "existingNoteBehavior": "ask"
+}

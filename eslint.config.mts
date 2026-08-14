@@ -29,4 +29,18 @@ export default defineConfig(
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+		files: ['src/main.ts'],
+		rules: {
+			'obsidianmd/commands/no-default-hotkeys': 'off',
+			'obsidianmd/settings-tab/prefer-setting-definitions': 'off',
+		},
+	},
+	{
+		files: ['tests/**/*.ts'],
+		rules: {
+			'obsidianmd/no-nodejs-modules': 'off',
+			'obsidianmd/prefer-window-timers': 'off',
+		},
+	},
 );

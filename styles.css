@@ -1,8 +1,74 @@
-/*
-
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
-
-If your plugin does not need CSS, delete this file.
-
-*/
+.mynary-search { display: flex; gap: 6px; margin-bottom: 12px; align-items: center; }
+.mynary-search input { flex: 1; min-width: 0; }
+.mynary-search-button { align-items: center; display: inline-flex; flex: 0 0 auto; justify-content: center; min-width: 32px; padding: 4px 8px; }
+.mynary-search-button svg { height: 16px; width: 16px; }
+.mynary-search select { flex: 0 0 58px; }
+.mynary-entry-title h2 { margin-bottom: 4px; }
+.mynary-entry-metadata { color: var(--text-muted); font-size: var(--font-ui-smaller); margin-bottom: 8px; }
+.mynary-phonetics { color: var(--text-muted); margin-bottom: 12px; }
+.mynary-meaning { margin-bottom: 14px; }
+.mynary-meaning h3 { color: var(--text-accent); font-size: var(--font-ui-small); font-style: italic; }
+.mynary-meaning-context { color: var(--text-muted); font-size: var(--font-ui-smaller); margin: -8px 0 6px; }
+.mynary-meaning blockquote { margin: 6px 0; color: var(--text-muted); font-size: var(--font-ui-small); }
+.mynary-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+.mynary-actions button { width: 100%; }
+.mynary-source { font-size: var(--font-ui-smaller); }
+.mynary-empty { color: var(--text-muted); padding: 12px 0; }
+.mynary-state { padding: 16px 0; }
+.mynary-loading { color: var(--text-muted); }
+.mynary-error { color: var(--text-error); white-space: pre-wrap; margin-bottom: 8px; }
+.mynary-secondary-action { margin-top: 12px; }
+.mynary-lookup-modal { width: min(720px, calc(100vw - 32px)); max-width: calc(100vw - 32px); }
+.mynary-lookup-modal .modal-content { max-height: 75vh; overflow-y: auto; }
+.mynary-selection-preview { border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); color: var(--text-muted); max-height: 140px; overflow-y: auto; padding: 10px; white-space: pre-wrap; }
+.mynary-selection-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.mynary-expand-actions { margin: -4px 0 12px; }
+.mynary-collapsible { border-top: 1px solid var(--background-modifier-border); margin: 10px 0; padding: 8px 0; }
+.mynary-collapsible summary { cursor: pointer; font-weight: var(--font-semibold); }
+.mynary-collapsible ul { margin-bottom: 0; }
+.mynary-translation-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.mynary-translation-filters input { flex: 1 1 180px; min-width: 0; }
+.mynary-translation-filters select { flex: 0 1 180px; min-width: 140px; }
+.mynary-translation-results { max-height: 420px; overflow-y: auto; }
+.mynary-actions { position: sticky; bottom: 0; background: var(--modal-background); padding: 10px 0; z-index: 1; }
+.mynary-sidebar { height: 100%; overflow-y: auto; }
+.mynary-sidebar .mynary-search { position: sticky; top: 0; background: var(--background-primary); padding: 4px 0 8px; z-index: 2; }
+.mynary-history { border-top: 1px solid var(--background-modifier-border); margin-top: 16px; padding-top: 10px; }
+.mynary-history h4 { margin: 0 0 6px; }
+.mynary-history button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 4px; cursor: pointer; }
+.mynary-template-picker { width: min(760px, calc(100vw - 32px)); max-width: calc(100vw - 32px); }
+.mynary-template-picker .modal-content, .mynary-template-manager .modal-content { max-height: 82vh; overflow-y: auto; }
+.mynary-template-select { min-width: 220px; max-width: 100%; }
+.mynary-template-preview { background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); max-height: 340px; min-height: 120px; overflow: auto; padding: 12px; white-space: pre-wrap; }
+.mynary-note-destination { background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); margin: 10px 0; padding: 10px; }
+.mynary-note-destination div { font-family: var(--font-monospace); margin: 4px 0; overflow-wrap: anywhere; }
+.mynary-note-destination small { color: var(--text-muted); }
+.mynary-template-modal-actions, .mynary-template-editor-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.mynary-template-manager { width: min(1040px, calc(100vw - 32px)); max-width: calc(100vw - 32px); }
+.mynary-template-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.mynary-template-default-label { color: var(--text-accent); font-size: var(--font-ui-small); margin-right: auto; }
+.mynary-template-editor-layout { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.25fr) minmax(240px, .75fr); }
+.mynary-template-editor-form, .mynary-template-guide { min-width: 0; }
+.mynary-template-editor-form label { display: block; font-size: var(--font-ui-small); font-weight: var(--font-semibold); margin: 10px 0 6px; }
+.mynary-template-editor-form input { width: 100%; }
+.mynary-template-textarea { box-sizing: border-box; display: block; font-family: var(--font-monospace); font-size: var(--font-ui-small); line-height: 1.5; min-height: 480px; resize: vertical; width: 100%; }
+.mynary-template-guide { border-left: 1px solid var(--background-modifier-border); padding-left: 16px; }
+.mynary-template-guide h3 { font-size: var(--font-ui-small); margin: 10px 0 6px; }
+.mynary-template-guide p { color: var(--text-muted); font-size: var(--font-ui-small); }
+.mynary-template-guide pre { background: var(--background-secondary); overflow: auto; padding: 10px; white-space: pre-wrap; }
+.mynary-template-live-preview { max-height: 260px; }
+.mynary-template-preview-controls { margin: 6px 0; }
+.mynary-template-preview-controls select { max-width: 100%; }
+.mynary-template-validation { color: var(--text-error); font-size: var(--font-ui-small); margin-top: 8px; }
+.mynary-template-validation.is-valid { color: var(--text-success); }
+.mynary-template-validation ul { margin: 6px 0 0; padding-left: 20px; }
+.mynary-template-variable-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.mynary-template-variable-list button { font-family: var(--font-monospace); font-size: var(--font-ui-smaller); padding: 3px 6px; }
+.mynary-confirm-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+@media (max-width: 480px) {
+	.mynary-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.mynary-actions button:last-child { grid-column: 1 / -1; }
+	.mynary-template-editor-layout { grid-template-columns: 1fr; }
+	.mynary-template-guide { border-left: 0; border-top: 1px solid var(--background-modifier-border); padding-left: 0; padding-top: 12px; }
+	.mynary-template-textarea { min-height: 360px; }
+}

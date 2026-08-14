@@ -1,92 +1,133 @@
-# Obsidian Sample Plugin
+# Mynary Dictionary
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Mynary is an Obsidian plugin for looking up words with Wiktionary and turning the result into reusable vocabulary notes.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## What it does
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
+- Look up selected words or short phrases from the editor.
+- Open a dictionary sidebar for direct search, language selection and recent lookups.
+- Show definitions, part of speech, etymology, pronunciation, examples, translations, synonyms and antonyms when available.
+- Filter large translation results by language, sense or keyword.
+- Copy or insert a formatted result, or create/update a vocabulary note.
+- Use three built-in templates or create your own Markdown templates.
+- Cache results locally with a configurable TTL and entry limit.
 
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and outputs a Notice on click.
-- Registers a global interval which logs 'setInterval' to the console.
+The first provider is Wiktionary. The provider layer is designed so additional dictionary sources can be added later.
 
-## First time developing plugins?
+## Installation
 
-Quick starting guide for new plugin devs:
+### Manual installation
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `src/main.ts` to `main.js`.
-- Make changes to `src/main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+1. Build the plugin with `npm run build`.
+2. Create `.obsidian/plugins/mynary/` in your vault.
+3. Copy `main.js`, `manifest.json` and `styles.css` into that folder.
+4. Enable **Mynary Dictionary** in **Settings → Community plugins**.
 
-## Releasing new releases
+### Development
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
-
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
-
-## Adding your plugin to the community plugin list
-
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
-
-## How to use
-
-- Clone this repo.
-- Make sure your NodeJS is at least v18 (`node --version`).
-- `npm i` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint
-
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-	"fundingUrl": "https://buymeacoffee.com"
-}
+```bash
+npm install
+npm run dev
 ```
 
-If you have multiple URLs, you can also do:
+Validation commands:
 
-```json
-{
-	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com",
-		"GitHub Sponsor": "https://github.com/sponsors",
-		"Patreon": "https://www.patreon.com/"
-	}
-}
+```bash
+npm test -- --run
+npm run build
+npm run lint
 ```
 
-## API Documentation
+## Looking up a word
 
-See https://docs.obsidian.md
+From a Markdown editor, select a word or short phrase and press:
+
+- **Ctrl+Shift+L** on Windows/Linux
+- **Cmd+Shift+L** on macOS
+
+You can also right-click the selection and choose **Lookup selected word**, or run the command from the Command Palette.
+
+Selection handling is deliberately conservative. Mynary accepts up to 80 characters or 8 words. For a longer selection, the popup lets you look up the exact selection, only the first word, or cancel.
+
+The sidebar is available from the ribbon icon or the **Open dictionary sidebar** command. Its search button uses the selected language code; hover or focus the language selector to see the full language name.
+
+Results show whether they came from the local cache or a fresh request. Use **Refresh** to bypass the cache and fetch the current Wiktionary result. **Source: Wiktionary** opens the original page for verification.
+
+## Templates
+
+Open **Settings → Mynary Dictionary → Manage templates** to add, rename, edit, duplicate, delete and restore templates. Copy, Insert and Create note each show the same template picker, so the format can be chosen independently for every action.
+
+The manager provides:
+
+- A large Markdown editor.
+- Live validation for unknown variables and malformed `{{#if ...}}` blocks.
+- Preview data for rich entries, sparse entries, translation-heavy entries and the current lookup.
+- A default-template selector.
+- Safe migration of untouched legacy built-in and Flashcard templates. User-edited templates are preserved.
+
+Templates use case-insensitive `{{variable}}` placeholders. `{{Title}}` is an alias for `{{word}}`.
+
+Supported variables include:
+
+```text
+{{word}}             {{Title}}             {{language}}
+{{definition}}       {{definitions}}       {{definitionsMarkdown}}
+{{meaningsMarkdown}} {{IPA}}               {{partOfSpeech}}
+{{example}}          {{examples}}          {{examplesMarkdown}}
+{{translation}}      {{translations}}      {{translationsMarkdown}}
+{{synonyms}}         {{antonyms}}          {{etymology}}
+{{source}}           {{sourceUrl}}         {{lookupDate}}
+```
+
+Optional sections use:
+
+```text
+{{#if IPA}}
+## Pronunciation
+{{IPA}}
+{{/if}}
+```
+
+Empty values omit the conditional section. Unknown variables render as empty strings, while the Template Manager reports them so they can be corrected before use.
+
+## Creating and updating notes
+
+After a lookup, choose **Create note** and select a template. The note filename is generated from the configurable filename template; unsafe filename characters are replaced automatically. The note folder is created when it does not exist.
+
+When the target note already exists, choose one of these behaviors in Settings:
+
+- **Ask before replacing**: confirm before replacing the whole file.
+- **Replace automatically**: replace the whole file without asking.
+- **Update section**: preserve personal content and replace only the managed section.
+
+Managed sections use these markers:
+
+```markdown
+<!-- mynary:lookup:start -->
+Generated dictionary content
+<!-- mynary:lookup:end -->
+```
+
+If the markers are missing, Mynary appends them. Keep personal notes outside the managed section so future updates do not overwrite them.
+
+## Cache
+
+Results are stored in Obsidian's local plugin data, not in the vault. The default cache policy is 7 days and 100 entries. Both values can be changed in Settings. Use **Clear cache** to remove all cached lookup results.
+
+Refreshing a result bypasses the existing cache and stores the new result under the same lookup key.
+
+## Privacy and attribution
+
+Mynary has no telemetry, analytics, account system or advertising. It does not scan, index or upload vault contents.
+
+Only an explicitly requested word or phrase and the selected language are sent to the corresponding public Wiktionary API. Large entries may also request the public `/translations` subpage. Mynary does not send note content, vault contents, selection context, filenames or personal metadata.
+
+Cached data remains in local Obsidian plugin storage and is removed according to the configured TTL or cache limit. Data is written to the vault only when the user chooses to create or update a note.
+
+Results should be checked against the original source. Mynary displays and links to Wiktionary for attribution and verification.
+
+## Supported languages
+
+English (`en`), Vietnamese (`vi`), Japanese (`ja`), Korean (`ko`), Chinese (`zh`), French (`fr`), German (`de`), Spanish (`es`), Italian (`it`) and Russian (`ru`).
+
+The available fields depend on what Wiktionary provides for a particular word and language. Missing fields are represented as empty values rather than fabricated data.
