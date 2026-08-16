@@ -28,7 +28,7 @@ export function renderTemplate(entry: DictionaryEntry, template: string): string
 		definitionsMarkdown: definitions.map((definition) => `- ${definition}`).join('\n'),
 		meaningsMarkdown,
 		examplesMarkdown: examples.map((example) => `- ${example}`).join('\n'),
-		translationsMarkdown: entry.translations.map((translation) => `- ${translation.sense ? `${translation.sense}: ` : ''}${translation.languageName ?? translation.languageCode ?? translation.language ?? ''}: ${translation.word}`).join('\n'),
+		translationsMarkdown: renderTranslationsMarkdown(entry.translations),
 	};
 	const aliases: Record<string, string> = {
 		title: 'word',
@@ -45,6 +45,27 @@ export function renderTemplate(entry: DictionaryEntry, template: string): string
 	const resolve = (key: string) => lookup.get((aliases[key.toLocaleLowerCase()] ?? key).toLocaleLowerCase()) ?? '';
 	const withConditionals = renderConditionalBlocks(template, (key) => Boolean(resolve(key).trim()));
 	return withConditionals.replace(/\{\{\s*([\w]+)\s*\}\}/g, (_match, key: string) => resolve(key));
+}
+
+function renderTranslationsMarkdown(translations: DictionaryEntry['translations']): string {
+	const groups = new Map<string, string[]>();
+
+	for (const translation of translations) {
+		const sense = translation.sense?.trim() ?? '';
+		const language = translation.languageName ?? translation.languageCode ?? translation.language ?? 'Unknown';
+		const items = groups.get(sense) ?? [];
+		items.push(`${language}: ${translation.word}`);
+		groups.set(sense, items);
+	}
+
+	if (groups.size === 1 && groups.has('')) {
+		return (groups.get('') ?? []).map((item) => `- ${item}`).join('\n');
+	}
+
+	return [...groups.entries()].map(([sense, items]) => {
+		if (!sense) return items.map((item) => `- ${item}`).join('\n');
+		return [`- **${sense}**`, ...items.map((item) => `  - ${item}`)].join('\n');
+	}).join('\n\n');
 }
 
 function renderConditionalBlocks(template: string, isTruthy: (key: string) => boolean): string {
