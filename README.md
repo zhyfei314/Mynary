@@ -8,7 +8,7 @@ Mynary is an Obsidian community plugin for looking up words and short phrases wi
 - Display definitions, pronunciation, part of speech, examples, translations, synonyms, antonyms and etymology when available.
 - Copy, insert or create a note using a reusable Markdown template.
 - Update only a managed section of an existing note while preserving personal content.
-- Cache results locally with configurable expiration and size limits.
+- Cache results locally with configurable expiration and size limits, including a persistent **Recent** lookup list.
 - Work on desktop and mobile.
 
 ## Installation
@@ -76,7 +76,7 @@ Templates are Markdown strings containing case-insensitive variables such as `{{
 | `{{examplesMarkdown}}` | Examples as a Markdown list |
 | `{{translation}}` | Translated words on one line |
 | `{{translations}}` | Translations separated by new lines |
-| `{{translationsMarkdown}}` | Translations as a Markdown list |
+| `{{translationsMarkdown}}` | Translations grouped by sense as a Markdown list; each sense is shown once |
 | `{{synonyms}}` | Synonyms separated by commas |
 | `{{antonyms}}` | Antonyms separated by commas |
 | `{{etymology}}` | Etymology text |
@@ -153,6 +153,8 @@ Default settings:
 - Request timeout: **15 seconds**
 
 The cache key includes the language and normalized lookup text. **Refresh** bypasses the cached value and stores the new result. Use **Clear cache** in settings to remove all cached results.
+
+The **Recent** list stores the last 20 looked-up words in local plugin data and is restored when Obsidian is reopened. Existing cached entries are used to restore the list after upgrading from an earlier version.
 
 ## Privacy and attribution
 
