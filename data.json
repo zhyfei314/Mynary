@@ -18583,6 +18583,5569 @@
       },
       "createdAt": 1786702878332,
       "expiresAt": 1787307678332
+    },
+    "v5:en:hello": {
+      "key": "v5:en:hello",
+      "entry": {
+        "word": "hello",
+        "language": "en",
+        "phonetics": [
+          {
+            "text": "/hɛˈloʊ/"
+          },
+          {
+            "text": "/həˈloʊ/"
+          },
+          {
+            "text": "/ˈhɛloʊ/"
+          },
+          {
+            "text": "/həˈləʊ/"
+          },
+          {
+            "text": "/hɛˈləʊ/"
+          },
+          {
+            "text": "/haˈlaʊ/"
+          },
+          {
+            "text": "/həˈləʉ/"
+          },
+          {
+            "text": "/hɛˈloː/"
+          },
+          {
+            "text": "/həˈloː/"
+          },
+          {
+            "text": "/ˈhɛloː/"
+          },
+          {
+            "text": "/ˈhɛlo/"
+          },
+          {
+            "text": "/həˈlo(w)/"
+          },
+          {
+            "text": "-ɛləʊ"
+          },
+          {
+            "text": "-əʊ"
+          }
+        ],
+        "meanings": [
+          {
+            "partOfSpeech": "Interjection",
+            "definitions": [
+              {
+                "text": "A greeting (salutation) said when meeting someone or acknowledging someone’s arrival or presence.",
+                "examples": [
+                  "Synonyms: see Thesaurus:hello",
+                  "Coordinate terms: see Thesaurus:goodbye",
+                  "Hello, everyone."
+                ]
+              },
+              {
+                "text": "A greeting used when answering the telephone.",
+                "examples": [
+                  "Hello? How may I help you?",
+                  "Hello. This is Marsha. ― Yes, Marsha."
+                ]
+              },
+              {
+                "text": "A call for response if it is not clear if anyone is present or listening, or if a telephone conversation may have been disconnected.",
+                "examples": [
+                  "Hello? Is anyone there?",
+                  "I made a speaking trumpet of my hands and commenced to whoop “Ahoy!” and “Hello!” at the top of my lungs. […] The Colonel woke up, and, after asking what in brimstone was the matter, opened his mouth and roared “Hi!” and “Hello!” like the bull of Bashan."
+                ]
+              },
+              {
+                "text": "(colloquial) Used sarcastically to imply that the person addressed has done something the speaker considers to be foolish, or missed something that should have been obvious.",
+                "examples": [
+                  "You just tried to start your car with your cell phone. Hello?",
+                  "Dionne: Hello? There was a stop sign.Cher: I totally paused.",
+                  "Uh, hello? We're using a CANNON to get to the moon? Isn't that, like, dangerous?"
+                ]
+              },
+              {
+                "text": "(chiefly UK) An expression of puzzlement or discovery.",
+                "examples": [
+                  "Synonyms: see Thesaurus:wow",
+                  "Hello! What’s going on here?"
+                ]
+              }
+            ]
+          },
+          {
+            "partOfSpeech": "Noun",
+            "definitions": [
+              {
+                "text": "\"Hello!\" or an equivalent greeting.",
+                "examples": [
+                  "Synonym: greeting",
+                  "They gave each other a quick hello when they met, and went back on their merry ways.",
+                  "In many new buildings, though, neighbors are venturing beyond tight-lipped hellos at the mailbox.(Can we archive this URL?)",
+                  "(Can we archive this URL?)"
+                ]
+              }
+            ]
+          },
+          {
+            "partOfSpeech": "Verb",
+            "definitions": [
+              {
+                "text": "(transitive) To greet (someone) with \"hello\".",
+                "examples": [
+                  "She is there guarding and looking after the candy and the children generally, and she helloes and renders an exclamation that Maidie is crossing the street.",
+                  "He helloes to my daughter: […]",
+                  "‘Hello Minka! Great to meet you!’ Minka seems nonplussed at what I thought was an uncontroversial opening remark. There’s an awkward pause. She then helloes me back. But that’s all I get.",
+                  "I had to traipse around somewhat, helloing people and being helloed, before I spotted my mother and my father, sharing shade and a spread blanket with Pete and Marie Reese and Toussaint Rennie near the back of the park."
+                ]
+              }
+            ]
+          }
+        ],
+        "translations": [
+          {
+            "word": "сальам",
+            "languageName": "Abaza",
+            "sense": "greeting"
+          },
+          {
+            "word": "бзиа збаша",
+            "languageName": "Abkhaz",
+            "sense": "greeting"
+          },
+          {
+            "word": "мыш бзи",
+            "languageName": "Abkhaz",
+            "sense": "greeting"
+          },
+          {
+            "word": "бзиара убааит",
+            "languageName": "Abkhaz",
+            "sense": "greeting"
+          },
+          {
+            "word": "бзиара ббааит",
+            "languageName": "Abkhaz",
+            "sense": "greeting"
+          },
+          {
+            "word": "бзиара жәбааит",
+            "languageName": "Abkhaz",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "Afrikaans",
+            "languageCode": "af",
+            "sense": "greeting"
+          },
+          {
+            "word": "(af)",
+            "languageName": "Afrikaans",
+            "languageCode": "af",
+            "sense": "greeting"
+          },
+          {
+            "word": "goeiedag",
+            "languageName": "Afrikaans",
+            "languageCode": "af",
+            "sense": "greeting"
+          },
+          {
+            "word": "𑜈𑜩𑜨 𑜀𑜪𑜨",
+            "languageName": "Ahom",
+            "sense": "greeting"
+          },
+          {
+            "word": "イランカラㇷ゚テ",
+            "languageName": "Ainu",
+            "sense": "greeting"
+          },
+          {
+            "word": "maakye",
+            "languageName": "Akan",
+            "sense": "greeting"
+          },
+          {
+            "word": "maaha",
+            "languageName": "Akan",
+            "sense": "greeting"
+          },
+          {
+            "word": "maadwo",
+            "languageName": "Akan",
+            "sense": "greeting"
+          },
+          {
+            "word": "përshëndetje",
+            "languageName": "Albanian",
+            "languageCode": "sq",
+            "sense": "greeting"
+          },
+          {
+            "word": "(sq)",
+            "languageName": "Albanian",
+            "languageCode": "sq",
+            "sense": "greeting"
+          },
+          {
+            "word": "tungjatjeta",
+            "languageName": "Albanian",
+            "languageCode": "sq",
+            "sense": "greeting"
+          },
+          {
+            "word": "tung",
+            "languageName": "Albanian",
+            "languageCode": "sq",
+            "sense": "greeting"
+          },
+          {
+            "word": "ç'kemi",
+            "languageName": "Albanian",
+            "languageCode": "sq",
+            "sense": "greeting"
+          },
+          {
+            "word": "falem",
+            "languageName": "Albanian",
+            "languageCode": "sq",
+            "sense": "greeting"
+          },
+          {
+            "word": "(aae)",
+            "languageName": "Albanian",
+            "languageCode": "sq",
+            "sense": "greeting"
+          },
+          {
+            "word": "aang",
+            "languageName": "Aleut",
+            "sense": "greeting"
+          },
+          {
+            "word": "draas",
+            "languageName": "Aleut",
+            "sense": "greeting"
+          },
+          {
+            "word": "эзен",
+            "languageName": "Altai",
+            "sense": "greeting"
+          },
+          {
+            "word": "селем",
+            "languageName": "Altai",
+            "sense": "greeting"
+          },
+          {
+            "word": "cama’i",
+            "languageName": "Alutiiq",
+            "sense": "greeting"
+          },
+          {
+            "word": "wai",
+            "languageName": "Ambonese Malay",
+            "sense": "greeting"
+          },
+          {
+            "word": "B@Sfhead-PalmForward B@FromSfhead-PalmForward",
+            "languageName": "American Sign Language",
+            "sense": "greeting"
+          },
+          {
+            "word": "ሰላም",
+            "languageName": "Amharic",
+            "sense": "greeting"
+          },
+          {
+            "word": "dá nzhǫ́",
+            "languageName": "Apache",
+            "sense": "greeting"
+          },
+          {
+            "word": "dagotʼee",
+            "languageName": "Apache",
+            "sense": "greeting"
+          },
+          {
+            "word": "daʼanzho",
+            "languageName": "Apache",
+            "sense": "greeting"
+          },
+          {
+            "word": "yaʼateh",
+            "languageName": "Apache",
+            "sense": "greeting"
+          },
+          {
+            "word": "السَّلَامُ عَلَيْكُمْ",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ar)",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "سَلَام",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "مَرْحَبًا",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "أَهْلًا",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "اهلاً",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "مَرحَبا",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "هلا",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "السلام عليكم",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "أهلًا",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "هلو",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "ܫܠܵܡܵܐ",
+            "languageName": "Aramaic",
+            "sense": "greeting"
+          },
+          {
+            "word": "ܫܠܵܡܵܐ ܥܲܠܘܼܟ݂",
+            "languageName": "Aramaic",
+            "sense": "greeting"
+          },
+          {
+            "word": "ܫܠܵܡܵܐ ܥܲܠܵܟ݂ܝ",
+            "languageName": "Aramaic",
+            "sense": "greeting"
+          },
+          {
+            "word": "ܫܠܵܡܵܐ ܥܲܠܵܘܟ݂ܘܿܢ",
+            "languageName": "Aramaic",
+            "sense": "greeting"
+          },
+          {
+            "word": "салам алейкум",
+            "languageName": "Archi",
+            "sense": "greeting"
+          },
+          {
+            "word": "варчӏами",
+            "languageName": "Archi",
+            "sense": "greeting"
+          },
+          {
+            "word": "բարև",
+            "languageName": "Armenian",
+            "languageCode": "hy",
+            "sense": "greeting"
+          },
+          {
+            "word": "(hy)",
+            "languageName": "Armenian",
+            "languageCode": "hy",
+            "sense": "greeting"
+          },
+          {
+            "word": "բարև ձեզ",
+            "languageName": "Armenian",
+            "languageCode": "hy",
+            "sense": "greeting"
+          },
+          {
+            "word": "ողջույն",
+            "languageName": "Armenian",
+            "languageCode": "hy",
+            "sense": "greeting"
+          },
+          {
+            "word": "নমস্কাৰ",
+            "languageName": "Assamese",
+            "sense": "greeting"
+          },
+          {
+            "word": "আচ্চেলামো আলাইকোম",
+            "languageName": "Assamese",
+            "sense": "greeting"
+          },
+          {
+            "word": "হেল’",
+            "languageName": "Assamese",
+            "sense": "greeting"
+          },
+          {
+            "word": "hola",
+            "languageName": "Asturian",
+            "languageCode": "ast",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ast)",
+            "languageName": "Asturian",
+            "languageCode": "ast",
+            "sense": "greeting"
+          },
+          {
+            "word": "salam",
+            "languageName": "Azerbaijani",
+            "languageCode": "az",
+            "sense": "greeting"
+          },
+          {
+            "word": "(az)",
+            "languageName": "Azerbaijani",
+            "languageCode": "az",
+            "sense": "greeting"
+          },
+          {
+            "word": "səlam",
+            "languageName": "Azerbaijani",
+            "languageCode": "az",
+            "sense": "greeting"
+          },
+          {
+            "word": "hər vaxtınız xeyir olsun",
+            "languageName": "Azerbaijani",
+            "languageCode": "az",
+            "sense": "greeting"
+          },
+          {
+            "word": "hər vaxtınız xeyir",
+            "languageName": "Azerbaijani",
+            "languageCode": "az",
+            "sense": "greeting"
+          },
+          {
+            "word": "günaydın",
+            "languageName": "Azerbaijani",
+            "languageCode": "az",
+            "sense": "greeting"
+          },
+          {
+            "word": "xoş gördük",
+            "languageName": "Azerbaijani",
+            "languageCode": "az",
+            "sense": "greeting"
+          },
+          {
+            "word": "əssəlamü əleyküm",
+            "languageName": "Azerbaijani",
+            "languageCode": "az",
+            "sense": "greeting"
+          },
+          {
+            "word": "i ni ce",
+            "languageName": "Bambara",
+            "sense": "greeting"
+          },
+          {
+            "word": "сәләм",
+            "languageName": "Bashkir",
+            "sense": "greeting"
+          },
+          {
+            "word": "kaixo",
+            "languageName": "Basque",
+            "languageCode": "eu",
+            "sense": "greeting"
+          },
+          {
+            "word": "(eu)",
+            "languageName": "Basque",
+            "languageCode": "eu",
+            "sense": "greeting"
+          },
+          {
+            "word": "віта́ю",
+            "languageName": "Belarusian",
+            "sense": "greeting"
+          },
+          {
+            "word": "здаро́ў",
+            "languageName": "Belarusian",
+            "sense": "greeting"
+          },
+          {
+            "word": "прыве́т",
+            "languageName": "Belarusian",
+            "sense": "greeting"
+          },
+          {
+            "word": "до́бры дзень",
+            "languageName": "Belarusian",
+            "sense": "greeting"
+          },
+          {
+            "word": "আসসালামু আলাইকুম",
+            "languageName": "Bengali",
+            "languageCode": "bn",
+            "sense": "greeting"
+          },
+          {
+            "word": "(bn)",
+            "languageName": "Bengali",
+            "languageCode": "bn",
+            "sense": "greeting"
+          },
+          {
+            "word": "সালাম",
+            "languageName": "Bengali",
+            "languageCode": "bn",
+            "sense": "greeting"
+          },
+          {
+            "word": "নমস্কার",
+            "languageName": "Bengali",
+            "languageCode": "bn",
+            "sense": "greeting"
+          },
+          {
+            "word": "হ্যালো",
+            "languageName": "Bengali",
+            "languageCode": "bn",
+            "sense": "greeting"
+          },
+          {
+            "word": "प्रणाम",
+            "languageName": "Bhojpuri",
+            "sense": "greeting"
+          },
+          {
+            "word": "mengz ndil",
+            "languageName": "Bouyei",
+            "sense": "greeting"
+          },
+          {
+            "word": "здра́сти",
+            "languageName": "Bulgarian",
+            "languageCode": "bg",
+            "sense": "greeting"
+          },
+          {
+            "word": "(bg)",
+            "languageName": "Bulgarian",
+            "languageCode": "bg",
+            "sense": "greeting"
+          },
+          {
+            "word": "здраве́й",
+            "languageName": "Bulgarian",
+            "languageCode": "bg",
+            "sense": "greeting"
+          },
+          {
+            "word": "здраве́йте",
+            "languageName": "Bulgarian",
+            "languageCode": "bg",
+            "sense": "greeting"
+          },
+          {
+            "word": "မင်္ဂလာပါ",
+            "languageName": "Burmese",
+            "languageCode": "my",
+            "sense": "greeting"
+          },
+          {
+            "word": "(my)",
+            "languageName": "Burmese",
+            "languageCode": "my",
+            "sense": "greeting"
+          },
+          {
+            "word": "ဟဲလို",
+            "languageName": "Burmese",
+            "languageCode": "my",
+            "sense": "greeting"
+          },
+          {
+            "word": "наздар",
+            "languageName": "Carpathian Rusyn",
+            "sense": "greeting"
+          },
+          {
+            "word": "hola",
+            "languageName": "Catalan",
+            "languageCode": "ca",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ca)",
+            "languageName": "Catalan",
+            "languageCode": "ca",
+            "sense": "greeting"
+          },
+          {
+            "word": "sgę́꞉nǫʼ",
+            "languageName": "Cayuga",
+            "sense": "greeting"
+          },
+          {
+            "word": "ⴰⵣⵓⵍ",
+            "languageName": "Central Atlas Tamazight",
+            "sense": "greeting"
+          },
+          {
+            "word": "håfa adai",
+            "languageName": "Chamorro",
+            "sense": "greeting"
+          },
+          {
+            "word": "маршалла ду хьоьга",
+            "languageName": "Chechen",
+            "sense": "greeting"
+          },
+          {
+            "word": "маршалла ду шуьга",
+            "languageName": "Chechen",
+            "sense": "greeting"
+          },
+          {
+            "word": "ассаламу ӏалайкум",
+            "languageName": "Chechen",
+            "sense": "greeting"
+          },
+          {
+            "word": "ᎣᏏᏲ",
+            "languageName": "Cherokee",
+            "languageCode": "chr",
+            "sense": "greeting"
+          },
+          {
+            "word": "(chr)",
+            "languageName": "Cherokee",
+            "languageCode": "chr",
+            "sense": "greeting"
+          },
+          {
+            "word": "moni",
+            "languageName": "Chichewa",
+            "sense": "greeting"
+          },
+          {
+            "word": "chokma",
+            "languageName": "Chickasaw",
+            "sense": "greeting"
+          },
+          {
+            "word": "你好",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "哈佬",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "ни хо",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "сэляму",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "хома",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "汝好",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "(zh)",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "您好",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "你們好",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "你们好",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "好",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "嗨",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "哈囉",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "哈啰",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "ciallo",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "儂好",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "侬好",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "halito",
+            "languageName": "Choctaw",
+            "sense": "greeting"
+          },
+          {
+            "word": "еттык",
+            "languageName": "Chukchi",
+            "sense": "greeting"
+          },
+          {
+            "word": "ети",
+            "languageName": "Chukchi",
+            "sense": "greeting"
+          },
+          {
+            "word": "етти",
+            "languageName": "Chukchi",
+            "sense": "greeting"
+          },
+          {
+            "word": "уузыншэм",
+            "languageName": "Circassian",
+            "sense": "greeting"
+          },
+          {
+            "word": "ⲛⲟϥⲣⲓ",
+            "languageName": "Coptic",
+            "sense": "greeting"
+          },
+          {
+            "word": "dydh da",
+            "languageName": "Cornish",
+            "sense": "greeting"
+          },
+          {
+            "word": "bonghjornu",
+            "languageName": "Corsican",
+            "sense": "greeting"
+          },
+          {
+            "word": "tânisi",
+            "languageName": "Cree",
+            "sense": "greeting"
+          },
+          {
+            "word": "Мераба",
+            "languageName": "Crimean Tatar",
+            "sense": "greeting"
+          },
+          {
+            "word": "Meraba",
+            "languageName": "Crimean Tatar",
+            "sense": "greeting"
+          },
+          {
+            "word": "ahoj",
+            "languageName": "Czech",
+            "languageCode": "cs",
+            "sense": "greeting"
+          },
+          {
+            "word": "(cs)",
+            "languageName": "Czech",
+            "languageCode": "cs",
+            "sense": "greeting"
+          },
+          {
+            "word": "nazdar",
+            "languageName": "Czech",
+            "languageCode": "cs",
+            "sense": "greeting"
+          },
+          {
+            "word": "čau",
+            "languageName": "Czech",
+            "languageCode": "cs",
+            "sense": "greeting"
+          },
+          {
+            "word": "dobrý den",
+            "languageName": "Czech",
+            "languageCode": "cs",
+            "sense": "greeting"
+          },
+          {
+            "word": "hej",
+            "languageName": "Danish",
+            "languageCode": "da",
+            "sense": "greeting"
+          },
+          {
+            "word": "(da)",
+            "languageName": "Danish",
+            "languageCode": "da",
+            "sense": "greeting"
+          },
+          {
+            "word": "dav",
+            "languageName": "Danish",
+            "languageCode": "da",
+            "sense": "greeting"
+          },
+          {
+            "word": "god dag",
+            "languageName": "Danish",
+            "languageCode": "da",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "Danish",
+            "languageCode": "da",
+            "sense": "greeting"
+          },
+          {
+            "word": "halløj",
+            "languageName": "Danish",
+            "languageCode": "da",
+            "sense": "greeting"
+          },
+          {
+            "word": "އައްސަލާމު ޢަލައިކުމް",
+            "languageName": "Dhivehi",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "(nl)",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "hoi",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "hai",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "hé",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "dag",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "goeiedag",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "goededag",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "goedendag",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "goeiendag",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "saluton",
+            "languageName": "Esperanto",
+            "languageCode": "eo",
+            "sense": "greeting"
+          },
+          {
+            "word": "(eo)",
+            "languageName": "Esperanto",
+            "languageCode": "eo",
+            "sense": "greeting"
+          },
+          {
+            "word": "tere",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "(et)",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "tervist",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "hei",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "tsau",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "hey",
+            "languageName": "Faroese",
+            "sense": "greeting"
+          },
+          {
+            "word": "halló",
+            "languageName": "Faroese",
+            "sense": "greeting"
+          },
+          {
+            "word": "góðan dag",
+            "languageName": "Faroese",
+            "sense": "greeting"
+          },
+          {
+            "word": "bula",
+            "languageName": "Fijian",
+            "languageCode": "fj",
+            "sense": "greeting"
+          },
+          {
+            "word": "(fj)",
+            "languageName": "Fijian",
+            "languageCode": "fj",
+            "sense": "greeting"
+          },
+          {
+            "word": "terve",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "greeting"
+          },
+          {
+            "word": "(fi)",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "greeting"
+          },
+          {
+            "word": "moi",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "greeting"
+          },
+          {
+            "word": "hei",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "greeting"
+          },
+          {
+            "word": "moikka",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "greeting"
+          },
+          {
+            "word": "tsau",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "greeting"
+          },
+          {
+            "word": "ahô",
+            "languageName": "Fox",
+            "sense": "greeting"
+          },
+          {
+            "word": "bonjour",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "(fr)",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "salut",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "coucou",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "Frisian",
+            "sense": "greeting"
+          },
+          {
+            "word": "hoi",
+            "languageName": "Frisian",
+            "sense": "greeting"
+          },
+          {
+            "word": "mandi",
+            "languageName": "Friulian",
+            "sense": "greeting"
+          },
+          {
+            "word": "mihofnima",
+            "languageName": "Fula",
+            "sense": "greeting"
+          },
+          {
+            "word": "ola",
+            "languageName": "Galician",
+            "languageCode": "gl",
+            "sense": "greeting"
+          },
+          {
+            "word": "(gl)",
+            "languageName": "Galician",
+            "languageCode": "gl",
+            "sense": "greeting"
+          },
+          {
+            "word": "oula",
+            "languageName": "Galician",
+            "languageCode": "gl",
+            "sense": "greeting"
+          },
+          {
+            "word": "ouga",
+            "languageName": "Galician",
+            "languageCode": "gl",
+            "sense": "greeting"
+          },
+          {
+            "word": "გამარჯობა",
+            "languageName": "Georgian",
+            "languageCode": "ka",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ka)",
+            "languageName": "Georgian",
+            "languageCode": "ka",
+            "sense": "greeting"
+          },
+          {
+            "word": "ჰეი",
+            "languageName": "Georgian",
+            "languageCode": "ka",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "(de)",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "guten Tag",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "servus",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "moin",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "grüß Gott",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "Tag",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "grüezi",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "sälü",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "sali",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "hoi",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "hello",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "grias di",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "pfiati",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "mauri",
+            "languageName": "Gilbertese",
+            "sense": "greeting"
+          },
+          {
+            "word": "𐌷𐌰𐌹𐌻𐍃",
+            "languageName": "Gothic",
+            "sense": "greeting"
+          },
+          {
+            "word": "𐌷𐌰𐌹𐌻𐌰",
+            "languageName": "Gothic",
+            "sense": "greeting"
+          },
+          {
+            "word": "γεια",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "(el)",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "γεια σου",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "γεια σας",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "χαίρε",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "χαίρετε",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "χαῖρε",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "χαῖρε καί ὑγίαινε",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "aluu",
+            "languageName": "Greenlandic",
+            "languageCode": "kl",
+            "sense": "greeting"
+          },
+          {
+            "word": "(kl)",
+            "languageName": "Greenlandic",
+            "languageCode": "kl",
+            "sense": "greeting"
+          },
+          {
+            "word": "verify",
+            "languageName": "Guarani",
+            "languageCode": "gn",
+            "sense": "greeting"
+          },
+          {
+            "word": "maitei",
+            "languageName": "Guarani",
+            "languageCode": "gn",
+            "sense": "greeting"
+          },
+          {
+            "word": "(gn)",
+            "languageName": "Guarani",
+            "languageCode": "gn",
+            "sense": "greeting"
+          },
+          {
+            "word": "નમસ્તે",
+            "languageName": "Gujarati",
+            "sense": "greeting"
+          },
+          {
+            "word": "નમસ્કાર",
+            "languageName": "Gujarati",
+            "sense": "greeting"
+          },
+          {
+            "word": "bonjou",
+            "languageName": "Haitian Creole",
+            "sense": "greeting"
+          },
+          {
+            "word": "sannu",
+            "languageName": "Hausa",
+            "sense": "greeting"
+          },
+          {
+            "word": "aloha",
+            "languageName": "Hawaiian",
+            "sense": "greeting"
+          },
+          {
+            "word": "שָׁלוֹם",
+            "languageName": "Hebrew",
+            "languageCode": "he",
+            "sense": "greeting"
+          },
+          {
+            "word": "(he)",
+            "languageName": "Hebrew",
+            "languageCode": "he",
+            "sense": "greeting"
+          },
+          {
+            "word": "שָׁלוֹם עָלֵיכֶם",
+            "languageName": "Hebrew",
+            "languageCode": "he",
+            "sense": "greeting"
+          },
+          {
+            "word": "नमस्ते",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "greeting"
+          },
+          {
+            "word": "(hi)",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "greeting"
+          },
+          {
+            "word": "नमस्कार",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "greeting"
+          },
+          {
+            "word": "सलाम",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "greeting"
+          },
+          {
+            "word": "सत श्री अकाल",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "greeting"
+          },
+          {
+            "word": "हेलो",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "greeting"
+          },
+          {
+            "word": "हलो",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "greeting"
+          },
+          {
+            "word": "सत्य",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "greeting"
+          },
+          {
+            "word": "आदाब",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "greeting"
+          },
+          {
+            "word": "nyob zoo",
+            "languageName": "Hmong",
+            "sense": "greeting"
+          },
+          {
+            "word": "szia",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "(hu)",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "sziasztok",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "szervusz",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "szervusztok",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "heló",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "helló",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "jó napot",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "jó napot kívánok",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "üdvözlöm",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "halló",
+            "languageName": "Icelandic",
+            "languageCode": "is",
+            "sense": "greeting"
+          },
+          {
+            "word": "(is)",
+            "languageName": "Icelandic",
+            "languageCode": "is",
+            "sense": "greeting"
+          },
+          {
+            "word": "hæ",
+            "languageName": "Icelandic",
+            "languageCode": "is",
+            "sense": "greeting"
+          },
+          {
+            "word": "góðan dag",
+            "languageName": "Icelandic",
+            "languageCode": "is",
+            "sense": "greeting"
+          },
+          {
+            "word": "góðan daginn",
+            "languageName": "Icelandic",
+            "languageCode": "is",
+            "sense": "greeting"
+          },
+          {
+            "word": "hola",
+            "languageName": "Ido",
+            "languageCode": "io",
+            "sense": "greeting"
+          },
+          {
+            "word": "(io)",
+            "languageName": "Ido",
+            "languageCode": "io",
+            "sense": "greeting"
+          },
+          {
+            "word": "kèdu",
+            "languageName": "Igbo",
+            "sense": "greeting"
+          },
+          {
+            "word": "hai",
+            "languageName": "Indonesian",
+            "languageCode": "id",
+            "sense": "greeting"
+          },
+          {
+            "word": "(id)",
+            "languageName": "Indonesian",
+            "languageCode": "id",
+            "sense": "greeting"
+          },
+          {
+            "word": "salam",
+            "languageName": "Indonesian",
+            "languageCode": "id",
+            "sense": "greeting"
+          },
+          {
+            "word": "tere",
+            "languageName": "Ingrian",
+            "sense": "greeting"
+          },
+          {
+            "word": "draastui",
+            "languageName": "Ingrian",
+            "sense": "greeting"
+          },
+          {
+            "word": "bon die",
+            "languageName": "Interlingua",
+            "languageCode": "ia",
+            "sense": "greeting"
+          },
+          {
+            "word": "salute",
+            "languageName": "Interlingua",
+            "languageCode": "ia",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ia)",
+            "languageName": "Interlingua",
+            "languageCode": "ia",
+            "sense": "greeting"
+          },
+          {
+            "word": "juu",
+            "languageName": "Iquito",
+            "sense": "greeting"
+          },
+          {
+            "word": "Dia dhuit",
+            "languageName": "Irish",
+            "sense": "greeting"
+          },
+          {
+            "word": "Dia dhaoibh",
+            "languageName": "Irish",
+            "sense": "greeting"
+          },
+          {
+            "word": "Dia's Muire dhuit",
+            "languageName": "Irish",
+            "sense": "greeting"
+          },
+          {
+            "word": "Dia's Muire dhaoibh",
+            "languageName": "Irish",
+            "sense": "greeting"
+          },
+          {
+            "word": "ciao",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "greeting"
+          },
+          {
+            "word": "(it)",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "greeting"
+          },
+          {
+            "word": "salve",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "greeting"
+          },
+          {
+            "word": "buongiorno",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "greeting"
+          },
+          {
+            "word": "saluti",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "greeting"
+          },
+          {
+            "word": "yiem longx nyei",
+            "languageName": "Iu Mien",
+            "sense": "greeting"
+          },
+          {
+            "word": "ello",
+            "languageName": "Jamaican Creole",
+            "sense": "greeting"
+          },
+          {
+            "word": "wah gwaan",
+            "languageName": "Jamaican Creole",
+            "sense": "greeting"
+          },
+          {
+            "word": "おはよう",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ja)",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "おはようございます",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "今日は",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "今晩は",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "halo",
+            "languageName": "Javanese",
+            "languageCode": "jv",
+            "sense": "greeting"
+          },
+          {
+            "word": "(jv)",
+            "languageName": "Javanese",
+            "languageCode": "jv",
+            "sense": "greeting"
+          },
+          {
+            "word": "반갑수다",
+            "languageName": "Jeju",
+            "sense": "greeting"
+          },
+          {
+            "word": "펜안ᄒᆞ우꽈",
+            "languageName": "Jeju",
+            "sense": "greeting"
+          },
+          {
+            "word": "펜안",
+            "languageName": "Jeju",
+            "sense": "greeting"
+          },
+          {
+            "word": "шолум",
+            "languageName": "Judeo-Tat",
+            "sense": "greeting"
+          },
+          {
+            "word": "azul",
+            "languageName": "Kabyle",
+            "sense": "greeting"
+          },
+          {
+            "word": "мендвт",
+            "languageName": "Kalmyk",
+            "sense": "greeting"
+          },
+          {
+            "word": "менд",
+            "languageName": "Kalmyk",
+            "sense": "greeting"
+          },
+          {
+            "word": "ತುಳಿಲು",
+            "languageName": "Kannada",
+            "languageCode": "kn",
+            "sense": "greeting"
+          },
+          {
+            "word": "(kn)",
+            "languageName": "Kannada",
+            "languageCode": "kn",
+            "sense": "greeting"
+          },
+          {
+            "word": "ನಮಸ್ಕಾರ",
+            "languageName": "Kannada",
+            "languageCode": "kn",
+            "sense": "greeting"
+          },
+          {
+            "word": "кюнюгюз ашхы болсун",
+            "languageName": "Karachay-Balkar",
+            "sense": "greeting"
+          },
+          {
+            "word": "ассаламу алейкум",
+            "languageName": "Karachay-Balkar",
+            "sense": "greeting"
+          },
+          {
+            "word": "terveh",
+            "languageName": "Karelian",
+            "sense": "greeting"
+          },
+          {
+            "word": "hei",
+            "languageName": "Karelian",
+            "sense": "greeting"
+          },
+          {
+            "word": "ခွဲးဟဝ်ဒျာႏ",
+            "languageName": "Karen",
+            "languageCode": "blk",
+            "sense": "greeting"
+          },
+          {
+            "word": "(blk)",
+            "languageName": "Karen",
+            "languageCode": "blk",
+            "sense": "greeting"
+          },
+          {
+            "word": "မင်္ဂလာႏဒျာႏ",
+            "languageName": "Karen",
+            "languageCode": "blk",
+            "sense": "greeting"
+          },
+          {
+            "word": "сәлем",
+            "languageName": "Kazakh",
+            "sense": "greeting"
+          },
+          {
+            "word": "сәлеметсіздер",
+            "languageName": "Kazakh",
+            "sense": "greeting"
+          },
+          {
+            "word": "ជម្រាបសួរ",
+            "languageName": "Khmer",
+            "sense": "greeting"
+          },
+          {
+            "word": "សួស្តី",
+            "languageName": "Khmer",
+            "sense": "greeting"
+          },
+          {
+            "word": "Видза оланныд",
+            "languageName": "Komi",
+            "sense": "greeting"
+          },
+          {
+            "word": "안녕하십니까",
+            "languageName": "Korean",
+            "languageCode": "ko",
+            "sense": "greeting"
+          },
+          {
+            "word": "안녕하세요",
+            "languageName": "Korean",
+            "languageCode": "ko",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ko)",
+            "languageName": "Korean",
+            "languageCode": "ko",
+            "sense": "greeting"
+          },
+          {
+            "word": "안녕(安寧)",
+            "languageName": "Korean",
+            "languageCode": "ko",
+            "sense": "greeting"
+          },
+          {
+            "word": "kushɛ",
+            "languageName": "Krio",
+            "sense": "greeting"
+          },
+          {
+            "word": "merheba",
+            "languageName": "Kurdish",
+            "languageCode": "ku",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ku)",
+            "languageName": "Kurdish",
+            "languageCode": "ku",
+            "sense": "greeting"
+          },
+          {
+            "word": "silav",
+            "languageName": "Kurdish",
+            "languageCode": "ku",
+            "sense": "greeting"
+          },
+          {
+            "word": "selam",
+            "languageName": "Kurdish",
+            "languageCode": "ku",
+            "sense": "greeting"
+          },
+          {
+            "word": "саламатсыздарбы",
+            "languageName": "Kyrgyz",
+            "languageCode": "ky",
+            "sense": "greeting"
+          },
+          {
+            "word": "салам",
+            "languageName": "Kyrgyz",
+            "languageCode": "ky",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ky)",
+            "languageName": "Kyrgyz",
+            "languageCode": "ky",
+            "sense": "greeting"
+          },
+          {
+            "word": "shalom",
+            "languageName": "Ladino",
+            "sense": "greeting"
+          },
+          {
+            "word": "saludos",
+            "languageName": "Ladino",
+            "sense": "greeting"
+          },
+          {
+            "word": "bonjur",
+            "languageName": "Ladino",
+            "sense": "greeting"
+          },
+          {
+            "word": "салам",
+            "languageName": "Lak",
+            "sense": "greeting"
+          },
+          {
+            "word": "háu",
+            "languageName": "Lakota",
+            "sense": "greeting"
+          },
+          {
+            "word": "ສະບາຍດີ",
+            "languageName": "Lao",
+            "languageCode": "lo",
+            "sense": "greeting"
+          },
+          {
+            "word": "(lo)",
+            "languageName": "Lao",
+            "languageCode": "lo",
+            "sense": "greeting"
+          },
+          {
+            "word": "salvē",
+            "languageName": "Latin",
+            "languageCode": "la",
+            "sense": "greeting"
+          },
+          {
+            "word": "(la)",
+            "languageName": "Latin",
+            "languageCode": "la",
+            "sense": "greeting"
+          },
+          {
+            "word": "salvēte",
+            "languageName": "Latin",
+            "languageCode": "la",
+            "sense": "greeting"
+          },
+          {
+            "word": "avē",
+            "languageName": "Latin",
+            "languageCode": "la",
+            "sense": "greeting"
+          },
+          {
+            "word": "avēte",
+            "languageName": "Latin",
+            "languageCode": "la",
+            "sense": "greeting"
+          },
+          {
+            "word": "sveiki",
+            "languageName": "Latvian",
+            "languageCode": "lv",
+            "sense": "greeting"
+          },
+          {
+            "word": "sveiks",
+            "languageName": "Latvian",
+            "languageCode": "lv",
+            "sense": "greeting"
+          },
+          {
+            "word": "(lv)",
+            "languageName": "Latvian",
+            "languageCode": "lv",
+            "sense": "greeting"
+          },
+          {
+            "word": "sveika",
+            "languageName": "Latvian",
+            "languageCode": "lv",
+            "sense": "greeting"
+          },
+          {
+            "word": "čau",
+            "languageName": "Latvian",
+            "languageCode": "lv",
+            "sense": "greeting"
+          },
+          {
+            "word": "გეგაჯგინას",
+            "languageName": "Laz",
+            "sense": "greeting"
+          },
+          {
+            "word": "салам",
+            "languageName": "Lezgi",
+            "sense": "greeting"
+          },
+          {
+            "word": "labas",
+            "languageName": "Lithuanian",
+            "languageCode": "lt",
+            "sense": "greeting"
+          },
+          {
+            "word": "(lt)",
+            "languageName": "Lithuanian",
+            "languageCode": "lt",
+            "sense": "greeting"
+          },
+          {
+            "word": "sveikas",
+            "languageName": "Lithuanian",
+            "languageCode": "lt",
+            "sense": "greeting"
+          },
+          {
+            "word": "sveiki",
+            "languageName": "Lithuanian",
+            "languageCode": "lt",
+            "sense": "greeting"
+          },
+          {
+            "word": "tēriņtš",
+            "languageName": "Livonian",
+            "sense": "greeting"
+          },
+          {
+            "word": "moi",
+            "languageName": "Low German",
+            "languageCode": "nds",
+            "sense": "greeting"
+          },
+          {
+            "word": "moin",
+            "languageName": "Low German",
+            "languageCode": "nds",
+            "sense": "greeting"
+          },
+          {
+            "word": "hoi",
+            "languageName": "Low German",
+            "languageCode": "nds",
+            "sense": "greeting"
+          },
+          {
+            "word": "hai",
+            "languageName": "Low German",
+            "languageCode": "nds",
+            "sense": "greeting"
+          },
+          {
+            "word": "hee",
+            "languageName": "Low German",
+            "languageCode": "nds",
+            "sense": "greeting"
+          },
+          {
+            "word": "(nds)",
+            "languageName": "Low German",
+            "languageCode": "nds",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "Low German",
+            "languageCode": "nds",
+            "sense": "greeting"
+          },
+          {
+            "word": "gode(n) dag",
+            "languageName": "Low German",
+            "languageCode": "nds",
+            "sense": "greeting"
+          },
+          {
+            "word": "ge(n)dag",
+            "languageName": "Low German",
+            "languageCode": "nds",
+            "sense": "greeting"
+          },
+          {
+            "word": "ᦍᦲᧃᦡᦲ",
+            "languageName": "Lü",
+            "sense": "greeting"
+          },
+          {
+            "word": "msawa",
+            "languageName": "Luo",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "Luxembourgish",
+            "sense": "greeting"
+          },
+          {
+            "word": "sopa",
+            "languageName": "Maasai",
+            "sense": "greeting"
+          },
+          {
+            "word": "entasupa",
+            "languageName": "Maasai",
+            "sense": "greeting"
+          },
+          {
+            "word": "здраво",
+            "languageName": "Macedonian",
+            "sense": "greeting"
+          },
+          {
+            "word": "manao ahoana?",
+            "languageName": "Malagasy",
+            "languageCode": "mg",
+            "sense": "greeting"
+          },
+          {
+            "word": "salama",
+            "languageName": "Malagasy",
+            "languageCode": "mg",
+            "sense": "greeting"
+          },
+          {
+            "word": "(mg)",
+            "languageName": "Malagasy",
+            "languageCode": "mg",
+            "sense": "greeting"
+          },
+          {
+            "word": "helo",
+            "languageName": "Malay",
+            "languageCode": "ms",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ms)",
+            "languageName": "Malay",
+            "languageCode": "ms",
+            "sense": "greeting"
+          },
+          {
+            "word": "apa khabar",
+            "languageName": "Malay",
+            "languageCode": "ms",
+            "sense": "greeting"
+          },
+          {
+            "word": "salam",
+            "languageName": "Malay",
+            "languageCode": "ms",
+            "sense": "greeting"
+          },
+          {
+            "word": "ഹലോ",
+            "languageName": "Malayalam",
+            "languageCode": "ml",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ml)",
+            "languageName": "Malayalam",
+            "languageCode": "ml",
+            "sense": "greeting"
+          },
+          {
+            "word": "നമസ്തേ",
+            "languageName": "Malayalam",
+            "languageCode": "ml",
+            "sense": "greeting"
+          },
+          {
+            "word": "നമസ്കാരം",
+            "languageName": "Malayalam",
+            "languageCode": "ml",
+            "sense": "greeting"
+          },
+          {
+            "word": "bonġu",
+            "languageName": "Maltese",
+            "languageCode": "mt",
+            "sense": "greeting"
+          },
+          {
+            "word": "(mt)",
+            "languageName": "Maltese",
+            "languageCode": "mt",
+            "sense": "greeting"
+          },
+          {
+            "word": "bonswa",
+            "languageName": "Maltese",
+            "languageCode": "mt",
+            "sense": "greeting"
+          },
+          {
+            "word": "nsellimlek",
+            "languageName": "Maltese",
+            "languageCode": "mt",
+            "sense": "greeting"
+          },
+          {
+            "word": "nsellmilkom",
+            "languageName": "Maltese",
+            "languageCode": "mt",
+            "sense": "greeting"
+          },
+          {
+            "word": "nsellmulek",
+            "languageName": "Maltese",
+            "languageCode": "mt",
+            "sense": "greeting"
+          },
+          {
+            "word": "nsellmulkom",
+            "languageName": "Maltese",
+            "languageCode": "mt",
+            "sense": "greeting"
+          },
+          {
+            "word": "ħelow",
+            "languageName": "Maltese",
+            "languageCode": "mt",
+            "sense": "greeting"
+          },
+          {
+            "word": "ᠰᠠᡳᠶᡡᠨ",
+            "languageName": "Manchu",
+            "sense": "greeting"
+          },
+          {
+            "word": "kia ora",
+            "languageName": "Māori",
+            "languageCode": "mi",
+            "sense": "greeting"
+          },
+          {
+            "word": "(mi)",
+            "languageName": "Māori",
+            "languageCode": "mi",
+            "sense": "greeting"
+          },
+          {
+            "word": "tēnā koe",
+            "languageName": "Māori",
+            "languageCode": "mi",
+            "sense": "greeting"
+          },
+          {
+            "word": "tēnā kōrua",
+            "languageName": "Māori",
+            "languageCode": "mi",
+            "sense": "greeting"
+          },
+          {
+            "word": "tēnā koutou",
+            "languageName": "Māori",
+            "languageCode": "mi",
+            "sense": "greeting"
+          },
+          {
+            "word": "io̧kwe",
+            "languageName": "Marshallese",
+            "sense": "greeting"
+          },
+          {
+            "word": "yokwe",
+            "languageName": "Marshallese",
+            "sense": "greeting"
+          },
+          {
+            "word": "mari",
+            "languageName": "Mapudungun",
+            "sense": "greeting"
+          },
+          {
+            "word": "yo",
+            "languageName": "Maranungku",
+            "sense": "greeting"
+          },
+          {
+            "word": "नमस्कार",
+            "languageName": "Marathi",
+            "languageCode": "mr",
+            "sense": "greeting"
+          },
+          {
+            "word": "(mr)",
+            "languageName": "Marathi",
+            "languageCode": "mr",
+            "sense": "greeting"
+          },
+          {
+            "word": "tánishi",
+            "languageName": "Michif",
+            "sense": "greeting"
+          },
+          {
+            "word": "boñjour",
+            "languageName": "Michif",
+            "sense": "greeting"
+          },
+          {
+            "word": "გომორძგუა",
+            "languageName": "Mingrelian",
+            "sense": "greeting"
+          },
+          {
+            "word": "sekoh",
+            "languageName": "Mohawk",
+            "sense": "greeting"
+          },
+          {
+            "word": "မ္ၚဵုရအဴ",
+            "languageName": "Mon",
+            "languageCode": "mnw",
+            "sense": "greeting"
+          },
+          {
+            "word": "(mnw)",
+            "languageName": "Mon",
+            "languageCode": "mnw",
+            "sense": "greeting"
+          },
+          {
+            "word": "сайн уу?",
+            "languageName": "Mongolian",
+            "languageCode": "mn",
+            "sense": "greeting"
+          },
+          {
+            "word": "(mn)",
+            "languageName": "Mongolian",
+            "languageCode": "mn",
+            "sense": "greeting"
+          },
+          {
+            "word": "сайн байна уу?",
+            "languageName": "Mongolian",
+            "languageCode": "mn",
+            "sense": "greeting"
+          },
+          {
+            "word": "сайн байцгаана уу?",
+            "languageName": "Mongolian",
+            "languageCode": "mn",
+            "sense": "greeting"
+          },
+          {
+            "word": "dʼyoos",
+            "languageName": "Mopan Maya",
+            "sense": "greeting"
+          },
+          {
+            "word": "hǖhêi",
+            "languageName": "Naga",
+            "sense": "greeting"
+          },
+          {
+            "word": "niltze",
+            "languageName": "Nahuatl",
+            "languageCode": "nah",
+            "sense": "greeting"
+          },
+          {
+            "word": "(nah)",
+            "languageName": "Nahuatl",
+            "languageCode": "nah",
+            "sense": "greeting"
+          },
+          {
+            "word": "panoltih",
+            "languageName": "Nahuatl",
+            "languageCode": "nah",
+            "sense": "greeting"
+          },
+          {
+            "word": "yáʼátʼééh",
+            "languageName": "Navajo",
+            "sense": "greeting"
+          },
+          {
+            "word": "uè",
+            "languageName": "Neapolitan",
+            "sense": "greeting"
+          },
+          {
+            "word": "नमस्ते",
+            "languageName": "Nepali",
+            "languageCode": "ne",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ne)",
+            "languageName": "Nepali",
+            "languageCode": "ne",
+            "sense": "greeting"
+          },
+          {
+            "word": "नमस्कार",
+            "languageName": "Nepali",
+            "languageCode": "ne",
+            "sense": "greeting"
+          },
+          {
+            "word": "baon-n-jour",
+            "languageName": "Norman",
+            "sense": "greeting"
+          },
+          {
+            "word": "banjour",
+            "languageName": "Norman",
+            "sense": "greeting"
+          },
+          {
+            "word": "boujouo",
+            "languageName": "Norman",
+            "sense": "greeting"
+          },
+          {
+            "word": "bouônjour",
+            "languageName": "Norman",
+            "sense": "greeting"
+          },
+          {
+            "word": "bwõju",
+            "languageName": "Norman",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "Norwegian",
+            "languageCode": "no",
+            "sense": "greeting"
+          },
+          {
+            "word": "(no)",
+            "languageName": "Norwegian",
+            "languageCode": "no",
+            "sense": "greeting"
+          },
+          {
+            "word": "hei",
+            "languageName": "Norwegian",
+            "languageCode": "no",
+            "sense": "greeting"
+          },
+          {
+            "word": "god dag",
+            "languageName": "Norwegian",
+            "languageCode": "no",
+            "sense": "greeting"
+          },
+          {
+            "word": "halla",
+            "languageName": "Norwegian",
+            "languageCode": "no",
+            "sense": "greeting"
+          },
+          {
+            "word": "heisann",
+            "languageName": "Norwegian",
+            "languageCode": "no",
+            "sense": "greeting"
+          },
+          {
+            "word": "ǃhonkia",
+            "languageName": "Nǀuu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ǃʻhûua",
+            "languageName": "Nǀuu",
+            "sense": "greeting"
+          },
+          {
+            "word": "nǃʻhonga",
+            "languageName": "Nǀuu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ǃʻhoangkia",
+            "languageName": "Nǀuu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ǃʻhoengkia",
+            "languageName": "Nǀuu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ǃʻhûuuwe",
+            "languageName": "Nǀuu",
+            "sense": "greeting"
+          },
+          {
+            "word": "nǃʻhongowe",
+            "languageName": "Nǀuu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ǃʻhoangkica",
+            "languageName": "Nǀuu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ǃʻhoangkiki",
+            "languageName": "Nǀuu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ǃʻhuqungkia",
+            "languageName": "Nǀuu",
+            "sense": "greeting"
+          },
+          {
+            "word": "bonjorn",
+            "languageName": "Occitan",
+            "languageCode": "oc",
+            "sense": "greeting"
+          },
+          {
+            "word": "(oc)",
+            "languageName": "Occitan",
+            "languageCode": "oc",
+            "sense": "greeting"
+          },
+          {
+            "word": "adieu-siatz",
+            "languageName": "Occitan",
+            "languageCode": "oc",
+            "sense": "greeting"
+          },
+          {
+            "word": "adieu-siás",
+            "languageName": "Occitan",
+            "languageCode": "oc",
+            "sense": "greeting"
+          },
+          {
+            "word": "ନମସ୍କାର",
+            "languageName": "Odia",
+            "languageCode": "or",
+            "sense": "greeting"
+          },
+          {
+            "word": "(or)",
+            "languageName": "Odia",
+            "languageCode": "or",
+            "sense": "greeting"
+          },
+          {
+            "word": "boozhoo",
+            "languageName": "Ojibwe",
+            "sense": "greeting"
+          },
+          {
+            "word": "はいさい",
+            "languageName": "Okinawan",
+            "sense": "greeting"
+          },
+          {
+            "word": "はいたい",
+            "languageName": "Okinawan",
+            "sense": "greeting"
+          },
+          {
+            "word": "はい",
+            "languageName": "Okinawan",
+            "sense": "greeting"
+          },
+          {
+            "word": "wes hāl",
+            "languageName": "Old English",
+            "sense": "greeting"
+          },
+          {
+            "word": "akkam",
+            "languageName": "Oromo",
+            "sense": "greeting"
+          },
+          {
+            "word": "салам",
+            "languageName": "Ossetian",
+            "sense": "greeting"
+          },
+          {
+            "word": "байрай",
+            "languageName": "Ossetian",
+            "sense": "greeting"
+          },
+          {
+            "word": "арфӕ",
+            "languageName": "Ossetian",
+            "sense": "greeting"
+          },
+          {
+            "word": "alii",
+            "languageName": "Palauan",
+            "sense": "greeting"
+          },
+          {
+            "word": "здраво",
+            "languageName": "Pannonian Rusyn",
+            "sense": "greeting"
+          },
+          {
+            "word": "سلام",
+            "languageName": "Pashto",
+            "languageCode": "ps",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ps)",
+            "languageName": "Pashto",
+            "languageCode": "ps",
+            "sense": "greeting"
+          },
+          {
+            "word": "سلام الېک",
+            "languageName": "Pashto",
+            "languageCode": "ps",
+            "sense": "greeting"
+          },
+          {
+            "word": "السلام عليکم",
+            "languageName": "Pashto",
+            "languageCode": "ps",
+            "sense": "greeting"
+          },
+          {
+            "word": "سَلَام",
+            "languageName": "Persian",
+            "sense": "greeting"
+          },
+          {
+            "word": "سَلَام عَلَیْکُم",
+            "languageName": "Persian",
+            "sense": "greeting"
+          },
+          {
+            "word": "دُرود",
+            "languageName": "Persian",
+            "sense": "greeting"
+          },
+          {
+            "word": "دَرُود",
+            "languageName": "Persian",
+            "sense": "greeting"
+          },
+          {
+            "word": "دُرُود",
+            "languageName": "Persian",
+            "sense": "greeting"
+          },
+          {
+            "word": "سَلام",
+            "languageName": "Persian",
+            "sense": "greeting"
+          },
+          {
+            "word": "سَلام عَلِیْکُم",
+            "languageName": "Persian",
+            "sense": "greeting"
+          },
+          {
+            "word": "bojour",
+            "languageName": "Picard",
+            "sense": "greeting"
+          },
+          {
+            "word": "watawieh",
+            "languageName": "Pitcairn-Norfolk",
+            "sense": "greeting"
+          },
+          {
+            "word": "cześć",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "(pl)",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "witaj",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "witajcie",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "witam",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "dzień dobry",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "siema",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "czołem",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "halo",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "serwus",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "cześka",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "siemanero",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "hej",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "cze",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "elo",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "oi",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "greeting"
+          },
+          {
+            "word": "(pt)",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "greeting"
+          },
+          {
+            "word": "olá",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "greeting"
+          },
+          {
+            "word": "e aí?",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "greeting"
+          },
+          {
+            "word": "bozho",
+            "languageName": "Potawatomi",
+            "sense": "greeting"
+          },
+          {
+            "word": "ਸਤਿ ਸ਼੍ਰੀ ਅਕਾਲ",
+            "languageName": "Punjabi",
+            "sense": "greeting"
+          },
+          {
+            "word": "'iorana",
+            "languageName": "Rapa Nui",
+            "sense": "greeting"
+          },
+          {
+            "word": "te aves baxtalo",
+            "languageName": "Romani",
+            "sense": "greeting"
+          },
+          {
+            "word": "te aves baxtali",
+            "languageName": "Romani",
+            "sense": "greeting"
+          },
+          {
+            "word": "te aven baxtale",
+            "languageName": "Romani",
+            "sense": "greeting"
+          },
+          {
+            "word": "salut",
+            "languageName": "Romanian",
+            "languageCode": "ro",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ro)",
+            "languageName": "Romanian",
+            "languageCode": "ro",
+            "sense": "greeting"
+          },
+          {
+            "word": "bună",
+            "languageName": "Romanian",
+            "languageCode": "ro",
+            "sense": "greeting"
+          },
+          {
+            "word": "noroc",
+            "languageName": "Romanian",
+            "languageCode": "ro",
+            "sense": "greeting"
+          },
+          {
+            "word": "bună ziua",
+            "languageName": "Romanian",
+            "languageCode": "ro",
+            "sense": "greeting"
+          },
+          {
+            "word": "servus",
+            "languageName": "Romanian",
+            "languageCode": "ro",
+            "sense": "greeting"
+          },
+          {
+            "word": "приве́т",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ru)",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "здоро́во",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "здра́вствуйте",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "в",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "до́брый день",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "здра́вствуй",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "салю́т",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "muraho",
+            "languageName": "Rwanda-Rundi",
+            "sense": "greeting"
+          },
+          {
+            "word": "supa",
+            "languageName": "Samburu",
+            "sense": "greeting"
+          },
+          {
+            "word": "entaa supa",
+            "languageName": "Samburu",
+            "sense": "greeting"
+          },
+          {
+            "word": "eserian",
+            "languageName": "Samburu",
+            "sense": "greeting"
+          },
+          {
+            "word": "oyie",
+            "languageName": "Samburu",
+            "sense": "greeting"
+          },
+          {
+            "word": "verify",
+            "languageName": "Samburu",
+            "sense": "greeting"
+          },
+          {
+            "word": "kejua",
+            "languageName": "Samburu",
+            "sense": "greeting"
+          },
+          {
+            "word": "tiervâ",
+            "languageName": "Sami",
+            "sense": "greeting"
+          },
+          {
+            "word": "dearvva",
+            "languageName": "Sami",
+            "sense": "greeting"
+          },
+          {
+            "word": "būres",
+            "languageName": "Sami",
+            "sense": "greeting"
+          },
+          {
+            "word": "tiõrv",
+            "languageName": "Sami",
+            "sense": "greeting"
+          },
+          {
+            "word": "buaregh",
+            "languageName": "Sami",
+            "sense": "greeting"
+          },
+          {
+            "word": "talofa",
+            "languageName": "Samoan",
+            "sense": "greeting"
+          },
+          {
+            "word": "नमस्कार",
+            "languageName": "Sanskrit",
+            "languageCode": "sa",
+            "sense": "greeting"
+          },
+          {
+            "word": "(sa)",
+            "languageName": "Sanskrit",
+            "languageCode": "sa",
+            "sense": "greeting"
+          },
+          {
+            "word": "नमस्ते",
+            "languageName": "Sanskrit",
+            "languageCode": "sa",
+            "sense": "greeting"
+          },
+          {
+            "word": "नमो नमः",
+            "languageName": "Sanskrit",
+            "languageCode": "sa",
+            "sense": "greeting"
+          },
+          {
+            "word": "ᱡᱚᱦᱟᱨ",
+            "languageName": "Santali",
+            "languageCode": "sat",
+            "sense": "greeting"
+          },
+          {
+            "word": "(sat)",
+            "languageName": "Santali",
+            "languageCode": "sat",
+            "sense": "greeting"
+          },
+          {
+            "word": "hullo",
+            "languageName": "Scots",
+            "sense": "greeting"
+          },
+          {
+            "word": "halò",
+            "languageName": "Scottish Gaelic",
+            "sense": "greeting"
+          },
+          {
+            "word": "latha math",
+            "languageName": "Scottish Gaelic",
+            "sense": "greeting"
+          },
+          {
+            "word": "hòigh",
+            "languageName": "Scottish Gaelic",
+            "sense": "greeting"
+          },
+          {
+            "word": "здра̏во",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "ћа̑о",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "ме̏рха̄ба",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "селам",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "бог",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "бок",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "zdrȁvo",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "(sh)",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "ćȃo",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "mȅrhāba",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "selam",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "bog",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "bok",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "lumela",
+            "languageName": "Sesotho",
+            "sense": "greeting"
+          },
+          {
+            "word": "မႂ်ႇသုင်",
+            "languageName": "Shan",
+            "languageCode": "shn",
+            "sense": "greeting"
+          },
+          {
+            "word": "(shn)",
+            "languageName": "Shan",
+            "languageCode": "shn",
+            "sense": "greeting"
+          },
+          {
+            "word": "hatito",
+            "languageName": "Shawnee",
+            "sense": "greeting"
+          },
+          {
+            "word": "mhoro",
+            "languageName": "Shona",
+            "sense": "greeting"
+          },
+          {
+            "word": "ciao",
+            "languageName": "Sicilian",
+            "sense": "greeting"
+          },
+          {
+            "word": "salutamu",
+            "languageName": "Sicilian",
+            "sense": "greeting"
+          },
+          {
+            "word": "s'abbinidica",
+            "languageName": "Sicilian",
+            "sense": "greeting"
+          },
+          {
+            "word": "هيلو",
+            "languageName": "Sindhi",
+            "sense": "greeting"
+          },
+          {
+            "word": "හලෝ",
+            "languageName": "Sinhalese",
+            "languageCode": "si",
+            "sense": "greeting"
+          },
+          {
+            "word": "ආයුබෝවන්",
+            "languageName": "Sinhalese",
+            "languageCode": "si",
+            "sense": "greeting"
+          },
+          {
+            "word": "(si)",
+            "languageName": "Sinhalese",
+            "languageCode": "si",
+            "sense": "greeting"
+          },
+          {
+            "word": "ahoj",
+            "languageName": "Slovak",
+            "languageCode": "sk",
+            "sense": "greeting"
+          },
+          {
+            "word": "(sk)",
+            "languageName": "Slovak",
+            "languageCode": "sk",
+            "sense": "greeting"
+          },
+          {
+            "word": "nazdar",
+            "languageName": "Slovak",
+            "languageCode": "sk",
+            "sense": "greeting"
+          },
+          {
+            "word": "servus",
+            "languageName": "Slovak",
+            "languageCode": "sk",
+            "sense": "greeting"
+          },
+          {
+            "word": "dobrý deň",
+            "languageName": "Slovak",
+            "languageCode": "sk",
+            "sense": "greeting"
+          },
+          {
+            "word": "žívjo",
+            "languageName": "Slovene",
+            "sense": "greeting"
+          },
+          {
+            "word": "zdrávo",
+            "languageName": "Slovene",
+            "sense": "greeting"
+          },
+          {
+            "word": "dóber dán",
+            "languageName": "Slovene",
+            "sense": "greeting"
+          },
+          {
+            "word": "pozdravljeni",
+            "languageName": "Slovene",
+            "sense": "greeting"
+          },
+          {
+            "word": "ma nabad baa",
+            "languageName": "Somali",
+            "sense": "greeting"
+          },
+          {
+            "word": "waa nabad",
+            "languageName": "Somali",
+            "sense": "greeting"
+          },
+          {
+            "word": "dobry źeń",
+            "languageName": "Sorbian",
+            "sense": "greeting"
+          },
+          {
+            "word": "dobry dźeń",
+            "languageName": "Sorbian",
+            "sense": "greeting"
+          },
+          {
+            "word": "dumela",
+            "languageName": "Sotho",
+            "languageCode": "st",
+            "sense": "greeting"
+          },
+          {
+            "word": "(st)",
+            "languageName": "Sotho",
+            "languageCode": "st",
+            "sense": "greeting"
+          },
+          {
+            "word": "hola",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "(es)",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "holi",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "holis",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "halo",
+            "languageName": "Sundanese",
+            "languageCode": "su",
+            "sense": "greeting"
+          },
+          {
+            "word": "sampurasun",
+            "languageName": "Sundanese",
+            "languageCode": "su",
+            "sense": "greeting"
+          },
+          {
+            "word": "(su)",
+            "languageName": "Sundanese",
+            "languageCode": "su",
+            "sense": "greeting"
+          },
+          {
+            "word": "ხოჩა ლადა̈ღ",
+            "languageName": "Svan",
+            "sense": "greeting"
+          },
+          {
+            "word": "jambo",
+            "languageName": "Swahili",
+            "languageCode": "sw",
+            "sense": "greeting"
+          },
+          {
+            "word": "(sw)",
+            "languageName": "Swahili",
+            "languageCode": "sw",
+            "sense": "greeting"
+          },
+          {
+            "word": "salaam",
+            "languageName": "Swahili",
+            "languageCode": "sw",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallå",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "greeting"
+          },
+          {
+            "word": "(sv)",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "greeting"
+          },
+          {
+            "word": "hej",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "greeting"
+          },
+          {
+            "word": "god dag",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "greeting"
+          },
+          {
+            "word": "tjena",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "greeting"
+          },
+          {
+            "word": "hejsan",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "greeting"
+          },
+          {
+            "word": "tja",
+            "languageName": "Swedish",
+            "languageCode": "sv",
+            "sense": "greeting"
+          },
+          {
+            "word": "kamusta",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "(tl)",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "kumusta",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "musta",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "hoy",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "huy",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "oy",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "oi",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "uy",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "ui",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "салом",
+            "languageName": "Tajik",
+            "sense": "greeting"
+          },
+          {
+            "word": "வணக்கம்",
+            "languageName": "Tamil",
+            "languageCode": "ta",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ta)",
+            "languageName": "Tamil",
+            "languageCode": "ta",
+            "sense": "greeting"
+          },
+          {
+            "word": "äshazhoix",
+            "languageName": "Tangsa",
+            "sense": "greeting"
+          },
+          {
+            "word": "сәлам",
+            "languageName": "Tatar",
+            "languageCode": "tt",
+            "sense": "greeting"
+          },
+          {
+            "word": "(tt)",
+            "languageName": "Tatar",
+            "languageCode": "tt",
+            "sense": "greeting"
+          },
+          {
+            "word": "నమసకారం",
+            "languageName": "Telugu",
+            "sense": "greeting"
+          },
+          {
+            "word": "బాగున్నారా",
+            "languageName": "Telugu",
+            "sense": "greeting"
+          },
+          {
+            "word": "elo",
+            "languageName": "Tetum",
+            "sense": "greeting"
+          },
+          {
+            "word": "olá",
+            "languageName": "Tetum",
+            "sense": "greeting"
+          },
+          {
+            "word": "สวัสดี",
+            "languageName": "Thai",
+            "languageCode": "th",
+            "sense": "greeting"
+          },
+          {
+            "word": "(th)",
+            "languageName": "Thai",
+            "languageCode": "th",
+            "sense": "greeting"
+          },
+          {
+            "word": "สวัสดีครับ",
+            "languageName": "Thai",
+            "languageCode": "th",
+            "sense": "greeting"
+          },
+          {
+            "word": "สวัสดีค่ะ",
+            "languageName": "Thai",
+            "languageCode": "th",
+            "sense": "greeting"
+          },
+          {
+            "word": "หวัดดี",
+            "languageName": "Thai",
+            "languageCode": "th",
+            "sense": "greeting"
+          },
+          {
+            "word": "สบายดีก่อ",
+            "languageName": "Thai",
+            "languageCode": "th",
+            "sense": "greeting"
+          },
+          {
+            "word": "བཀྲ་ཤིས་བདེ་ལེགས",
+            "languageName": "Tibetan",
+            "sense": "greeting"
+          },
+          {
+            "word": "ሰላም",
+            "languageName": "Tigrinya",
+            "sense": "greeting"
+          },
+          {
+            "word": "mālō e lelei",
+            "languageName": "Tongan",
+            "sense": "greeting"
+          },
+          {
+            "word": "dumela",
+            "languageName": "Tswana",
+            "languageCode": "tn",
+            "sense": "greeting"
+          },
+          {
+            "word": "(tn)",
+            "languageName": "Tswana",
+            "languageCode": "tn",
+            "sense": "greeting"
+          },
+          {
+            "word": "dumelang",
+            "languageName": "Tswana",
+            "languageCode": "tn",
+            "sense": "greeting"
+          },
+          {
+            "word": "merhaba",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "greeting"
+          },
+          {
+            "word": "(tr)",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "greeting"
+          },
+          {
+            "word": "selam",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "greeting"
+          },
+          {
+            "word": "esenlikler",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "greeting"
+          },
+          {
+            "word": "مرحبا",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "greeting"
+          },
+          {
+            "word": "سلام",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "greeting"
+          },
+          {
+            "word": "salam",
+            "languageName": "Turkmen",
+            "sense": "greeting"
+          },
+          {
+            "word": "gowmy?",
+            "languageName": "Turkmen",
+            "sense": "greeting"
+          },
+          {
+            "word": "gowmyň",
+            "languageName": "Turkmen",
+            "sense": "greeting"
+          },
+          {
+            "word": "gurgunmy",
+            "languageName": "Turkmen",
+            "sense": "greeting"
+          },
+          {
+            "word": "экии",
+            "languageName": "Tuvan",
+            "sense": "greeting"
+          },
+          {
+            "word": "ӟечбур",
+            "languageName": "Udmurt",
+            "sense": "greeting"
+          },
+          {
+            "word": "ӟеч",
+            "languageName": "Udmurt",
+            "sense": "greeting"
+          },
+          {
+            "word": "чырткем",
+            "languageName": "Udmurt",
+            "sense": "greeting"
+          },
+          {
+            "word": "умой",
+            "languageName": "Udmurt",
+            "sense": "greeting"
+          },
+          {
+            "word": "приві́т",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "(uk)",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "здоро́в був",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "добри́день",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "чоло́м",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "се́рвус",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "здра́стуйте",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "здра́стуй",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "adiyoos",
+            "languageName": "Ulithian",
+            "sense": "greeting"
+          },
+          {
+            "word": "سَلام عَلَیکُم",
+            "languageName": "Urdu",
+            "languageCode": "ur",
+            "sense": "greeting"
+          },
+          {
+            "word": "اَلسَّلامُ عَلَیکُم",
+            "languageName": "Urdu",
+            "languageCode": "ur",
+            "sense": "greeting"
+          },
+          {
+            "word": "اَلسَّلامُ عَلَیکُم وَرَحْمَۃُاللہ وَبَرَکَاتُہ",
+            "languageName": "Urdu",
+            "languageCode": "ur",
+            "sense": "greeting"
+          },
+          {
+            "word": "آداب",
+            "languageName": "Urdu",
+            "languageCode": "ur",
+            "sense": "greeting"
+          },
+          {
+            "word": "(ur)",
+            "languageName": "Urdu",
+            "languageCode": "ur",
+            "sense": "greeting"
+          },
+          {
+            "word": "سالام",
+            "languageName": "Uyghur",
+            "sense": "greeting"
+          },
+          {
+            "word": "salom",
+            "languageName": "Uzbek",
+            "languageCode": "uz",
+            "sense": "greeting"
+          },
+          {
+            "word": "(uz)",
+            "languageName": "Uzbek",
+            "languageCode": "uz",
+            "sense": "greeting"
+          },
+          {
+            "word": "ciao",
+            "languageName": "Venetan",
+            "languageCode": "vec",
+            "sense": "greeting"
+          },
+          {
+            "word": "(vec)",
+            "languageName": "Venetan",
+            "languageCode": "vec",
+            "sense": "greeting"
+          },
+          {
+            "word": "xin chào",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "(vi)",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "chào",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "glidis",
+            "languageName": "Volapük",
+            "sense": "greeting"
+          },
+          {
+            "word": "bondjoû",
+            "languageName": "Walloon",
+            "languageCode": "wa",
+            "sense": "greeting"
+          },
+          {
+            "word": "(wa)",
+            "languageName": "Walloon",
+            "languageCode": "wa",
+            "sense": "greeting"
+          },
+          {
+            "word": "a",
+            "languageName": "Walloon",
+            "languageCode": "wa",
+            "sense": "greeting"
+          },
+          {
+            "word": "diewåde",
+            "languageName": "Walloon",
+            "languageCode": "wa",
+            "sense": "greeting"
+          },
+          {
+            "word": "helo",
+            "languageName": "Welsh",
+            "languageCode": "cy",
+            "sense": "greeting"
+          },
+          {
+            "word": "(cy)",
+            "languageName": "Welsh",
+            "languageCode": "cy",
+            "sense": "greeting"
+          },
+          {
+            "word": "bore da",
+            "languageName": "Welsh",
+            "languageCode": "cy",
+            "sense": "greeting"
+          },
+          {
+            "word": "dydd da",
+            "languageName": "Welsh",
+            "languageCode": "cy",
+            "sense": "greeting"
+          },
+          {
+            "word": "hylo",
+            "languageName": "Welsh",
+            "languageCode": "cy",
+            "sense": "greeting"
+          },
+          {
+            "word": "haho",
+            "languageName": "Winnebago",
+            "sense": "greeting"
+          },
+          {
+            "word": "hą",
+            "languageName": "Winnebago",
+            "sense": "greeting"
+          },
+          {
+            "word": "hinįkaraginʼ",
+            "languageName": "Winnebago",
+            "sense": "greeting"
+          },
+          {
+            "word": "molo",
+            "languageName": "Xhosa",
+            "sense": "greeting"
+          },
+          {
+            "word": "molweni",
+            "languageName": "Xhosa",
+            "sense": "greeting"
+          },
+          {
+            "word": "ᠪᠠᡳᡨᠠᡴᡡᠨᠠ",
+            "languageName": "Xibe",
+            "sense": "greeting"
+          },
+          {
+            "word": "эҕэрдэ",
+            "languageName": "Yakut",
+            "sense": "greeting"
+          },
+          {
+            "word": "дорообо",
+            "languageName": "Yakut",
+            "sense": "greeting"
+          },
+          {
+            "word": "שלום־עליכם",
+            "languageName": "Yiddish",
+            "languageCode": "yi",
+            "sense": "greeting"
+          },
+          {
+            "word": "אַ גוטן",
+            "languageName": "Yiddish",
+            "languageCode": "yi",
+            "sense": "greeting"
+          },
+          {
+            "word": "(yi)",
+            "languageName": "Yiddish",
+            "languageCode": "yi",
+            "sense": "greeting"
+          },
+          {
+            "word": "גוט־מאָרגן",
+            "languageName": "Yiddish",
+            "languageCode": "yi",
+            "sense": "greeting"
+          },
+          {
+            "word": "ẹ pẹ̀lẹ́",
+            "languageName": "Yoruba",
+            "sense": "greeting"
+          },
+          {
+            "word": "pẹ̀lẹ́",
+            "languageName": "Yoruba",
+            "sense": "greeting"
+          },
+          {
+            "word": "waqaa",
+            "languageName": "Yup'ik",
+            "sense": "greeting"
+          },
+          {
+            "word": "cama-i",
+            "languageName": "Yup'ik",
+            "sense": "greeting"
+          },
+          {
+            "word": "ola",
+            "languageName": "Zapotec",
+            "sense": "greeting"
+          },
+          {
+            "word": "sılam",
+            "languageName": "Zazaki",
+            "sense": "greeting"
+          },
+          {
+            "word": "namaste",
+            "languageName": "Zazaki",
+            "sense": "greeting"
+          },
+          {
+            "word": "mwngz ndei",
+            "languageName": "Zhuang",
+            "sense": "greeting"
+          },
+          {
+            "word": "sawubona",
+            "languageName": "Zulu",
+            "languageCode": "zu",
+            "sense": "greeting"
+          },
+          {
+            "word": "(zu)",
+            "languageName": "Zulu",
+            "languageCode": "zu",
+            "sense": "greeting"
+          },
+          {
+            "word": "sanibonani",
+            "languageName": "Zulu",
+            "languageCode": "zu",
+            "sense": "greeting"
+          },
+          {
+            "word": "alo",
+            "languageName": "Albanian",
+            "languageCode": "sq",
+            "sense": "greeting"
+          },
+          {
+            "word": "آلُو",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "آلُوْ",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "أَلُو",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "أَلُوْ",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "اَلُو",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "ألو",
+            "languageName": "Arabic",
+            "languageCode": "ar",
+            "sense": "greeting"
+          },
+          {
+            "word": "ܐܲܠܘܼ",
+            "languageName": "Aramaic",
+            "sense": "greeting"
+          },
+          {
+            "word": "ալլո",
+            "languageName": "Armenian",
+            "languageCode": "hy",
+            "sense": "greeting"
+          },
+          {
+            "word": "alo",
+            "languageName": "Azerbaijani",
+            "sense": "greeting"
+          },
+          {
+            "word": "алло",
+            "languageName": "Bashkir",
+            "sense": "greeting"
+          },
+          {
+            "word": "алё",
+            "languageName": "Belarusian",
+            "sense": "greeting"
+          },
+          {
+            "word": "а́ло",
+            "languageName": "Bulgarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "အမိန့်ရှိပါ",
+            "languageName": "Burmese",
+            "languageCode": "my",
+            "sense": "greeting"
+          },
+          {
+            "word": "digui",
+            "languageName": "Catalan",
+            "languageCode": "ca",
+            "sense": "greeting"
+          },
+          {
+            "word": "si",
+            "languageName": "Catalan",
+            "languageCode": "ca",
+            "sense": "greeting"
+          },
+          {
+            "word": "mani'm",
+            "languageName": "Catalan",
+            "languageCode": "ca",
+            "sense": "greeting"
+          },
+          {
+            "word": "喂",
+            "languageName": "Chinese",
+            "languageCode": "zh-min-nan",
+            "sense": "greeting"
+          },
+          {
+            "word": "摩西摩西",
+            "languageName": "Chinese",
+            "languageCode": "zh-min-nan",
+            "sense": "greeting"
+          },
+          {
+            "word": "噯",
+            "languageName": "Chinese",
+            "languageCode": "zh-min-nan",
+            "sense": "greeting"
+          },
+          {
+            "word": "嗳",
+            "languageName": "Chinese",
+            "languageCode": "zh-min-nan",
+            "sense": "greeting"
+          },
+          {
+            "word": "(zh-min-nan)",
+            "languageName": "Chinese",
+            "languageCode": "zh-min-nan",
+            "sense": "greeting"
+          },
+          {
+            "word": "(zh)",
+            "languageName": "Chinese",
+            "languageCode": "zh-min-nan",
+            "sense": "greeting"
+          },
+          {
+            "word": "haló",
+            "languageName": "Czech",
+            "languageCode": "cs",
+            "sense": "greeting"
+          },
+          {
+            "word": "met",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "tot",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "halo",
+            "languageName": "Esperanto",
+            "languageCode": "eo",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "halloo",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "haloo",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "greeting"
+          },
+          {
+            "word": "allô",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "diga",
+            "languageName": "Galician",
+            "languageCode": "gl",
+            "sense": "greeting"
+          },
+          {
+            "word": "ალო",
+            "languageName": "Georgian",
+            "sense": "greeting"
+          },
+          {
+            "word": "გისმენთ",
+            "languageName": "Georgian",
+            "sense": "greeting"
+          },
+          {
+            "word": "εμπρός",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "παρακαλώ",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "ναι;",
+            "languageName": "Greek",
+            "languageCode": "el",
+            "sense": "greeting"
+          },
+          {
+            "word": "ō",
+            "languageName": "Hawaiian",
+            "sense": "greeting"
+          },
+          {
+            "word": "שָׁלוֹם?",
+            "languageName": "Hebrew",
+            "languageCode": "he",
+            "sense": "greeting"
+          },
+          {
+            "word": "הָלוֹ?",
+            "languageName": "Hebrew",
+            "languageCode": "he",
+            "sense": "greeting"
+          },
+          {
+            "word": "हैलो",
+            "languageName": "Hindi",
+            "languageCode": "hi",
+            "sense": "greeting"
+          },
+          {
+            "word": "halló",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "halo",
+            "languageName": "Indonesian",
+            "languageCode": "id",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "Interlingua",
+            "sense": "greeting"
+          },
+          {
+            "word": "haileo",
+            "languageName": "Irish",
+            "sense": "greeting"
+          },
+          {
+            "word": "pronto",
+            "languageName": "Italian",
+            "languageCode": "it",
+            "sense": "greeting"
+          },
+          {
+            "word": "もしもし",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "алло",
+            "languageName": "Kazakh",
+            "sense": "greeting"
+          },
+          {
+            "word": "бар ма",
+            "languageName": "Kazakh",
+            "sense": "greeting"
+          },
+          {
+            "word": "уей",
+            "languageName": "Kazakh",
+            "sense": "greeting"
+          },
+          {
+            "word": "អាឡូ",
+            "languageName": "Khmer",
+            "sense": "greeting"
+          },
+          {
+            "word": "អល្លោ",
+            "languageName": "Khmer",
+            "sense": "greeting"
+          },
+          {
+            "word": "여보세요",
+            "languageName": "Korean",
+            "languageCode": "ko",
+            "sense": "greeting"
+          },
+          {
+            "word": "elo",
+            "languageName": "Kurdish",
+            "languageCode": "ku",
+            "sense": "greeting"
+          },
+          {
+            "word": "helo",
+            "languageName": "Kurdish",
+            "languageCode": "ku",
+            "sense": "greeting"
+          },
+          {
+            "word": "алло",
+            "languageName": "Kyrgyz",
+            "languageCode": "ky",
+            "sense": "greeting"
+          },
+          {
+            "word": "ອາໂຫຼ",
+            "languageName": "Lao",
+            "sense": "greeting"
+          },
+          {
+            "word": "ອາໂຫລ",
+            "languageName": "Lao",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo",
+            "languageName": "Latvian",
+            "sense": "greeting"
+          },
+          {
+            "word": "alio",
+            "languageName": "Lithuanian",
+            "languageCode": "lt",
+            "sense": "greeting"
+          },
+          {
+            "word": "klausau",
+            "languageName": "Lithuanian",
+            "languageCode": "lt",
+            "sense": "greeting"
+          },
+          {
+            "word": "ало",
+            "languageName": "Macedonian",
+            "sense": "greeting"
+          },
+          {
+            "word": "alô",
+            "languageName": "Malagasy",
+            "languageCode": "mg",
+            "sense": "greeting"
+          },
+          {
+            "word": "ħellow",
+            "languageName": "Maltese",
+            "sense": "greeting"
+          },
+          {
+            "word": "हॅलो",
+            "languageName": "Marathi",
+            "sense": "greeting"
+          },
+          {
+            "word": "алло",
+            "languageName": "Mari",
+            "sense": "greeting"
+          },
+          {
+            "word": "हेलो",
+            "languageName": "Nepali",
+            "languageCode": "ne",
+            "sense": "greeting"
+          },
+          {
+            "word": "हलो",
+            "languageName": "Nepali",
+            "languageCode": "ne",
+            "sense": "greeting"
+          },
+          {
+            "word": "ହ୍ୟାଲୋ",
+            "languageName": "Odia",
+            "sense": "greeting"
+          },
+          {
+            "word": "هَلو",
+            "languageName": "Persian",
+            "sense": "greeting"
+          },
+          {
+            "word": "اَلو",
+            "languageName": "Persian",
+            "sense": "greeting"
+          },
+          {
+            "word": "słucham",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "alô",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "greeting"
+          },
+          {
+            "word": "estou",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "greeting"
+          },
+          {
+            "word": "àlo",
+            "languageName": "Romani",
+            "sense": "greeting"
+          },
+          {
+            "word": "alo",
+            "languageName": "Romanian",
+            "languageCode": "ro",
+            "sense": "greeting"
+          },
+          {
+            "word": "haló",
+            "languageName": "Romanian",
+            "languageCode": "ro",
+            "sense": "greeting"
+          },
+          {
+            "word": "алло́",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "алё",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "слу́шаю",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "ха̀ло",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "молим",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "изволите",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "hàlo",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "molim",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "izvolite",
+            "languageName": "Serbo-Croatian",
+            "languageCode": "sh",
+            "sense": "greeting"
+          },
+          {
+            "word": "prontu",
+            "languageName": "Sicilian",
+            "languageCode": "scn",
+            "sense": "greeting"
+          },
+          {
+            "word": "(scn)",
+            "languageName": "Sicilian",
+            "languageCode": "scn",
+            "sense": "greeting"
+          },
+          {
+            "word": "prontu, cu' è?",
+            "languageName": "Sicilian",
+            "languageCode": "scn",
+            "sense": "greeting"
+          },
+          {
+            "word": "haló",
+            "languageName": "Slovak",
+            "sense": "greeting"
+          },
+          {
+            "word": "prosím",
+            "languageName": "Slovak",
+            "sense": "greeting"
+          },
+          {
+            "word": "haló?",
+            "languageName": "Slovene",
+            "languageCode": "sl",
+            "sense": "greeting"
+          },
+          {
+            "word": "prosim",
+            "languageName": "Slovene",
+            "languageCode": "sl",
+            "sense": "greeting"
+          },
+          {
+            "word": "(sl)",
+            "languageName": "Slovene",
+            "languageCode": "sl",
+            "sense": "greeting"
+          },
+          {
+            "word": "aló",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "bueno",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "diga",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "dígame",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "oigo",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "¿sí?",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "helo?",
+            "languageName": "Tagalog",
+            "sense": "greeting"
+          },
+          {
+            "word": "magandang araw po!",
+            "languageName": "Tagalog",
+            "sense": "greeting"
+          },
+          {
+            "word": "алло",
+            "languageName": "Tajik",
+            "languageCode": "tg",
+            "sense": "greeting"
+          },
+          {
+            "word": "(tg)",
+            "languageName": "Tajik",
+            "languageCode": "tg",
+            "sense": "greeting"
+          },
+          {
+            "word": "ҳа",
+            "languageName": "Tajik",
+            "languageCode": "tg",
+            "sense": "greeting"
+          },
+          {
+            "word": "лаббай",
+            "languageName": "Tajik",
+            "languageCode": "tg",
+            "sense": "greeting"
+          },
+          {
+            "word": "สวัสดีครับ",
+            "languageName": "Thai",
+            "sense": "greeting"
+          },
+          {
+            "word": "สวัสดีค่ะ",
+            "languageName": "Thai",
+            "sense": "greeting"
+          },
+          {
+            "word": "ฮัลโหล",
+            "languageName": "Thai",
+            "sense": "greeting"
+          },
+          {
+            "word": "แฮลโล",
+            "languageName": "Thai",
+            "sense": "greeting"
+          },
+          {
+            "word": "alo",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "greeting"
+          },
+          {
+            "word": "efendim",
+            "languageName": "Turkish",
+            "languageCode": "tr",
+            "sense": "greeting"
+          },
+          {
+            "word": "allo",
+            "languageName": "Turkmen",
+            "sense": "greeting"
+          },
+          {
+            "word": "алло́",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "слу́хаю",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "ہَیلو",
+            "languageName": "Urdu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ہیلو",
+            "languageName": "Urdu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ہَلو",
+            "languageName": "Urdu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ياخشىمۇسىز",
+            "languageName": "Uyghur",
+            "sense": "greeting"
+          },
+          {
+            "word": "ئەسسالامۇ ئەلەيكۇم",
+            "languageName": "Uyghur",
+            "sense": "greeting"
+          },
+          {
+            "word": "allo",
+            "languageName": "Uzbek",
+            "languageCode": "uz",
+            "sense": "greeting"
+          },
+          {
+            "word": "a-lô",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "elo",
+            "languageName": "Zazaki",
+            "sense": "greeting"
+          },
+          {
+            "word": "Is",
+            "languageName": "Afrikaans",
+            "sense": "greeting"
+          },
+          {
+            "word": "daar",
+            "languageName": "Afrikaans",
+            "sense": "greeting"
+          },
+          {
+            "word": "iemand?",
+            "languageName": "Afrikaans",
+            "sense": "greeting"
+          },
+          {
+            "word": "هَل مِن أَحَدٍ هُنَا؟",
+            "languageName": "Arabic",
+            "sense": "greeting"
+          },
+          {
+            "word": "ܐܲܠܘܼ؟ ܚܲܕ݇ ܝܠܹܗ ܬܵܡܵܐ؟",
+            "languageName": "Aramaic",
+            "sense": "greeting"
+          },
+          {
+            "word": "աու",
+            "languageName": "Armenian",
+            "sense": "greeting"
+          },
+          {
+            "word": "কোনোবা আছেনে?",
+            "languageName": "Assamese",
+            "sense": "greeting"
+          },
+          {
+            "word": "kimsə var?",
+            "languageName": "Azerbaijani",
+            "sense": "greeting"
+          },
+          {
+            "word": "гэй",
+            "languageName": "Belarusian",
+            "sense": "greeting"
+          },
+          {
+            "word": "ওহে",
+            "languageName": "Bengali",
+            "languageCode": "bn",
+            "sense": "greeting"
+          },
+          {
+            "word": "ехо?",
+            "languageName": "Bulgarian",
+            "languageCode": "bg",
+            "sense": "greeting"
+          },
+          {
+            "word": "hola?",
+            "languageName": "Catalan",
+            "languageCode": "ca",
+            "sense": "greeting"
+          },
+          {
+            "word": "na maria?",
+            "languageName": "Catalan",
+            "languageCode": "ca",
+            "sense": "greeting"
+          },
+          {
+            "word": "喂",
+            "languageName": "Chinese",
+            "sense": "greeting"
+          },
+          {
+            "word": "有儂無？",
+            "languageName": "Chinese",
+            "sense": "greeting"
+          },
+          {
+            "word": "有侬无？",
+            "languageName": "Chinese",
+            "sense": "greeting"
+          },
+          {
+            "word": "有",
+            "languageName": "Chinese",
+            "sense": "greeting"
+          },
+          {
+            "word": "人",
+            "languageName": "Chinese",
+            "sense": "greeting"
+          },
+          {
+            "word": "嗎",
+            "languageName": "Chinese",
+            "sense": "greeting"
+          },
+          {
+            "word": "吗",
+            "languageName": "Chinese",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo?",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "hola",
+            "languageName": "Esperanto",
+            "sense": "greeting"
+          },
+          {
+            "word": "halloo?",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "huhuu?",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "greeting"
+          },
+          {
+            "word": "eh oh ?",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "oh eh ?",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "allô ?",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "ohé !",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo?",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "jemand da?",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "שלום? מישהו שם?",
+            "languageName": "Hebrew",
+            "sense": "greeting"
+          },
+          {
+            "word": "hahó",
+            "languageName": "Hungarian",
+            "languageCode": "hu",
+            "sense": "greeting"
+          },
+          {
+            "word": "halló?",
+            "languageName": "Icelandic",
+            "languageCode": "is",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo?",
+            "languageName": "Interlingua",
+            "sense": "greeting"
+          },
+          {
+            "word": "c'è nessuno",
+            "languageName": "Italian",
+            "sense": "greeting"
+          },
+          {
+            "word": "c'è qualcuno?",
+            "languageName": "Italian",
+            "sense": "greeting"
+          },
+          {
+            "word": "おーい",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "すみませーん",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "ちょっと",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "계세요?",
+            "languageName": "Korean",
+            "sense": "greeting"
+          },
+          {
+            "word": "ало́",
+            "languageName": "Macedonian",
+            "sense": "greeting"
+          },
+          {
+            "word": "hawn xi ħadd?",
+            "languageName": "Maltese",
+            "sense": "greeting"
+          },
+          {
+            "word": "को छ त्यहाँ",
+            "languageName": "Nepali",
+            "sense": "greeting"
+          },
+          {
+            "word": "को हो त्यहाँ?",
+            "languageName": "Nepali",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo?",
+            "languageName": "Norwegian",
+            "languageCode": "no",
+            "sense": "greeting"
+          },
+          {
+            "word": "halo?",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "jest tu kto?",
+            "languageName": "Polish",
+            "languageCode": "pl",
+            "sense": "greeting"
+          },
+          {
+            "word": "olá?",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "greeting"
+          },
+          {
+            "word": "alo?",
+            "languageName": "Romanian",
+            "languageCode": "ro",
+            "sense": "greeting"
+          },
+          {
+            "word": "haló?",
+            "languageName": "Romanian",
+            "languageCode": "ro",
+            "sense": "greeting"
+          },
+          {
+            "word": "ау́",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "е́сть кто́-нибудь?",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "haló?",
+            "languageName": "Slovene",
+            "sense": "greeting"
+          },
+          {
+            "word": "¿aló?",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "¡Hola!",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "¿Hay alguien?",
+            "languageName": "Spanish",
+            "languageCode": "es",
+            "sense": "greeting"
+          },
+          {
+            "word": "tao po?!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "sino po nandyan?",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "әй",
+            "languageName": "Tatar",
+            "sense": "greeting"
+          },
+          {
+            "word": "кем булса да бармы?",
+            "languageName": "Tatar",
+            "sense": "greeting"
+          },
+          {
+            "word": "ఎవరైనా ఉంది",
+            "languageName": "Telugu",
+            "sense": "greeting"
+          },
+          {
+            "word": "มีใครอยู่ไหม?",
+            "languageName": "Thai",
+            "sense": "greeting"
+          },
+          {
+            "word": "orda kimse var mı?",
+            "languageName": "Turkish",
+            "sense": "greeting"
+          },
+          {
+            "word": "kimse yok mu?",
+            "languageName": "Turkish",
+            "sense": "greeting"
+          },
+          {
+            "word": "аго́в",
+            "languageName": "Ukrainian",
+            "languageCode": "uk",
+            "sense": "greeting"
+          },
+          {
+            "word": "کوئی ہے؟",
+            "languageName": "Urdu",
+            "sense": "greeting"
+          },
+          {
+            "word": "ơi",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "helo?",
+            "languageName": "Welsh",
+            "languageCode": "cy",
+            "sense": "greeting"
+          },
+          {
+            "word": "hımın",
+            "languageName": "Zazaki",
+            "sense": "greeting"
+          },
+          {
+            "word": "kam esto",
+            "languageName": "Zazaki",
+            "sense": "greeting"
+          },
+          {
+            "word": "ало",
+            "languageName": "Bulgarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "喂",
+            "languageName": "Chinese",
+            "languageCode": "zh",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo!",
+            "languageName": "Danish",
+            "languageCode": "da",
+            "sense": "greeting"
+          },
+          {
+            "word": "hey!",
+            "languageName": "Danish",
+            "languageCode": "da",
+            "sense": "greeting"
+          },
+          {
+            "word": "ja, hallo!",
+            "languageName": "Dutch",
+            "sense": "greeting"
+          },
+          {
+            "word": "halloo!",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "tere hommikust!",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "tere tali!",
+            "languageName": "Estonian",
+            "languageCode": "et",
+            "sense": "greeting"
+          },
+          {
+            "word": "haloo!",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "greeting"
+          },
+          {
+            "word": "ho",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo!",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "halloho!",
+            "languageName": "German",
+            "languageCode": "de",
+            "sense": "greeting"
+          },
+          {
+            "word": "הלו",
+            "languageName": "Hebrew",
+            "sense": "greeting"
+          },
+          {
+            "word": "jól",
+            "languageName": "Hungarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "vagy",
+            "languageName": "Hungarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "magad",
+            "languageName": "Hungarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "nál",
+            "languageName": "Hungarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "ész",
+            "languageName": "Hungarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "nél",
+            "languageName": "Hungarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "esz",
+            "languageName": "Hungarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "ed",
+            "languageName": "Hungarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "normális",
+            "languageName": "Hungarian",
+            "sense": "greeting"
+          },
+          {
+            "word": "halló!",
+            "languageName": "Icelandic",
+            "languageCode": "is",
+            "sense": "greeting"
+          },
+          {
+            "word": "やれやれ",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "やれやれだぜ",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "大丈夫",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "大丈夫かよ",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "マジ",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "マジかよ",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "acorda",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "greeting"
+          },
+          {
+            "word": "aloo",
+            "languageName": "Romanian",
+            "sense": "greeting"
+          },
+          {
+            "word": "здра́сте",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "здра́сте Но́вый Го́д",
+            "languageName": "Russian",
+            "languageCode": "ru",
+            "sense": "greeting"
+          },
+          {
+            "word": "haló!",
+            "languageName": "Slovene",
+            "sense": "greeting"
+          },
+          {
+            "word": "men hallå",
+            "languageName": "Swedish",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallå där",
+            "languageName": "Swedish",
+            "sense": "greeting"
+          },
+          {
+            "word": "hoy!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "huy!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "oy!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "oi!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "uy!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "ui!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "này!",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "але́",
+            "languageName": "Belarusian",
+            "languageCode": "be",
+            "sense": "greeting"
+          },
+          {
+            "word": "(be)",
+            "languageName": "Belarusian",
+            "languageCode": "be",
+            "sense": "greeting"
+          },
+          {
+            "word": "моля",
+            "languageName": "Bulgarian",
+            "languageCode": "bg",
+            "sense": "greeting"
+          },
+          {
+            "word": "conill!",
+            "languageName": "Catalan",
+            "languageCode": "ca",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo?",
+            "languageName": "Danish",
+            "languageCode": "da",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo!",
+            "languageName": "Dutch",
+            "languageCode": "nl",
+            "sense": "greeting"
+          },
+          {
+            "word": "oho",
+            "languageName": "Finnish",
+            "languageCode": "fi",
+            "sense": "greeting"
+          },
+          {
+            "word": "ouah",
+            "languageName": "French",
+            "languageCode": "fr",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallo!",
+            "languageName": "Frisian",
+            "sense": "greeting"
+          },
+          {
+            "word": "本当？",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "冗談だろ？",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "大丈夫？",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "大丈夫かよ？",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "マジ？",
+            "languageName": "Japanese",
+            "languageCode": "ja",
+            "sense": "greeting"
+          },
+          {
+            "word": "o que",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "greeting"
+          },
+          {
+            "word": "oi?",
+            "languageName": "Portuguese",
+            "languageCode": "pt",
+            "sense": "greeting"
+          },
+          {
+            "word": "ia uite",
+            "languageName": "Romanian",
+            "sense": "greeting"
+          },
+          {
+            "word": "hêj!",
+            "languageName": "Slovene",
+            "sense": "greeting"
+          },
+          {
+            "word": "uy?!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "ui?!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "huy?!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "oy?!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "oi?!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "hoy?!",
+            "languageName": "Tagalog",
+            "languageCode": "tl",
+            "sense": "greeting"
+          },
+          {
+            "word": "ôi trời!",
+            "languageName": "Vietnamese",
+            "sense": "greeting"
+          },
+          {
+            "word": "merhebaa",
+            "languageName": "Zazaki",
+            "languageCode": "diq",
+            "sense": "greeting"
+          },
+          {
+            "word": "way",
+            "languageName": "Zazaki",
+            "languageCode": "diq",
+            "sense": "greeting"
+          },
+          {
+            "word": "(diq)",
+            "languageName": "Zazaki",
+            "languageCode": "diq",
+            "sense": "greeting"
+          },
+          {
+            "word": "verify",
+            "languageName": "Fijian",
+            "languageCode": "fj",
+            "sense": "greeting"
+          },
+          {
+            "word": "verify",
+            "languageName": "Irish",
+            "sense": "greeting"
+          },
+          {
+            "word": "haló",
+            "languageName": "Irish",
+            "sense": "greeting"
+          },
+          {
+            "word": "verify",
+            "languageName": "Nahuatl",
+            "languageCode": "nah",
+            "sense": "greeting"
+          },
+          {
+            "word": "verify",
+            "languageName": "Nepali",
+            "languageCode": "ne",
+            "sense": "greeting"
+          },
+          {
+            "word": "verify",
+            "languageName": "Tatar",
+            "sense": "greeting"
+          },
+          {
+            "word": "isänme",
+            "languageName": "Tatar",
+            "sense": "greeting"
+          },
+          {
+            "word": "sälâm",
+            "languageName": "Tatar",
+            "sense": "greeting"
+          },
+          {
+            "word": "allo",
+            "languageName": "Tatar",
+            "sense": "greeting"
+          },
+          {
+            "word": "hallow",
+            "languageName": "Tatar",
+            "sense": "greeting"
+          },
+          {
+            "word": "verify",
+            "languageName": "Urdu",
+            "languageCode": "ur",
+            "sense": "greeting"
+          },
+          {
+            "word": "السلام علیکم",
+            "languageName": "Urdu",
+            "languageCode": "ur",
+            "sense": "greeting"
+          },
+          {
+            "word": "ông",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "bà",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "cô",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "anh",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "chị",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "em",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "quí vị",
+            "languageName": "Vietnamese",
+            "languageCode": "vi",
+            "sense": "greeting"
+          },
+          {
+            "word": "verify",
+            "languageName": "Woiwurrung",
+            "sense": "greeting"
+          },
+          {
+            "word": "gudjinna",
+            "languageName": "Woiwurrung",
+            "sense": "greeting"
+          },
+          {
+            "word": "wawa",
+            "languageName": "Woiwurrung",
+            "sense": "greeting"
+          }
+        ],
+        "synonyms": [],
+        "antonyms": [],
+        "etymology": "First attested in 1826. From holla, hollo (attested 1588). This variant of hallo is often credited to Thomas Edison as a coinage for telephone use, but its appearance in print predates the invention of the telephone by several decades. Ultimately from a variant of Old English ēalā, such as hēlā, which was used colloquially at the time similarly to how hey and (in some dialects) hi are used nowadays. Thus, equivalent to a compound of hey and lo. Used when drawing attention to yourself. Possibly influenced by Old Saxon halo, imperative of halōn (“to call, fetch”), used in hailing a ferryman, akin to Old High German hala, hola!, imperative forms of halōn, holōn (“to fetch”). For more information, see hallo. The Oxford English Dictionary and Merriam-Webster Dictionary also suggested that it is a variant of holla, a variant of holloo. Further beyond, the origin remains uncertain. OED and Merriam-Webster suggested that it has a connection between hallow (“to shout, to cry out loud”), which came from Old French holloer, which, according to Altfranzösisches Wörterbuch, is from Old Saxon halōn. Pronunciation[edit]",
+        "source": {
+          "id": "wiktionary",
+          "name": "Wiktionary",
+          "url": "https://en.wiktionary.org/wiki/hello"
+        },
+        "fetchedAt": 1786703637830
+      },
+      "createdAt": 1786703637894,
+      "expiresAt": 1787308437894
     }
   },
   "defaultLanguage": "en",

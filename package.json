@@ -1,6 +1,6 @@
 {
 	"name": "mynary-dictionary",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Wiktionary dictionary lookup and personalized vocabulary notes for Obsidian.",
 	"main": "main.js",
 	"type": "module",

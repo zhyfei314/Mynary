@@ -46,12 +46,16 @@ export default class MynaryPlugin extends Plugin {
 	lookupError = '';
 	currentQuery = '';
 	lastLookupWasCached = false;
+	private historySave: Promise<void> = Promise.resolve();
 
 	async onload() {
-		this.settings = normalizeSettings(await this.loadData() as unknown);
+		const raw = await this.loadData() as unknown;
+		this.settings = normalizeSettings(raw);
+		this.history = normalizeHistory(raw);
 		if (migrateTemplates(this.settings.templates)) await this.saveSettings();
 		this.cache = new CacheManager(this, this.settings);
 		await this.cache.whenReady();
+		if (!this.history.length) this.history = this.cache.getRecentWords();
 		this.provider = new WiktionaryProvider(requestWiktionary);
 		this.registerView(VIEW_TYPE_DICTIONARY, (leaf) => new DictionaryView(leaf, this));
 		this.registerEvent(this.app.workspace.on('editor-menu', (menu: Menu, editor: Editor) => {
@@ -124,12 +128,12 @@ export default class MynaryPlugin extends Plugin {
 		try {
 			const cached = await this.cache.get(key);
 			if (requestId !== this.lookupSequence) return undefined;
-			if (cached && !forceRefresh) { this.lastLookupWasCached = true; this.setEntry(cached, normalized); return cached; }
+			if (cached && !forceRefresh) { this.lastLookupWasCached = true; await this.setEntry(cached, normalized); return cached; }
 			const entry = await this.provider.lookup(normalized, language);
 			if (requestId !== this.lookupSequence) return undefined;
 			await this.cache.set(key, entry);
 			if (requestId !== this.lookupSequence) return undefined;
-			this.setEntry(entry, normalized);
+			await this.setEntry(entry, normalized);
 			return entry;
 		} catch (error) {
 			if (requestId !== this.lookupSequence) return undefined;
@@ -145,12 +149,22 @@ export default class MynaryPlugin extends Plugin {
 		await this.lookup(this.currentQuery, this.lastEntry?.language ?? this.activeLanguage, true);
 	}
 
-	private setEntry(entry: DictionaryEntry, historyWord: string) {
+	private async setEntry(entry: DictionaryEntry, historyWord: string) {
 		this.lastEntry = entry;
 		this.lookupStatus = 'success';
 		this.lookupError = '';
 		this.history = [historyWord, ...this.history.filter((item) => item !== historyWord)].slice(0, 20);
+		await this.persistHistory();
 		this.notifyLookupListeners();
+	}
+
+	private async persistHistory() {
+		this.historySave = this.historySave.then(async () => {
+			const raw = await this.loadData() as unknown;
+			const existing = isRecord(raw) ? raw : {};
+			await this.saveData({ ...existing, history: this.history });
+		});
+		await this.historySave;
 	}
 
 	subscribeLookup(listener: LookupListener) {
@@ -277,6 +291,17 @@ export class LookupModal extends Modal {
 		this.selectionChoice = false;
 		void this.plugin.lookup(word);
 	}
+}
+
+function normalizeHistory(raw: unknown): string[] {
+	if (!isRecord(raw) || !Array.isArray(raw.history)) return [];
+	const history: string[] = [];
+	for (const value of raw.history) {
+		if (typeof value !== 'string') continue;
+		const word = value.trim();
+		if (word && !history.includes(word)) history.push(word);
+	}
+	return history.slice(0, 20);
 }
 
 export class DictionaryView extends ItemView {

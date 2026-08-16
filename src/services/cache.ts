@@ -25,6 +25,13 @@ export class CacheManager {
 		}
 		return item.entry;
 	}
+	getRecentWords(limit = 20): string[] {
+		return Object.values(this.entries)
+			.sort((left, right) => right.createdAt - left.createdAt)
+			.map((item) => item.entry.word)
+			.filter((word, index, words) => words.indexOf(word) === index)
+			.slice(0, limit);
+	}
 	async set(key: string, entry: DictionaryEntry) {
 		await this.ready;
 		const now = Date.now();
