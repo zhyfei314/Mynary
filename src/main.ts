@@ -54,8 +54,6 @@ export default class MynaryPlugin extends Plugin {
 		this.history = normalizeHistory(raw);
 		if (migrateTemplates(this.settings.templates)) await this.saveSettings();
 		this.cache = new CacheManager(this, this.settings);
-		await this.cache.whenReady();
-		if (!this.history.length) this.history = this.cache.getRecentWords();
 		this.provider = new WiktionaryProvider(requestWiktionary);
 		this.registerView(VIEW_TYPE_DICTIONARY, (leaf) => new DictionaryView(leaf, this));
 		this.registerEvent(this.app.workspace.on('editor-menu', (menu: Menu, editor: Editor) => {
@@ -76,6 +74,18 @@ export default class MynaryPlugin extends Plugin {
 		this.addCommand({ id: 'insert-lookup-result', name: 'Insert lookup result', checkCallback: (checking) => this.commandWithEntry(checking, () => this.insertResult()) });
 		this.addCommand({ id: 'clear-dictionary-cache', name: 'Clear dictionary cache', callback: async () => { await this.cache.clear(); new Notice('Dictionary cache cleared.'); } });
 		this.addSettingTab(new DictionarySettingTab(this.app, this));
+
+		// Cache loading is independent of the popup and the command lifecycle.
+		// Keep history hydration in the background so a cold start does not make
+		// lookup actions wait for the cache before they become available.
+		void this.hydrateHistory();
+	}
+
+	private async hydrateHistory() {
+		await this.cache.whenReady();
+		if (this.history.length) return;
+		this.history = this.cache.getRecentWords();
+		this.notifyLookupListeners();
 	}
 
 	async saveSettings() {
