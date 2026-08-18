@@ -1,7 +1,7 @@
 {
 	"id": "mynary",
 	"name": "Mynary Dictionary",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"minAppVersion": "1.7.2",
 	"description": "Look up words with Wiktionary and create personalized vocabulary notes.",
 	"author": "zhyfei314",
