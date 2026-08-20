@@ -32,6 +32,7 @@
 .mynary-translation-results { max-height: 420px; overflow-y: auto; }
 .mynary-actions { position: sticky; bottom: 0; background: var(--modal-background); padding: 10px 0; z-index: 1; }
 .mynary-sidebar { height: 100%; overflow-y: auto; }
+.mynary-sidebar, .mynary-lookup-modal, .mynary-template-picker, .mynary-template-manager { -webkit-user-select: text; user-select: text; }
 .mynary-sidebar .mynary-search { position: sticky; top: 0; background: var(--background-primary); padding: 4px 0 8px; z-index: 2; }
 .mynary-selection-lookup { display: none; }
 .mynary-history { border-top: 1px solid var(--background-modifier-border); margin-top: 16px; padding-top: 10px; }

@@ -252,8 +252,13 @@ export class LookupModal extends Modal {
 	onOpen() {
 		this.modalEl.addClass('mynary-lookup-modal');
 		this.unsubscribe = this.plugin.subscribeLookup(() => this.render());
+		if (!this.selectionChoice) {
+			// Start the lookup before the first render so a cold popup shows its
+			// loading state instead of briefly displaying "No result yet.".
+			void this.plugin.lookup(this.word);
+			return;
+		}
 		this.render();
-		if (!this.selectionChoice) void this.plugin.lookup(this.word);
 	}
 
 	onClose() {

@@ -130,7 +130,7 @@ function isEtymologyHeading(value: string) {
 
 function parseDefinition(item: Element): Definition | undefined {
 	const clone = item.cloneNode(true) as Element;
-	Array.from(clone.querySelectorAll('ol, ul, dl, blockquote, .citation, .reference, .references, .quotation, .quote, [class*="quote"], sup')).forEach((node) => node.remove());
+	Array.from(clone.querySelectorAll('ol, ul, dl, blockquote, style, script, template, .citation, .reference, .references, .quotation, .quote, [class*="quote"], sup')).forEach((node) => node.remove());
 	const text = cleanText(clone.textContent ?? '');
 	if (!text) return undefined;
 	const examples = Array.from(item.querySelectorAll('dl dd, .example, .e-example, .usage-example')).filter((node) => !isQuoteElement(node)).map((node) => cleanText(node.textContent ?? '')).filter(Boolean);
@@ -162,7 +162,7 @@ function parseTranslations(nodes: Element[]): Translation[] {
 			if (cells.length < 2) continue;
 			const languageName = cleanText(cells[0]?.textContent ?? '').replace(/:$/, '');
 			const languageCode = findLanguageCode(cells[0] ?? row);
-			const words = cells.slice(1).flatMap((cell) => Array.from(cell.querySelectorAll('a')).map((link) => cleanText(link.textContent ?? '')).filter(Boolean));
+			const words = cells.slice(1).flatMap((cell) => translationWords(cell));
 			words.forEach((word) => translations.push({ word, languageCode, languageName, sense }));
 		}
 		for (const item of block.flatMap((node) => Array.from(node.querySelectorAll('li')))) {
@@ -170,7 +170,7 @@ function parseTranslations(nodes: Element[]): Translation[] {
 			const separator = text.indexOf(':');
 			if (separator <= 0) continue;
 			const languageName = text.slice(0, separator).trim();
-			const words = Array.from(item.querySelectorAll('a')).map((link) => cleanText(link.textContent ?? '')).filter(Boolean);
+			const words = translationWords(item).filter((word) => !isLanguageLabel(word, findLanguageCode(item), languageName));
 			words.forEach((word) => translations.push({ word, languageName, languageCode: findLanguageCode(item), sense }));
 		}
 	}
@@ -178,10 +178,18 @@ function parseTranslations(nodes: Element[]): Translation[] {
 }
 
 function parseSectionText(nodes: Element[], target: string): string | undefined {
-	const heading = nodes.find((node): node is HTMLHeadingElement => /^H[3-5]$/.test(node.tagName) && matchesHeading(node, HEADING_ALIASES[target] ?? [target]));
-	if (!heading) return undefined;
-	const text = nodesBetween(nodes, heading, nextHeading(nodes, heading)).filter((node) => !/^H[3-5]$/.test(node.tagName)).map((node) => cleanText(node.textContent ?? '')).filter(Boolean).join(' ');
-	return text || undefined;
+	const headings = nodes.filter((node): node is HTMLHeadingElement => /^H[3-5]$/.test(node.tagName) && isTargetHeading(node, target));
+	const sections = headings.flatMap((heading) => nodesBetween(nodes, heading, nextAnyHeading(nodes, heading))
+		.filter((node) => !/^H[3-5]$/.test(node.tagName))
+		.map((node) => cleanText(node.textContent ?? '')).filter(Boolean));
+	return [...new Set(sections)].join(' ') || undefined;
+}
+
+function translationWords(element: Element): string[] {
+	return Array.from(element.querySelectorAll('a'))
+		.filter((link) => !link.hasAttribute('lang') && !/^https?:\/\/[^/]+\.wiktionary\.org/i.test(link.getAttribute('href') ?? ''))
+		.map((link) => cleanText(link.textContent ?? ''))
+		.filter(Boolean);
 }
 
 function parseRelation(nodes: Element[], target: string): string[] {
@@ -216,13 +224,27 @@ function nextHeading(nodes: Element[], start: Element): Element | undefined {
 		return /^H[3-5]$/.test(candidate.tagName) && candidate !== start && candidateLevel <= level && isAfter(start, candidate);
 	});
 }
+function nextAnyHeading(nodes: Element[], start: Element): Element | undefined {
+	return nodes.find((candidate) => /^H[3-5]$/.test(candidate.tagName) && candidate !== start && isAfter(start, candidate));
+}
 
 function headingText(element: Element) { return cleanText(element.querySelector('.mw-headline')?.textContent ?? element.textContent ?? ''); }
 function matchesHeading(element: Element, aliases: string[]) {
 	const value = headingText(element).toLocaleLowerCase();
 	return aliases.some((alias) => value === alias.toLocaleLowerCase());
 }
-function cleanText(value: string) { return compactRepeatedTokens(value.replace(/\[[0-9]+\]/g, '').replace(/\s+/g, ' ').trim()); }
+function isTargetHeading(element: Element, target: string) {
+	const value = headingText(element).toLocaleLowerCase();
+	const aliases = HEADING_ALIASES[target] ?? [target];
+	return aliases.some((alias) => value === alias.toLocaleLowerCase() || value.startsWith(`${alias.toLocaleLowerCase()} `));
+}
+function cleanText(value: string) {
+	return compactRepeatedTokens(value
+		.replace(/\[[0-9]+\]/g, '')
+		.replace(/\.mw-parser-output\s*\{[^}]*\}/gi, '')
+		.replace(/(?:^|\s)[.#][\w-]+\s*\{[^}]*\}/g, ' ')
+		.replace(/\s+/g, ' ').trim());
+}
 function isAfter(start: Element, candidate: Element) { return Boolean(start.compareDocumentPosition(candidate) & 4); }
 function compactRepeatedTokens(value: string) {
 	const tokens = value.split(' ').filter(Boolean);
