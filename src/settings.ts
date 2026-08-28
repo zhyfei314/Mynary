@@ -1,4 +1,5 @@
 import type { TemplateDefinition } from './types';
+import { WIKTIONARY_LANGUAGES } from './providers/language-registry';
 
 export interface LanguageOption { code: string; name: string; }
 export interface DictionarySettings {
@@ -11,6 +12,13 @@ export interface DictionarySettings {
 	defaultTemplateId: string;
 	templates: TemplateDefinition[];
 	existingNoteBehavior: 'ask' | 'overwrite' | 'update-section';
+	ttsEnabled: boolean;
+	ttsAutoGenerate: boolean;
+	ttsRuntime: 'web' | 'server';
+	supertonicEndpoint: string;
+	supertonicVoice: string;
+	supertonicSteps: number;
+	supertonicSpeed: number;
 }
 
 export const FLASHCARD_TEMPLATE = `# flashcards/{{language}}_Definition
@@ -45,11 +53,7 @@ export const FLASHCARD_TEMPLATE = `# flashcards/{{language}}_Definition
 {{#if sourceUrl}}[Source]({{sourceUrl}})
 {{/if}}`;
 
-export const LANGUAGES: LanguageOption[] = [
-	{ code: 'en', name: 'English' }, { code: 'vi', name: 'Vietnamese' }, { code: 'ja', name: 'Japanese' },
-	{ code: 'ko', name: 'Korean' }, { code: 'zh', name: 'Chinese' }, { code: 'fr', name: 'French' },
-	{ code: 'de', name: 'German' }, { code: 'es', name: 'Spanish' }, { code: 'it', name: 'Italian' }, { code: 'ru', name: 'Russian' },
-];
+export const LANGUAGES: LanguageOption[] = WIKTIONARY_LANGUAGES.map(({ code, displayName }) => ({ code, name: displayName }));
 
 export const DEFAULT_TEMPLATES: TemplateDefinition[] = [
 	{ id: 'basic', name: 'Basic vocabulary', content: '---\nword: {{word}}\nlanguage: {{language}}\nsource: {{source}}\nsource_url: {{sourceUrl}}\nlookup_date: {{lookupDate}}\n---\n\n# {{word}}\n\n{{meaningsMarkdown}}\n\n{{#if examplesMarkdown}}## Examples\n{{examplesMarkdown}}\n{{/if}}' },
@@ -149,7 +153,7 @@ export function migrateTemplates(templates: TemplateDefinition[]): boolean {
 	return changed;
 }
 
-export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask' };
+export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'web', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05 };
 
 export function normalizeSettings(raw: unknown): DictionarySettings {
 	const data = isRecord(raw) ? raw : {};
@@ -168,7 +172,14 @@ export function normalizeSettings(raw: unknown): DictionarySettings {
 		maxCacheEntries: Math.floor(positiveNumber(data.maxCacheEntries, DEFAULT_SETTINGS.maxCacheEntries)),
 		defaultTemplateId,
 		templates,
-		existingNoteBehavior,
+		 existingNoteBehavior,
+		ttsEnabled: isEnabledSetting(data.ttsEnabled),
+		ttsAutoGenerate: isEnabledSetting(data.ttsAutoGenerate),
+		ttsRuntime: data.ttsRuntime === 'server' ? 'server' : 'web',
+		supertonicEndpoint: typeof data.supertonicEndpoint === 'string' && data.supertonicEndpoint.trim() ? data.supertonicEndpoint.trim() : DEFAULT_SETTINGS.supertonicEndpoint,
+		supertonicVoice: typeof data.supertonicVoice === 'string' && data.supertonicVoice.trim() ? data.supertonicVoice.trim() : DEFAULT_SETTINGS.supertonicVoice,
+		supertonicSteps: Math.min(16, Math.max(4, Math.floor(positiveNumber(data.supertonicSteps, DEFAULT_SETTINGS.supertonicSteps)))),
+		supertonicSpeed: Math.min(2, Math.max(0.7, positiveNumber(data.supertonicSpeed, DEFAULT_SETTINGS.supertonicSpeed))),
 	};
 }
 
@@ -184,7 +195,13 @@ function normalizeLanguages(value: unknown): LanguageOption[] {
 		seen.add(item.code);
 		return true;
 	});
+	if (languages.length && isLegacyDefaultLanguageList(languages)) return LANGUAGES.map((language) => ({ ...language }));
 	return languages.length ? languages : LANGUAGES.map((language) => ({ ...language }));
+}
+
+function isLegacyDefaultLanguageList(languages: LanguageOption[]) {
+	const legacyCodes = ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de', 'es', 'it', 'ru'];
+	return languages.length === legacyCodes.length && languages.every((language, index) => language.code === legacyCodes[index]);
 }
 
 function normalizeTemplates(value: unknown): TemplateDefinition[] {
@@ -200,4 +217,8 @@ function normalizeTemplates(value: unknown): TemplateDefinition[] {
 
 function positiveNumber(value: unknown, fallback: number) {
 	return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function isEnabledSetting(value: unknown) {
+	return value === true || (typeof value === 'string' && ['true', 'enabled', 'on'].includes(value.toLocaleLowerCase()));
 }

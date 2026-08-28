@@ -1,5 +1,6 @@
 import esbuild from 'esbuild';
 import process from 'process';
+import fs from 'node:fs';
 import { builtinModules } from 'node:module';
 
 const banner = `/*
@@ -9,6 +10,9 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = process.argv[2] === 'production';
+const wasmSource = 'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.wasm';
+const wasmTarget = 'ort-wasm-simd-threaded.jsep.wasm';
+if (fs.existsSync(wasmSource)) fs.copyFileSync(wasmSource, wasmTarget);
 
 const context = await esbuild.context({
 	banner: {

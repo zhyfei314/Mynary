@@ -1,4 +1,4 @@
-import { DictionaryEntry, Meaning, Phonetic, Translation } from '../types';
+import { DictionaryEntry, Meaning, Pronunciation, Translation } from '../types';
 
 const LANGUAGE_NAMES: Record<string, string> = {
 	en: 'English', vi: 'Vietnamese', ja: 'Japanese', ko: 'Korean', zh: 'Chinese',
@@ -36,7 +36,7 @@ function findLanguageSection(raw: string, language: string): string {
 	return raw.slice(bodyStart, next?.index ?? raw.length);
 }
 
-function parsePhonetics(section: string): Phonetic[] {
+function parsePhonetics(section: string): Pronunciation[] {
 	const values = new Set<string>();
 	for (const match of section.matchAll(/\{\{(?:IPA|IPAchar|pron|音声)\s*\|([^}]+)\}\}/gi)) {
 		const parts = (match[1] ?? '').split('|').map((part) => part.trim());

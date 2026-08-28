@@ -4,12 +4,14 @@ export function renderTemplate(entry: DictionaryEntry, template: string): string
 	const definitions = entry.meanings.flatMap((meaning) => meaning.definitions.map((definition) => definition.text));
 	const examples = entry.meanings.flatMap((meaning) => meaning.definitions.flatMap((definition) => definition.examples));
 	const meaningsMarkdown = entry.meanings.map((meaning) => {
-		const label = [meaning.partOfSpeech, meaning.etymology].filter(Boolean).join(' — ');
+		const label = [[meaning.partOfSpeech, ...(meaning.labels ?? [])].filter(Boolean).join(' · '), meaning.etymology].filter(Boolean).join(' — ');
 		const heading = label ? `### ${label}\n` : '';
 		return `${heading}${meaning.definitions.map((definition) => `- ${definition.text}`).join('\n')}`;
 	}).join('\n\n');
 	const values: Record<string, string> = {
 		word: entry.word,
+		baseWord: entry.baseWord ?? '',
+		inflection: entry.inflection ?? '',
 		language: entry.language,
 		IPA: entry.phonetics.map((phonetic) => phonetic.text).join(', '),
 		partOfSpeech: entry.meanings.map((meaning) => meaning.partOfSpeech).filter(Boolean).join(', '),

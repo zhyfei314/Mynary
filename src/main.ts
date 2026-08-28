@@ -18,6 +18,9 @@ import { DictionarySettings, isRecord, migrateTemplates, normalizeSettings } fro
 import { WiktionaryProvider } from './providers/wiktionary';
 import type { WiktionaryHttpResponse, WiktionaryRequester } from './providers/wiktionary';
 import { CacheManager } from './services/cache';
+import { SupertonicProvider } from './providers/supertonic';
+import type { SupertonicRequester } from './providers/supertonic';
+import { SupertonicWebProvider } from './providers/supertonic-web';
 import { renderEntry } from './utils/format';
 import { createVocabularyNote, renderTemplate } from './templates/template';
 import { analyzeSelection, normalizeSelection } from './utils/selection';
@@ -31,8 +34,32 @@ const requestWiktionary: WiktionaryRequester = async (url): Promise<WiktionaryHt
 	const response = await requestUrl(url);
 	return { status: response.status, json: response.json as unknown };
 };
+const requestSupertonic: SupertonicRequester = async (url, body) => {
+	const response = await requestUrl({ url, method: 'POST', headers: { 'content-type': 'application/json' }, body });
+	return { status: response.status, arrayBuffer: response.arrayBuffer, mimeType: response.headers['content-type'] };
+};
 type LookupStatus = 'idle' | 'loading' | 'success' | 'error';
 type LookupListener = (status: LookupStatus) => void;
+
+function waitForAudioReady(player: HTMLAudioElement) {
+	if (player.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) return Promise.resolve();
+	return new Promise<void>((resolve, reject) => {
+		let timeoutId: number | undefined;
+		const cleanup = () => {
+			player.removeEventListener('canplay', onReady);
+			player.removeEventListener('loadeddata', onReady);
+			player.removeEventListener('error', onError);
+			if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+		};
+		const onReady = () => { cleanup(); resolve(); };
+		const onError = () => { cleanup(); reject(new Error('The generated audio could not be loaded.')); };
+		player.addEventListener('canplay', onReady, { once: true });
+		player.addEventListener('loadeddata', onReady, { once: true });
+		player.addEventListener('error', onError, { once: true });
+		timeoutId = window.setTimeout(() => { cleanup(); reject(new Error('The generated audio took too long to load.')); }, 10_000);
+		player.load();
+	});
+}
 
 export default class MynaryPlugin extends Plugin {
 	settings!: DictionarySettings;
@@ -42,6 +69,9 @@ export default class MynaryPlugin extends Plugin {
 	private history: string[] = [];
 	private lookupListeners = new Set<LookupListener>();
 	private lookupSequence = 0;
+	private readAudioCache = new Map<string, { url: string; mimeType?: string }>();
+	private readAudioInFlight = new Map<string, Promise<{ url: string; mimeType?: string }>>();
+	private activeReader?: HTMLAudioElement;
 	lookupStatus: LookupStatus = 'idle';
 	lookupError = '';
 	currentQuery = '';
@@ -54,11 +84,12 @@ export default class MynaryPlugin extends Plugin {
 		this.history = normalizeHistory(raw);
 		if (migrateTemplates(this.settings.templates)) await this.saveSettings();
 		this.cache = new CacheManager(this, this.settings);
-		this.provider = new WiktionaryProvider(requestWiktionary);
+		this.rebuildProvider();
 		this.registerView(VIEW_TYPE_DICTIONARY, (leaf) => new DictionaryView(leaf, this));
 		this.registerEvent(this.app.workspace.on('editor-menu', (menu: Menu, editor: Editor) => {
 			if (!editor.getSelection().trim()) return;
 			menu.addItem((item) => item.setTitle('Lookup').setIcon('search').onClick(() => void this.lookupSelected(editor)));
+			menu.addItem((item) => item.setTitle('Read with supertonic').setIcon('volume-2').onClick(() => void this.readSelected(editor)));
 		}));
 
 		this.addRibbonIcon('book-open', 'Open dictionary sidebar', () => this.activateView());
@@ -68,6 +99,13 @@ export default class MynaryPlugin extends Plugin {
 			icon: 'search',
 			hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'L' }],
 			editorCallback: (editor) => void this.lookupSelected(editor),
+		});
+		this.addCommand({
+			id: 'read-selected-word',
+			name: 'Read selected text with supertonic',
+			icon: 'volume-2',
+			hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'R' }],
+			editorCallback: (editor) => void this.readSelected(editor),
 		});
 		this.addCommand({ id: 'open-dictionary-sidebar', name: 'Open dictionary sidebar', callback: () => this.activateView() });
 		this.addCommand({ id: 'create-vocabulary-note', name: 'Create vocabulary note from lookup', checkCallback: (checking) => this.commandWithEntry(checking, () => this.createNote()) });
@@ -92,6 +130,89 @@ export default class MynaryPlugin extends Plugin {
 		const raw = await this.loadData() as unknown;
 		const existing = isRecord(raw) ? raw : {};
 		await this.saveData({ ...existing, ...this.settings });
+	}
+
+	rebuildProvider() {
+		this.clearReadAudioCache();
+		const tts = this.settings.ttsEnabled
+			? this.settings.ttsRuntime === 'server'
+				? new SupertonicProvider(requestSupertonic, this.settings.supertonicEndpoint, this.settings.supertonicVoice, this.settings.supertonicSteps, this.settings.supertonicSpeed)
+				: new SupertonicWebProvider(this.settings.supertonicVoice, this.settings.supertonicSteps, this.settings.supertonicSpeed, this.app.vault.adapter.getResourcePath(`${this.manifest.dir}/ort-wasm-simd-threaded.jsep.wasm`))
+			: undefined;
+		this.provider = new WiktionaryProvider(requestWiktionary, tts, this.settings.ttsAutoGenerate);
+	}
+
+	async generateTts(pronunciationIndex: number, word: string, language: string) {
+		if (!this.provider.ttsAvailable) { new Notice('Enable supertonic in settings first.'); return; }
+		if (!this.provider.ttsAvailableFor(language)) { new Notice(`Supertonic does not support ${language.toUpperCase()}; IPA remains available.`); return; }
+		new Notice('Preparing supertonic… the first web runtime use may download the model.');
+		try {
+			const source = await this.provider.synthesizeTts(word, language);
+			if (!this.lastEntry || this.lastEntry.word !== word || this.lastEntry.language !== language) return;
+			const phonetics = this.lastEntry.phonetics.map((pronunciation, index) => index === pronunciationIndex
+				? { ...pronunciation, audio: [...(pronunciation.audio ?? []).filter((audio) => audio.provider !== 'tts'), source] }
+				: pronunciation);
+			this.lastEntry = { ...this.lastEntry, phonetics };
+			this.notifyLookupListeners();
+		} catch (error) {
+			new Notice(error instanceof Error ? error.message : 'Could not generate Supertonic audio.');
+		}
+	}
+
+	async readSelected(editor: Editor) {
+		const text = editor.getSelection().trim();
+		if (!text) { new Notice('Select text first.'); return; }
+		await this.readText(text);
+	}
+
+	async readCurrentSelection() {
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (activeView?.editor.getSelection().trim()) { await this.readSelected(activeView.editor); return; }
+		for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
+			if (!(leaf.view instanceof MarkdownView)) continue;
+			if (leaf.view.editor.getSelection().trim()) { await this.readSelected(leaf.view.editor); return; }
+		}
+		new Notice('Select text first.');
+	}
+
+	private async readText(text: string) {
+		if (!this.provider.ttsAvailable) { new Notice('Enable supertonic in settings first.'); return; }
+		if (!this.provider.ttsAvailableFor(this.activeLanguage)) { new Notice(`Supertonic does not support ${this.activeLanguage.toUpperCase()}; IPA remains available.`); return; }
+		const normalizedText = text.replace(/\s+/g, ' ').trim();
+		if (!normalizedText) { new Notice('Select some text first.'); return; }
+		const cacheKey = `${this.activeLanguage}:${normalizedText}`;
+		try {
+			let source = this.readAudioCache.get(cacheKey);
+			if (!source) {
+				new Notice('Generating speech…');
+				let pending = this.readAudioInFlight.get(cacheKey);
+				if (!pending) {
+					pending = this.provider.synthesizeTts(normalizedText, this.activeLanguage).then((result) => ({ url: result.url, mimeType: result.mimeType }));
+					this.readAudioInFlight.set(cacheKey, pending);
+					void pending.finally(() => this.readAudioInFlight.delete(cacheKey));
+				}
+				source = await pending;
+				this.readAudioCache.set(cacheKey, source);
+			}
+			this.activeReader?.pause();
+			const player = new Audio();
+			player.preload = 'auto';
+			player.volume = 1;
+			player.src = source.url;
+			this.activeReader = player;
+			await waitForAudioReady(player);
+			await player.play();
+		} catch (error) {
+			new Notice(error instanceof Error ? error.message : 'Could not read the selected text.');
+		}
+	}
+
+	private clearReadAudioCache() {
+		this.activeReader?.pause();
+		this.activeReader = undefined;
+		for (const source of this.readAudioCache.values()) URL.revokeObjectURL(source.url);
+		this.readAudioCache.clear();
+		this.readAudioInFlight.clear();
 	}
 	get activeLanguage() { return this.settings.defaultLanguage; }
 	getHistory() { return this.history; }
@@ -342,6 +463,8 @@ export class DictionaryView extends ItemView {
 		submit.addEventListener('click', submitLookup);
 		const selectionLookup = search.createEl('button', { text: 'Lookup selected text', cls: 'mynary-selection-lookup' });
 		selectionLookup.addEventListener('click', () => void this.plugin.lookupCurrentSelection());
+		const selectionRead = search.createEl('button', { text: 'Read selected text', cls: 'mynary-selection-read' });
+		selectionRead.addEventListener('click', () => void this.plugin.readCurrentSelection());
 		const language = search.createEl('select');
 		this.plugin.settings.languages.forEach((item) => language.createEl('option', { value: item.code, text: item.code.toUpperCase(), attr: { 'aria-label': item.name, title: item.name } }));
 		language.setAttribute('aria-label', 'Dictionary language');
@@ -409,6 +532,48 @@ class DictionarySettingTab extends PluginSettingTab {
 				control: { type: 'slider', key: 'maxCacheEntries', min: 1, max: 500, step: 1, defaultValue: 100, validate: (value) => typeof value === 'number' && value >= 1 ? undefined : 'Must be at least 1 entry.' },
 			},
 			{
+				name: 'Enable Supertonic local TTS',
+				desc: 'Enable the optional local TTS controls and selected-text reading.',
+				aliases: ['text to speech', 'tts', 'offline speech'],
+				control: { type: 'dropdown', key: 'ttsEnabled', options: { 'false': 'Disabled', 'true': 'Enabled' }, defaultValue: this.plugin.settings.ttsEnabled ? 'true' : 'false' },
+			},
+			{
+				name: 'Auto-generate tts when audio is missing',
+				desc: 'Generate a supertonic pronunciation during lookup when wiktionary has no audio.',
+				aliases: ['automatic pronunciation', 'tts fallback'],
+				control: { type: 'dropdown', key: 'ttsAutoGenerate', options: { 'false': 'Disabled', 'true': 'Enabled' }, defaultValue: this.plugin.settings.ttsAutoGenerate ? 'true' : 'false' },
+			},
+			{
+				name: 'Supertonic runtime',
+				desc: 'Web runs in the plugin without a terminal; server uses the advanced local bridge.',
+				aliases: ['tts runtime', 'web tts', 'local tts server'],
+				control: { type: 'dropdown', key: 'ttsRuntime', options: { web: 'Web (recommended)', server: 'Local server' }, defaultValue: this.plugin.settings.ttsRuntime },
+			},
+			{
+				name: 'Supertonic endpoint',
+				desc: 'Used only by the Local server runtime. Normally http://127.0.0.1:7788/v1/tts.',
+				aliases: ['tts endpoint', 'speech server'],
+				control: { type: 'text', key: 'supertonicEndpoint', placeholder: 'http://127.0.0.1:7788/v1/tts' },
+			},
+			{
+				name: 'Supertonic voice',
+				desc: 'Voice/style identifier accepted by the local server.',
+				aliases: ['tts voice', 'speaker style'],
+				control: { type: 'text', key: 'supertonicVoice', placeholder: 'M1' },
+			},
+			{
+				name: 'Supertonic steps',
+				desc: 'Quality/speed trade-off for local speech synthesis.',
+				aliases: ['tts steps'],
+				control: { type: 'slider', key: 'supertonicSteps', min: 4, max: 16, step: 1, defaultValue: 8 },
+			},
+			{
+				name: 'Supertonic speed',
+				desc: 'Playback speed sent to Supertonic.',
+				aliases: ['tts speed'],
+				control: { type: 'slider', key: 'supertonicSpeed', min: 0.7, max: 2, step: 0.05, defaultValue: 1.05 },
+			},
+			{
 				name: 'Default template',
 				desc: 'Template selected by default for copy, insert and note actions.',
 				aliases: ['vocabulary template', 'note template'],
@@ -432,6 +597,13 @@ class DictionarySettingTab extends PluginSettingTab {
 		new Setting(el).setName('Filename template').setDesc('Supports {{word}} and {{language}}.').addText((text) => text.setValue(this.plugin.settings.filenameTemplate).onChange((value) => { this.plugin.settings.filenameTemplate = value || '{{word}}'; void this.plugin.saveSettings(); }));
 		new Setting(el).setName('Cache ttl (days)').addText((text) => text.setValue(String(this.plugin.settings.cacheTtlDays)).onChange((value) => { const n = Math.max(1, Number(value) || 7); this.plugin.settings.cacheTtlDays = n; void this.plugin.saveSettings(); }));
 		new Setting(el).setName('Maximum cached entries').addText((text) => text.setValue(String(this.plugin.settings.maxCacheEntries)).onChange((value) => { const n = Math.max(1, Number(value) || 100); this.plugin.settings.maxCacheEntries = n; void this.plugin.saveSettings(); }));
+		new Setting(el).setName('Supertonic local tts').setDesc(`${this.plugin.settings.ttsEnabled ? 'Enabled' : 'Disabled'}. Optional audio supplement and selected-text reader.`).addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsEnabled).onChange((value) => { this.plugin.settings.ttsEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
+		new Setting(el).setName('Auto-generate tts when audio is missing').setDesc('Creates a supertonic audio source during lookup when wiktionary has ipa but no recording.').addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsAutoGenerate).onChange((value) => { this.plugin.settings.ttsAutoGenerate = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(el).setName('Supertonic runtime').setDesc('Web is recommended and does not need a terminal.').addDropdown((dropdown) => dropdown.addOption('web', 'Web (recommended)').addOption('server', 'Local server').setValue(this.plugin.settings.ttsRuntime).onChange((value) => { this.plugin.settings.ttsRuntime = value === 'server' ? 'server' : 'web'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(el).setName('Supertonic endpoint').setDesc('Used only by the local server runtime.').addText((text) => text.setValue(this.plugin.settings.supertonicEndpoint).onChange((value) => { this.plugin.settings.supertonicEndpoint = value.trim() || 'http://127.0.0.1:7788/v1/tts'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(el).setName('Supertonic voice').addText((text) => text.setValue(this.plugin.settings.supertonicVoice).onChange((value) => { this.plugin.settings.supertonicVoice = value.trim() || 'M1'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(el).setName('Supertonic steps').addText((text) => text.setValue(String(this.plugin.settings.supertonicSteps)).onChange((value) => { this.plugin.settings.supertonicSteps = Math.min(16, Math.max(4, Math.floor(Number(value) || 8))); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(el).setName('Supertonic speed').addText((text) => text.setValue(String(this.plugin.settings.supertonicSpeed)).onChange((value) => { this.plugin.settings.supertonicSpeed = Math.min(2, Math.max(0.7, Number(value) || 1.05)); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
 		new Setting(el).setName('Default template').addDropdown((dropdown) => { this.plugin.settings.templates.forEach((template) => { dropdown.addOption(template.id, template.name); }); dropdown.setValue(this.plugin.settings.defaultTemplateId).onChange((value) => { this.plugin.settings.defaultTemplateId = value; void this.plugin.saveSettings(); }); });
 		new Setting(el).setName('Existing note behavior').setDesc('Update section preserves content outside mynary markers and replaces only the generated section.').addDropdown((dropdown) => dropdown.addOption('ask', 'Ask before replacing').addOption('overwrite', 'Replace automatically').addOption('update-section', 'Update section').setValue(this.plugin.settings.existingNoteBehavior).onChange((value) => { this.plugin.settings.existingNoteBehavior = value as DictionarySettings['existingNoteBehavior']; void this.plugin.saveSettings(); }));
 		new Setting(el).setName('Templates').setDesc('Choose a template separately each time you copy, insert or create a note. Manage names, content, variables and default template in a larger editor.').addButton((button) => button.setButtonText('Manage templates').onClick(() => this.plugin.openTemplateManager()));
