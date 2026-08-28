@@ -6,6 +6,17 @@
 .mynary-entry-title h2 { margin-bottom: 4px; }
 .mynary-entry-metadata { color: var(--text-muted); font-size: var(--font-ui-smaller); margin-bottom: 8px; }
 .mynary-phonetics { color: var(--text-muted); margin-bottom: 12px; }
+.mynary-pronunciation-heading, .mynary-tts-heading { color: var(--text-normal); font-size: var(--font-ui-small); margin: 8px 0 4px; }
+.mynary-pronunciation { margin: 6px 0 10px; }
+.mynary-ipa { display: block; }
+.mynary-pronunciation-audio { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+.mynary-tts-section { border-top: 1px solid var(--background-modifier-border); margin-top: 12px; padding-top: 8px; }
+.mynary-tts-row { margin: 8px 0; }
+.mynary-tts-target { display: block; font-size: var(--font-ui-smaller); }
+.mynary-tts-note { font-size: var(--font-ui-smaller); margin: 4px 0 8px; }
+.mynary-pronunciation audio { height: 28px; max-width: 100%; width: 220px; }
+.mynary-audio-source { font-size: var(--font-ui-smaller); }
+.mynary-audio-generate, .mynary-audio-label { font-size: var(--font-ui-smaller); }
 .mynary-meaning { margin-bottom: 14px; }
 .mynary-meaning h3 { color: var(--text-accent); font-size: var(--font-ui-small); font-style: italic; }
 .mynary-meaning-context { color: var(--text-muted); font-size: var(--font-ui-smaller); margin: -8px 0 6px; }

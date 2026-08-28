@@ -145,6 +145,7 @@ export default class MynaryPlugin extends Plugin {
 	async generateTts(pronunciationIndex: number, word: string, language: string) {
 		if (!this.provider.ttsAvailable) { new Notice('Enable supertonic in settings first.'); return; }
 		if (!this.provider.ttsAvailableFor(language)) { new Notice(`Supertonic does not support ${language.toUpperCase()}; IPA remains available.`); return; }
+		if (this.settings.ttsRuntime === 'web' && !(await this.hasWebTtsRuntime())) return;
 		new Notice('Preparing supertonic… the first web runtime use may download the model.');
 		try {
 			const source = await this.provider.synthesizeTts(word, language);
@@ -178,6 +179,7 @@ export default class MynaryPlugin extends Plugin {
 	private async readText(text: string) {
 		if (!this.provider.ttsAvailable) { new Notice('Enable supertonic in settings first.'); return; }
 		if (!this.provider.ttsAvailableFor(this.activeLanguage)) { new Notice(`Supertonic does not support ${this.activeLanguage.toUpperCase()}; IPA remains available.`); return; }
+		if (this.settings.ttsRuntime === 'web' && !(await this.hasWebTtsRuntime())) return;
 		const normalizedText = text.replace(/\s+/g, ' ').trim();
 		if (!normalizedText) { new Notice('Select some text first.'); return; }
 		const cacheKey = `${this.activeLanguage}:${normalizedText}`;
@@ -205,6 +207,13 @@ export default class MynaryPlugin extends Plugin {
 		} catch (error) {
 			new Notice(error instanceof Error ? error.message : 'Could not read the selected text.');
 		}
+	}
+
+	private async hasWebTtsRuntime() {
+		const path = `${this.manifest.dir}/ort-wasm-simd-threaded.jsep.wasm`;
+		if (await this.app.vault.adapter.exists(path)) return true;
+		new Notice('Web Supertonic runtime is not installed. Add the optional WASM file to the Mynary plugin folder, or select Local server in settings.');
+		return false;
 	}
 
 	private clearReadAudioCache() {
