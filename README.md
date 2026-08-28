@@ -1,92 +1,215 @@
-# Obsidian Sample Plugin
+# Mynary Dictionary
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Mynary is an Obsidian plugin for looking up words and short phrases with Wiktionary and turning lookup results into vocabulary notes.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## What it does
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
+- Looks up selected words or phrases and searches from a dictionary sidebar.
+- Shows definitions, parts of speech, sense labels, examples, pronunciation, translations, synonyms, antonyms and etymology when available.
+- Resolves many inflected forms to a dictionary form, such as `walked` → `walk` and `tries` → `try`.
+- Preserves the original lookup word while showing the detected base form.
+- Copies results, inserts them into the active note, or creates a vocabulary note.
+- Provides editable Markdown templates and a local lookup cache.
+- Works on desktop and mobile.
 
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and outputs a Notice on click.
-- Registers a global interval which logs 'setInterval' to the console.
+Mynary uses the public Wiktionary API. It does not include an offline dictionary or offline translation database.
 
-## First time developing plugins?
+## Installation
 
-Quick starting guide for new plugin devs:
+### Community Plugins
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `src/main.ts` to `main.js`.
-- Make changes to `src/main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+1. Open **Settings → Community plugins**.
+2. Turn off Restricted mode if Obsidian asks you to do so.
+3. Search for **Mynary Dictionary**.
+4. Select **Install**, then **Enable**.
 
-## Releasing new releases
+Normal dictionary lookup needs no Node.js, Python, model download or WASM file.
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+### Manual installation
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+Download `main.js`, `manifest.json` and `styles.css` from a GitHub release and copy them directly into:
 
-## Adding your plugin to the community plugin list
-
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
-
-## How to use
-
-- Clone this repo.
-- Make sure your NodeJS is at least v18 (`node --version`).
-- `npm i` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint
-
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-	"fundingUrl": "https://buymeacoffee.com"
-}
+```text
+<Vault>/.obsidian/plugins/mynary/
 ```
 
-If you have multiple URLs, you can also do:
+Then enable Mynary under **Settings → Community plugins**. Reload Obsidian after replacing plugin files.
 
-```json
-{
-	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com",
-		"GitHub Sponsor": "https://github.com/sponsors",
-		"Patreon": "https://www.patreon.com/"
-	}
-}
+## Basic usage
+
+### Look up selected text
+
+Select a word or phrase in a Markdown note, then:
+
+- Select **Lookup** from the editor context menu.
+- Run **Mynary Dictionary: Lookup selected word** from the Command Palette.
+- Use **Mod + Shift + L** (`Ctrl` on Windows/Linux, `Cmd` on macOS).
+- Open the dictionary sidebar and select **Lookup selected text**.
+
+On mobile, add **Mynary Dictionary: Lookup selected word** under **Settings → Mobile → Configure mobile toolbar**. The editor selection menu and sidebar also work on mobile.
+
+### Search from the sidebar
+
+Select the book icon in the ribbon, or run **Mynary Dictionary: Open dictionary sidebar**. Enter a word or phrase, choose the Wiktionary language, and press Enter.
+
+The sidebar indicates whether a result came from the local cache. Select **Refresh** to bypass the cache. The default selection limit is 80 characters or 8 words.
+
+## Understanding results
+
+Wiktionary entries can contain several levels of information. Mynary keeps the hierarchy where possible:
+
+```text
+Verb
+├── Transitive
+│   └── Definitions
+└── Intransitive
+    └── Definitions
 ```
 
-## API Documentation
+An inflected lookup may show:
 
-See https://docs.obsidian.md
+```text
+walked · Base form: walk (past tense)
+```
+
+Mynary first checks the exact Wiktionary entry. If it has no dictionary definitions, Mynary follows Wiktionary `form-of` information and then tries conservative English deinflection rules inspired by Yomitan. Candidate forms are looked up again before being accepted.
+
+Available fields depend on the entry. Missing information is left empty rather than invented.
+
+## Creating vocabulary notes
+
+After a lookup, select **Copy**, **Insert** or **Create note**, then choose a template.
+
+Configure these options under **Settings → Mynary Dictionary**:
+
+- **Note folder** — destination folder; empty means the vault root.
+- **Filename template** — for example `{{word}}` or `{{language}}-{{word}}`.
+- **Default template** — template selected by default.
+- **Existing note behavior** — ask before replacing, replace automatically, or update only the managed section.
+
+Missing folders are created automatically and unsafe filename characters are replaced.
+
+When using **Update section**, Mynary manages only the content between:
+
+```markdown
+<!-- mynary:lookup:start -->
+Generated dictionary content
+<!-- mynary:lookup:end -->
+```
+
+Keep personal content outside these markers. If the markers are missing, Mynary appends a new managed section.
+
+## Templates
+
+Open **Settings → Mynary Dictionary → Manage templates** to create, edit, duplicate, delete or restore templates. Variables are case-insensitive; `{{Title}}` is an alias for `{{word}}`.
+
+| Variable | Description |
+| --- | --- |
+| `{{word}}` / `{{Title}}` | Original lookup word or phrase |
+| `{{baseWord}}` | Base form when an inflected form was resolved |
+| `{{inflection}}` | Detected inflection description |
+| `{{language}}` | Wiktionary language code |
+| `{{definition}}` | First definition |
+| `{{definitions}}` | Definitions separated by new lines |
+| `{{definitionsMarkdown}}` | Definitions as a Markdown list |
+| `{{meaningsMarkdown}}` | Meanings grouped by part of speech, labels and etymology |
+| `{{IPA}}` | Pronunciation information |
+| `{{partOfSpeech}}` | Part-of-speech values |
+| `{{example}}` | First example |
+| `{{examples}}` | Examples separated by new lines |
+| `{{examplesMarkdown}}` | Examples as a Markdown list |
+| `{{translation}}` | Translations on one line |
+| `{{translations}}` | Translations separated by new lines |
+| `{{translationsMarkdown}}` | Translations grouped by sense |
+| `{{synonyms}}` | Synonyms separated by commas |
+| `{{antonyms}}` | Antonyms separated by commas |
+| `{{etymology}}` | Etymology text |
+| `{{source}}` | Source name |
+| `{{sourceUrl}}` | Link to the source entry |
+| `{{lookupDate}}` | Lookup date in `YYYY-MM-DD` format |
+
+Optional sections can use conditional blocks:
+
+```markdown
+{{#if IPA}}
+**IPA:** {{IPA}}
+{{/if}}
+```
+
+## Optional Supertonic text-to-speech
+
+Supertonic is disabled by default and is not required for dictionary lookup. Wiktionary pronunciation text and available Wiktionary audio work without it.
+
+### Web runtime
+
+1. Enable **Supertonic local TTS** under **Settings → Mynary Dictionary**.
+2. Keep **Supertonic runtime** set to **Web**.
+3. Download the matching `ort-wasm-simd-threaded.jsep.wasm` file from the `onnxruntime-web` package/release.
+4. Place it next to `main.js` in the Mynary plugin folder.
+5. Use **Generate TTS**, **Read selected text with supertonic**, or **Mod + Shift + R**.
+
+The first Web runtime use downloads the Supertonic ONNX models from Hugging Face. These models may be large. If the WASM file is missing, Mynary shows an installation message and dictionary lookup continues to work.
+
+### Local server runtime
+
+Install Supertonic separately in a Python environment:
+
+```bash
+pip install supertonic
+supertonic serve --host 127.0.0.1 --port 7788
+```
+
+Select **Local server** under **Settings → Mynary Dictionary → Supertonic runtime**. The default endpoint is `http://127.0.0.1:7788/v1/tts`.
+
+The local server must be running whenever speech is generated. Supertonic supports fewer languages than Wiktionary; unsupported languages keep Wiktionary pronunciation and disable Supertonic generation.
+
+## Supported dictionary languages
+
+The language selector includes Arabic, Bulgarian, Chinese, Croatian, Czech, Danish, Dutch, English, Estonian, Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Latvian, Lithuanian, Norwegian, Polish, Portuguese, Romanian, Russian, Slovak, Slovenian, Spanish, Swedish, Thai, Turkish, Ukrainian and Vietnamese.
+
+Coverage varies by language and entry. Every result links to its original Wiktionary page for verification.
+
+## Cache and privacy
+
+Lookup results and the Recent list are stored in Obsidian's local plugin data.
+
+Default settings:
+
+- Cache lifetime: 7 days
+- Maximum cached entries: 100
+- Recent lookup history: 20 words
+- Request timeout: 15 seconds
+
+Mynary has no telemetry, analytics, advertising or account system. It does not scan or index the vault. The requested word or phrase and selected language are sent to the public Wiktionary API; large entries may also request the public `/translations` subpage.
+
+If Supertonic Web is enabled, model and voice assets are requested from Hugging Face. If Supertonic Local server is enabled, selected text is sent to the configured local endpoint.
+
+## Development
+
+Requirements: Node.js 18 or newer and npm.
+
+```bash
+npm install
+npm test
+npm run lint
+npm run build
+```
+
+Use `npm run dev` for esbuild watch mode. The production build writes `main.js` to the plugin root. Standard release files are `main.js`, `manifest.json` and `styles.css`; the optional Web TTS WASM file is not part of the standard Community Plugin installation.
+
+## Project structure
+
+```text
+src/
+  main.ts                    Plugin lifecycle, commands and views
+  providers/                 Wiktionary, language registry and TTS runtimes
+  services/                  Local cache management
+  templates/                 Template rendering and note generation
+  ui/                        Modals and confirmation dialogs
+  utils/                     Selection and result formatting
+  settings.ts                Settings, defaults and migration
+```
+
+## License
+
+Mynary is distributed under the MIT License. See [LICENSE](LICENSE).

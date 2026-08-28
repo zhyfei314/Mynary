@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
-	"minAppVersion": "1.0.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"id": "mynary",
+	"name": "Mynary Dictionary",
+	"version": "1.1.0",
+	"minAppVersion": "1.7.2",
+	"description": "Look up words with Wiktionary and create personalized vocabulary notes.",
+	"author": "zhyfei314",
+	"authorUrl": "https://github.com/zhyfei314",
+	"fundingUrl": "https://github.com/zhyfei314/Mynary",
 	"isDesktopOnly": false
 }
