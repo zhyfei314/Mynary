@@ -1,7 +1,6 @@
 import { DictionaryEntry } from '../types';
-import { normalizeEntry, parseFormOfLinks, parseWiktionaryHtml } from './wiktionary-html-parser';
+import { normalizeEntry, parseWiktionaryHtml } from './wiktionary-html-parser';
 import type { TtsProvider } from './supertonic';
-import { getEnglishDeinflections } from './english-deinflector';
 
 export interface WiktionaryHttpResponse { status: number; json: unknown; }
 export type WiktionaryRequester = (url: string) => Promise<WiktionaryHttpResponse>;
@@ -28,35 +27,15 @@ export class WiktionaryProvider {
 		const direct = await this.fetchPage(baseUrl, requestedTitle);
 		if (direct.html && direct.title) {
 			const entry = await this.parsePage(baseUrl, word, language, direct.title, direct.html);
-			if (entry.meanings.length) return entry;
-			const formOfEntry = await this.lookupFormOfLinks(baseUrl, direct.html, word, language);
-			if (formOfEntry) return formOfEntry;
+			return entry;
 		}
 		const lowercaseTitle = requestedTitle.toLocaleLowerCase();
 		if (lowercaseTitle !== requestedTitle) {
 			const lowercase = await this.fetchPage(baseUrl, lowercaseTitle);
 			if (lowercase.html && lowercase.title) {
 				const entry = await this.parsePage(baseUrl, word, language, lowercase.title, lowercase.html);
-				if (entry.meanings.length) return entry;
-				const formOfEntry = await this.lookupFormOfLinks(baseUrl, lowercase.html, word, language);
-				if (formOfEntry) return formOfEntry;
+				return entry;
 			}
-		}
-		if (language === 'en') {
-			const resolved: DictionaryEntry[] = [];
-			const bases: string[] = [];
-			const reasons: string[] = [];
-			for (const candidate of getEnglishDeinflections(requestedTitle)) {
-				let page: { title?: string; html?: string };
-				try { page = await this.fetchPage(baseUrl, candidate.word); } catch { continue; }
-				if (!page.html || !page.title) continue;
-				const entry = await this.parsePage(baseUrl, word, language, page.title, page.html);
-				if (!entry.meanings.length) continue;
-				resolved.push(entry);
-				bases.push(page.title);
-				reasons.push(candidate.reason);
-			}
-			if (resolved.length) return mergeResolvedEntries(word, resolved, bases, reasons);
 		}
 
 		// Wiktionary can keep a lowercase entry such as `hello` while a user
@@ -70,24 +49,10 @@ export class WiktionaryProvider {
 			const resolved = await this.fetchPage(baseUrl, resolvedTitle);
 			if (resolved.html && resolved.title) {
 				const entry = await this.parsePage(baseUrl, word, language, resolved.title, resolved.html);
-				if (entry.meanings.length) return entry;
+				return entry;
 			}
 		}
 		throw new Error(`No entry found for “${word}”.`);
-	}
-
-	private async lookupFormOfLinks(baseUrl: string, html: string, word: string, language: string) {
-		const resolved: DictionaryEntry[] = [];
-		const bases: string[] = [];
-		for (const lemma of parseFormOfLinks(html, language)) {
-			if (lemma.toLocaleLowerCase() === word.trim().toLocaleLowerCase()) continue;
-			let page: { title?: string; html?: string };
-			try { page = await this.fetchPage(baseUrl, lemma); } catch { continue; }
-			if (!page.html || !page.title) continue;
-			const entry = await this.parsePage(baseUrl, word, language, page.title, page.html);
-			if (entry.meanings.length) { resolved.push(entry); bases.push(page.title); }
-		}
-		return resolved.length ? mergeResolvedEntries(word, resolved, bases, ['Wiktionary form-of link']) : undefined;
 	}
 
 	private async fetchPage(baseUrl: string, title: string): Promise<{ title?: string; html?: string }> {
@@ -146,21 +111,4 @@ export class WiktionaryProvider {
 	private assertSuccess(status: number) {
 		if (status < 200 || status >= 300) throw new Error(`Wiktionary request failed (${status}).`);
 	}
-}
-
-function mergeResolvedEntries(word: string, entries: DictionaryEntry[], bases: string[], reasons: string[]): DictionaryEntry {
-	const first = entries[0];
-	if (!first) throw new Error('No resolved dictionary entry.');
-	return normalizeEntry({
-		...first,
-		word,
-		baseWord: [...new Set(bases)].join(', '),
-		inflection: [...new Set(reasons)].join('; '),
-		phonetics: entries.flatMap((entry) => entry.phonetics),
-		meanings: entries.flatMap((entry) => entry.meanings),
-		translations: entries.flatMap((entry) => entry.translations),
-		synonyms: entries.flatMap((entry) => entry.synonyms),
-		antonyms: entries.flatMap((entry) => entry.antonyms),
-		etymology: [...new Set(entries.map((entry) => entry.etymology).filter(Boolean))].join(' · ') || undefined,
-	});
 }

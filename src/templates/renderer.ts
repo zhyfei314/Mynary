@@ -1,17 +1,15 @@
 import { DictionaryEntry } from '../types';
 
 export function renderTemplate(entry: DictionaryEntry, template: string): string {
-	const definitions = entry.meanings.flatMap((meaning) => meaning.definitions.map((definition) => definition.text));
+	const definitions = entry.meanings.flatMap((meaning) => meaning.definitions.map(renderDefinitionMarkdown));
 	const examples = entry.meanings.flatMap((meaning) => meaning.definitions.flatMap((definition) => definition.examples));
 	const meaningsMarkdown = entry.meanings.map((meaning) => {
 		const label = [[meaning.partOfSpeech, ...(meaning.labels ?? [])].filter(Boolean).join(' · '), meaning.etymology].filter(Boolean).join(' — ');
 		const heading = label ? `### ${label}\n` : '';
-		return `${heading}${meaning.definitions.map((definition) => `- ${definition.text}`).join('\n')}`;
+		return `${heading}${meaning.definitions.map((definition) => `- ${renderDefinitionMarkdown(definition)}`).join('\n')}`;
 	}).join('\n\n');
 	const values: Record<string, string> = {
 		word: entry.word,
-		baseWord: entry.baseWord ?? '',
-		inflection: entry.inflection ?? '',
 		language: entry.language,
 		IPA: entry.phonetics.map((phonetic) => phonetic.text).join(', '),
 		partOfSpeech: entry.meanings.map((meaning) => meaning.partOfSpeech).filter(Boolean).join(', '),
@@ -27,7 +25,7 @@ export function renderTemplate(entry: DictionaryEntry, template: string): string
 		source: entry.source.name,
 		sourceUrl: entry.source.url,
 		lookupDate: new Date(entry.fetchedAt).toISOString().slice(0, 10),
-		definitionsMarkdown: definitions.map((definition) => `- ${definition}`).join('\n'),
+		definitionsMarkdown: entry.meanings.flatMap((meaning) => meaning.definitions.map((definition) => `- ${renderDefinitionMarkdown(definition)}`)).join('\n'),
 		meaningsMarkdown,
 		examplesMarkdown: examples.map((example) => `- ${example}`).join('\n'),
 		translationsMarkdown: renderTranslationsMarkdown(entry.translations),
@@ -47,6 +45,15 @@ export function renderTemplate(entry: DictionaryEntry, template: string): string
 	const resolve = (key: string) => lookup.get((aliases[key.toLocaleLowerCase()] ?? key).toLocaleLowerCase()) ?? '';
 	const withConditionals = renderConditionalBlocks(template, (key) => Boolean(resolve(key).trim()));
 	return withConditionals.replace(/\{\{\s*([\w]+)\s*\}\}/g, (_match, key: string) => resolve(key));
+}
+
+function renderDefinitionMarkdown(definition: DictionaryEntry['meanings'][number]['definitions'][number]) {
+	let output = definition.text;
+	for (const link of definition.links ?? []) {
+		const escaped = link.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		output = output.replace(new RegExp(`\\b${escaped}\\b`), link.target === link.text ? `[[${link.target}]]` : `[[${link.target}|${link.text}]]`);
+	}
+	return output;
 }
 
 function renderTranslationsMarkdown(translations: DictionaryEntry['translations']): string {

@@ -47,14 +47,14 @@ Depending on the entry, Mynary can show:
 - usage labels such as **Transitive**, **Intransitive**, **Countable**, and **Uncountable**;
 - examples, pronunciation, Wiktionary audio, translations, synonyms, antonyms, and etymology.
 
-When you look up an inflected form, Mynary tries to find its dictionary form while keeping the original word visible. For example:
+Mynary keeps each entry exactly as Wiktionary presents it. It does not silently replace an inflected or ambiguous word with a guessed root. When Wiktionary provides a link such as `destroy` or `run`, Mynary keeps that link available in the result. In generated Markdown, those links become Obsidian links:
 
 ```text
-walked → walk
-tries → try, trie
+third-person singular simple present indicative of [[destroy]]
+plural of [[run]]
 ```
 
-When more than one base form is possible, Mynary keeps the valid alternatives and makes them clickable. Select a base form to look it up directly. Results always include a link back to the original Wiktionary entry.
+Select a linked word to look it up directly in Mynary. The popup and dictionary sidebar use the same result renderer, so definitions, labels, examples, and Wiktionary links stay consistent between both views.
 
 ## Save what you learned
 
@@ -86,13 +86,11 @@ Open **Settings → Mynary Dictionary → Manage templates** to create, edit, du
 | Variable | What it contains |
 | --- | --- |
 | `{{word}}` / `{{Title}}` | The original word or phrase |
-| `{{baseWord}}` | The base form or forms, when found |
-| `{{inflection}}` | How the base form was detected |
 | `{{language}}` | Wiktionary language code |
-| `{{definition}}` | The first definition |
-| `{{definitions}}` | All definitions, one per line |
-| `{{definitionsMarkdown}}` | Definitions as a Markdown list |
-| `{{meaningsMarkdown}}` | Definitions grouped by part of speech and labels |
+| `{{definition}}` | The first definition, including Wiktionary links |
+| `{{definitions}}` | All definitions, one per line, including Wiktionary links |
+| `{{definitionsMarkdown}}` | Definitions as a Markdown list with Wiktionary links |
+| `{{meaningsMarkdown}}` | Definitions grouped by part of speech and labels, with Wiktionary links |
 | `{{IPA}}` | Pronunciation information |
 | `{{partOfSpeech}}` | Part-of-speech values |
 | `{{example}}` | The first example |

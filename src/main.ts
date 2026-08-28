@@ -29,7 +29,7 @@ import type { TemplateAction } from './ui/template-modals';
 import type { DeclarativeSettingDefinition } from './settings-definitions';
 
 export const VIEW_TYPE_DICTIONARY = 'mynary-dictionary-view';
-const CACHE_FORMAT_VERSION = 'v6';
+const CACHE_FORMAT_VERSION = 'v7';
 const requestWiktionary: WiktionaryRequester = async (url): Promise<WiktionaryHttpResponse> => {
 	const response = await requestUrl(url);
 	return { status: response.status, json: response.json as unknown };
@@ -212,7 +212,7 @@ export default class MynaryPlugin extends Plugin {
 	private async hasWebTtsRuntime() {
 		const path = `${this.manifest.dir}/ort-wasm-simd-threaded.jsep.wasm`;
 		if (await this.app.vault.adapter.exists(path)) return true;
-		new Notice('Web supertonic runtime is not installed. Add the optional wasm file to the Mynary plugin folder, or select local server in settings.');
+		new Notice('Web supertonic runtime is not installed. Add the optional wasm file to the plugin folder, or select local server in settings.');
 		return false;
 	}
 
