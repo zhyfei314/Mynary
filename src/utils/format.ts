@@ -8,7 +8,15 @@ export function renderEntry(container: HTMLElement, entry: DictionaryEntry, plug
 	const metadata = container.createDiv('mynary-entry-metadata');
 	metadata.createSpan({ text: plugin.lastLookupWasCached ? 'Cached result' : 'Fresh result' });
 	metadata.createSpan({ text: ` · ${entry.language.toUpperCase()}` });
-	if (entry.baseWord) metadata.createSpan({ text: ` · Base form: ${entry.baseWord} (${entry.inflection ?? 'inflected form'})` });
+	if (entry.baseWord) {
+		metadata.createSpan({ text: ' · Base form: ' });
+		const bases = entry.baseWord.split(',').map((base) => base.trim()).filter(Boolean);
+		bases.forEach((base, index) => {
+			if (index > 0) metadata.createSpan({ text: ', ' });
+			renderLookupLink(metadata, base, entry.language, plugin);
+		});
+		metadata.createSpan({ text: ` (${entry.inflection ?? 'inflected form'})` });
+	}
 	if (entry.phonetics.length) renderPronunciations(container, entry.phonetics, plugin, entry.word, entry.language);
 	const definitions = container.createDiv('mynary-definitions');
 	const totalDefinitions = entry.meanings.reduce((total, meaning) => total + meaning.definitions.length, 0);
@@ -52,6 +60,15 @@ export function renderEntry(container: HTMLElement, entry: DictionaryEntry, plug
 	const refresh = actions.createEl('button', { text: 'Refresh' });
 	refresh.addEventListener('click', () => void plugin.refreshLookup());
 	const source = container.createEl('a', { text: `Source: ${entry.source.name}`, href: entry.source.url, cls: 'mynary-source' }); source.target = '_blank';
+}
+
+function renderLookupLink(container: HTMLElement, word: string, language: string, plugin: MynaryPlugin) {
+	const link = container.createEl('a', { text: word, href: '#', cls: 'mynary-word-link' });
+	link.setAttribute('aria-label', `Look up ${word}`);
+	link.addEventListener('click', (event) => {
+		event.preventDefault();
+		void plugin.lookup(word, language);
+	});
 }
 
 function renderPronunciations(container: HTMLElement, pronunciations: DictionaryEntry['phonetics'], plugin: MynaryPlugin, word: string, language: string) {

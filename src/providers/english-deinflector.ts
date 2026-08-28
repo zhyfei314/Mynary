@@ -23,12 +23,17 @@ export function getEnglishDeinflections(input: string): EnglishDeinflection[] {
 		if (word === form) add(lemma, 'irregular past tense');
 	}
 
-	if (word.endsWith('ies')) add(`${word.slice(0, -3)}y`, 'third-person singular or plural');
+	if (word.endsWith('ies')) {
+		// A form such as `tries` can resolve to both `try` and `trie`.
+		// Keep both plausible lemmas and let Wiktionary verify them.
+		add(`${word.slice(0, -3)}y`, 'third-person singular or plural');
+		add(word.slice(0, -1), 'third-person singular or plural');
+	}
 	if (word.endsWith('ves')) {
 		add(`${word.slice(0, -3)}f`, 'plural');
 		add(`${word.slice(0, -3)}fe`, 'plural');
 	}
-	if (word.endsWith('es')) add(word.slice(0, -2), 'third-person singular or plural');
+	if (word.endsWith('es') && /(?:ches|shes|xes|zes|sses|oes)$/.test(word)) add(word.slice(0, -2), 'third-person singular or plural');
 	if (word.endsWith('s') && !word.endsWith('ss')) add(word.slice(0, -1), 'third-person singular or plural');
 
 	if (word.endsWith('ied')) add(`${word.slice(0, -3)}y`, 'past tense');

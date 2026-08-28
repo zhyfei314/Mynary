@@ -1,33 +1,22 @@
 # Mynary Dictionary
 
-Mynary is an Obsidian plugin for looking up words and short phrases with Wiktionary and turning lookup results into vocabulary notes.
+Look up a word while you are reading, understand how it is used, and save it as a vocabulary note — without leaving Obsidian.
 
-## What it does
+Mynary uses Wiktionary for dictionary data and is designed to stay out of your way. Select a word, look it up, and keep going.
 
-- Looks up selected words or phrases and searches from a dictionary sidebar.
-- Shows definitions, parts of speech, sense labels, examples, pronunciation, translations, synonyms, antonyms and etymology when available.
-- Resolves many inflected forms to a dictionary form, such as `walked` → `walk` and `tries` → `try`.
-- Preserves the original lookup word while showing the detected base form.
-- Copies results, inserts them into the active note, or creates a vocabulary note.
-- Provides editable Markdown templates and a local lookup cache.
-- Works on desktop and mobile.
+## Get started
 
-Mynary uses the public Wiktionary API. It does not include an offline dictionary or offline translation database.
-
-## Installation
-
-### Community Plugins
+### Install from Community Plugins
 
 1. Open **Settings → Community plugins**.
-2. Turn off Restricted mode if Obsidian asks you to do so.
-3. Search for **Mynary Dictionary**.
-4. Select **Install**, then **Enable**.
+2. If Obsidian asks, turn off Restricted mode.
+3. Search for **Mynary Dictionary**, then select **Install** and **Enable**.
 
-Normal dictionary lookup needs no Node.js, Python, model download or WASM file.
+That is all you need for dictionary lookups. Node.js, Python, model downloads, and the optional TTS WASM file are not required.
 
-### Manual installation
+### Install manually
 
-Download `main.js`, `manifest.json` and `styles.css` from a GitHub release and copy them directly into:
+Download `main.js`, `manifest.json`, and `styles.css` from a GitHub release. Copy them into:
 
 ```text
 <Vault>/.obsidian/plugins/mynary/
@@ -35,61 +24,52 @@ Download `main.js`, `manifest.json` and `styles.css` from a GitHub release and c
 
 Then enable Mynary under **Settings → Community plugins**. Reload Obsidian after replacing plugin files.
 
-## Basic usage
+## Look up a word
 
-### Look up selected text
-
-Select a word or phrase in a Markdown note, then:
+The quickest way is to select a word or short phrase in a Markdown note and choose one of these options:
 
 - Select **Lookup** from the editor context menu.
 - Run **Mynary Dictionary: Lookup selected word** from the Command Palette.
-- Use **Mod + Shift + L** (`Ctrl` on Windows/Linux, `Cmd` on macOS).
-- Open the dictionary sidebar and select **Lookup selected text**.
+- Press **Mod + Shift + L** (`Ctrl` on Windows/Linux, `Cmd` on macOS).
+- Open the dictionary sidebar and search there.
 
-On mobile, add **Mynary Dictionary: Lookup selected word** under **Settings → Mobile → Configure mobile toolbar**. The editor selection menu and sidebar also work on mobile.
+On mobile, add **Mynary Dictionary: Lookup selected word** to **Settings → Mobile → Configure mobile toolbar**. The selection menu and sidebar work there too.
 
-### Search from the sidebar
+To keep the sidebar open, select the book icon in the ribbon or run **Mynary Dictionary: Open dictionary sidebar**. Type a word or phrase, choose a Wiktionary language, and press Enter.
 
-Select the book icon in the ribbon, or run **Mynary Dictionary: Open dictionary sidebar**. Enter a word or phrase, choose the Wiktionary language, and press Enter.
+Mynary accepts selections up to 80 characters or 8 words by default. Longer selections can still be looked up exactly or reduced to their first word.
 
-The sidebar indicates whether a result came from the local cache. Select **Refresh** to bypass the cache. The default selection limit is 80 characters or 8 words.
+## What you will see
 
-## Understanding results
+Depending on the entry, Mynary can show:
 
-Wiktionary entries can contain several levels of information. Mynary keeps the hierarchy where possible:
+- definitions grouped by part of speech;
+- usage labels such as **Transitive**, **Intransitive**, **Countable**, and **Uncountable**;
+- examples, pronunciation, Wiktionary audio, translations, synonyms, antonyms, and etymology.
 
-```text
-Verb
-├── Transitive
-│   └── Definitions
-└── Intransitive
-    └── Definitions
-```
-
-An inflected lookup may show:
+When you look up an inflected form, Mynary tries to find its dictionary form while keeping the original word visible. For example:
 
 ```text
-walked · Base form: walk (past tense)
+walked → walk
+tries → try, trie
 ```
 
-Mynary first checks the exact Wiktionary entry. If it has no dictionary definitions, Mynary follows Wiktionary `form-of` information and then tries conservative English deinflection rules inspired by Yomitan. Candidate forms are looked up again before being accepted.
+When more than one base form is possible, Mynary keeps the valid alternatives and makes them clickable. Select a base form to look it up directly. Results always include a link back to the original Wiktionary entry.
 
-Available fields depend on the entry. Missing information is left empty rather than invented.
+## Save what you learned
 
-## Creating vocabulary notes
+After a lookup, choose **Copy**, **Insert**, or **Create note**, then select a template.
 
-After a lookup, select **Copy**, **Insert** or **Create note**, then choose a template.
+You can manage this workflow under **Settings → Mynary Dictionary**:
 
-Configure these options under **Settings → Mynary Dictionary**:
-
-- **Note folder** — destination folder; empty means the vault root.
+- **Note folder** — where new vocabulary notes go. Leave it empty to use the vault root.
 - **Filename template** — for example `{{word}}` or `{{language}}-{{word}}`.
-- **Default template** — template selected by default.
-- **Existing note behavior** — ask before replacing, replace automatically, or update only the managed section.
+- **Default template** — the template selected first.
+- **Existing note behavior** — ask before replacing, replace automatically, or update only Mynary's managed section.
 
-Missing folders are created automatically and unsafe filename characters are replaced.
+Mynary creates missing folders automatically and replaces unsafe filename characters.
 
-When using **Update section**, Mynary manages only the content between:
+When you choose **Update section**, only the content between these markers is managed:
 
 ```markdown
 <!-- mynary:lookup:start -->
@@ -97,29 +77,29 @@ Generated dictionary content
 <!-- mynary:lookup:end -->
 ```
 
-Keep personal content outside these markers. If the markers are missing, Mynary appends a new managed section.
+Anything outside the markers is left alone. If the markers are not present, Mynary appends a new managed section.
 
-## Templates
+## Make the notes yours with templates
 
-Open **Settings → Mynary Dictionary → Manage templates** to create, edit, duplicate, delete or restore templates. Variables are case-insensitive; `{{Title}}` is an alias for `{{word}}`.
+Open **Settings → Mynary Dictionary → Manage templates** to create, edit, duplicate, delete, or restore templates. Variable names are case-insensitive, so `{{Title}}` is the same as `{{word}}`.
 
-| Variable | Description |
+| Variable | What it contains |
 | --- | --- |
-| `{{word}}` / `{{Title}}` | Original lookup word or phrase |
-| `{{baseWord}}` | Base form when an inflected form was resolved |
-| `{{inflection}}` | Detected inflection description |
+| `{{word}}` / `{{Title}}` | The original word or phrase |
+| `{{baseWord}}` | The base form or forms, when found |
+| `{{inflection}}` | How the base form was detected |
 | `{{language}}` | Wiktionary language code |
-| `{{definition}}` | First definition |
-| `{{definitions}}` | Definitions separated by new lines |
+| `{{definition}}` | The first definition |
+| `{{definitions}}` | All definitions, one per line |
 | `{{definitionsMarkdown}}` | Definitions as a Markdown list |
-| `{{meaningsMarkdown}}` | Meanings grouped by part of speech, labels and etymology |
+| `{{meaningsMarkdown}}` | Definitions grouped by part of speech and labels |
 | `{{IPA}}` | Pronunciation information |
 | `{{partOfSpeech}}` | Part-of-speech values |
-| `{{example}}` | First example |
-| `{{examples}}` | Examples separated by new lines |
+| `{{example}}` | The first example |
+| `{{examples}}` | All examples, one per line |
 | `{{examplesMarkdown}}` | Examples as a Markdown list |
 | `{{translation}}` | Translations on one line |
-| `{{translations}}` | Translations separated by new lines |
+| `{{translations}}` | Translations, one per line |
 | `{{translationsMarkdown}}` | Translations grouped by sense |
 | `{{synonyms}}` | Synonyms separated by commas |
 | `{{antonyms}}` | Antonyms separated by commas |
@@ -128,7 +108,7 @@ Open **Settings → Mynary Dictionary → Manage templates** to create, edit, du
 | `{{sourceUrl}}` | Link to the source entry |
 | `{{lookupDate}}` | Lookup date in `YYYY-MM-DD` format |
 
-Optional sections can use conditional blocks:
+You can hide optional sections when they are empty:
 
 ```markdown
 {{#if IPA}}
@@ -136,23 +116,23 @@ Optional sections can use conditional blocks:
 {{/if}}
 ```
 
-## Optional Supertonic text-to-speech
+## Optional text-to-speech
 
-Supertonic is disabled by default and is not required for dictionary lookup. Wiktionary pronunciation text and available Wiktionary audio work without it.
+Dictionary lookup does not need Supertonic. It is an optional feature for generating pronunciation audio or reading selected text aloud.
 
 ### Web runtime
 
-1. Enable **Supertonic local TTS** under **Settings → Mynary Dictionary**.
+1. Enable **Supertonic local TTS** in **Settings → Mynary Dictionary**.
 2. Keep **Supertonic runtime** set to **Web**.
-3. Download the matching `ort-wasm-simd-threaded.jsep.wasm` file from the `onnxruntime-web` package/release.
+3. Download `ort-wasm-simd-threaded.jsep.wasm` from the matching `onnxruntime-web` package or release.
 4. Place it next to `main.js` in the Mynary plugin folder.
 5. Use **Generate TTS**, **Read selected text with supertonic**, or **Mod + Shift + R**.
 
-The first Web runtime use downloads the Supertonic ONNX models from Hugging Face. These models may be large. If the WASM file is missing, Mynary shows an installation message and dictionary lookup continues to work.
+The first Web runtime use downloads the Supertonic ONNX models from Hugging Face, so it may take a little longer and use a substantial amount of storage. If the WASM file is missing, dictionary lookup continues to work and Mynary shows a setup message when speech is requested.
 
 ### Local server runtime
 
-Install Supertonic separately in a Python environment:
+Install Supertonic in a Python environment:
 
 ```bash
 pip install supertonic
@@ -161,30 +141,28 @@ supertonic serve --host 127.0.0.1 --port 7788
 
 Select **Local server** under **Settings → Mynary Dictionary → Supertonic runtime**. The default endpoint is `http://127.0.0.1:7788/v1/tts`.
 
-The local server must be running whenever speech is generated. Supertonic supports fewer languages than Wiktionary; unsupported languages keep Wiktionary pronunciation and disable Supertonic generation.
+The server must be running whenever speech is generated. Supertonic supports fewer languages than Wiktionary; for unsupported languages, Mynary keeps the Wiktionary pronunciation and disables Supertonic generation.
 
-## Supported dictionary languages
+## Languages
 
-The language selector includes Arabic, Bulgarian, Chinese, Croatian, Czech, Danish, Dutch, English, Estonian, Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Latvian, Lithuanian, Norwegian, Polish, Portuguese, Romanian, Russian, Slovak, Slovenian, Spanish, Swedish, Thai, Turkish, Ukrainian and Vietnamese.
+The language selector includes Arabic, Bulgarian, Chinese, Croatian, Czech, Danish, Dutch, English, Estonian, Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Latvian, Lithuanian, Norwegian, Polish, Portuguese, Romanian, Russian, Slovak, Slovenian, Spanish, Swedish, Thai, Turkish, Ukrainian, and Vietnamese.
 
-Coverage varies by language and entry. Every result links to its original Wiktionary page for verification.
+Wiktionary coverage varies by language and by entry. When in doubt, follow the source link in the result and verify the original entry.
 
 ## Cache and privacy
 
-Lookup results and the Recent list are stored in Obsidian's local plugin data.
+Mynary stores lookup results and recent searches in Obsidian's local plugin data. The defaults are:
 
-Default settings:
+- cache lifetime: 7 days;
+- maximum cached entries: 100;
+- recent searches: 20 words;
+- request timeout: 15 seconds.
 
-- Cache lifetime: 7 days
-- Maximum cached entries: 100
-- Recent lookup history: 20 words
-- Request timeout: 15 seconds
+There is no telemetry, advertising, analytics, or account system. Mynary does not scan or index your vault. The word or phrase you look up, along with the selected language, is sent to the public Wiktionary API. Large entries may also request their public `/translations` subpage.
 
-Mynary has no telemetry, analytics, advertising or account system. It does not scan or index the vault. The requested word or phrase and selected language are sent to the public Wiktionary API; large entries may also request the public `/translations` subpage.
+If Web Supertonic is enabled, model and voice assets are requested from Hugging Face. If Local server is enabled, selected text is sent only to the endpoint configured in Mynary's settings.
 
-If Supertonic Web is enabled, model and voice assets are requested from Hugging Face. If Supertonic Local server is enabled, selected text is sent to the configured local endpoint.
-
-## Development
+## For contributors
 
 Requirements: Node.js 18 or newer and npm.
 
@@ -195,19 +173,18 @@ npm run lint
 npm run build
 ```
 
-Use `npm run dev` for esbuild watch mode. The production build writes `main.js` to the plugin root. Standard release files are `main.js`, `manifest.json` and `styles.css`; the optional Web TTS WASM file is not part of the standard Community Plugin installation.
+Use `npm run dev` for esbuild watch mode. The production build writes `main.js` to the plugin root.
 
-## Project structure
+The main source folders are:
 
 ```text
 src/
-  main.ts                    Plugin lifecycle, commands and views
-  providers/                 Wiktionary, language registry and TTS runtimes
-  services/                  Local cache management
-  templates/                 Template rendering and note generation
-  ui/                        Modals and confirmation dialogs
-  utils/                     Selection and result formatting
-  settings.ts                Settings, defaults and migration
+  main.ts          Plugin lifecycle, commands, and views
+  providers/       Wiktionary parsing and TTS runtimes
+  services/        Local cache management
+  templates/       Template rendering and note generation
+  ui/              Modals and dialogs
+  utils/           Selection and result formatting
 ```
 
 ## License

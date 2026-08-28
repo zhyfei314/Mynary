@@ -3,7 +3,7 @@ import { getLanguageHeadingAliases, getSectionAliases } from './language-registr
 
 const NON_MEANING_HEADINGS = new Set([
 	'alternative forms', 'alternative spellings', 'etymology', 'pronunciation', 'usage notes',
-	'derived terms', 'descendants', 'translations', 'synonyms', 'antonyms', 'references',
+	'derived terms', 'descendants', 'translations', 'synonyms', 'antonyms', 'references', 'conjugation', 'inflection',
 	'further reading', 'see also', 'anagrams', 'related words', 'coordinate terms',
 	'từ nguyên', 'cách phát âm', 'bản dịch', 'từ đồng nghĩa', 'từ trái nghĩa', 'tham khảo',
 	'語源', '発音', '翻訳', '類義語', '対義語', '参考',
@@ -37,9 +37,10 @@ export function parseFormOfLinks(html: string, language: string, documentFactory
 	const document = documentFactory(html);
 	const values = Array.from(document.querySelectorAll('a')).filter((link) => {
 		const className = link.className.toString().toLocaleLowerCase();
-		const text = link.parentElement?.textContent?.toLocaleLowerCase() ?? '';
-		return className.includes('form-of') || /\b(?:form|forms) of\b/.test(text);
-	}).map((link) => cleanText(link.textContent ?? '')).filter(Boolean);
+		const formOfAncestor = link.closest('[class*="form-of"], [class*="form_of"]');
+		const text = link.closest('li, p')?.textContent?.toLocaleLowerCase() ?? link.parentElement?.textContent?.toLocaleLowerCase() ?? '';
+		return className.includes('form-of') || Boolean(formOfAncestor) || looksLikeFormOfText(text);
+	}).map((link) => formOfTarget(link, language)).filter((value): value is string => Boolean(value));
 	return [...new Set(values)].filter((value) => value.toLocaleLowerCase() !== language.toLocaleLowerCase());
 }
 
@@ -121,13 +122,29 @@ function parseMeanings(nodes: Element[], language: string): Meaning[] {
 		const block = nodesBetween(nodes, heading, nextAnyHeading(nodes, heading));
 		const list = block.find((node) => node.tagName === 'OL' && node.querySelector(':scope > li'));
 		if (!list) continue;
-		const definitions = Array.from(list.querySelectorAll(':scope > li')).map((item) => parseDefinition(item)).filter((item): item is Definition => Boolean(item));
-		if (!definitions.length) continue;
+		const parsedDefinitions = Array.from(list.querySelectorAll(':scope > li')).map((item) => parseDefinition(item)).filter((item): item is ParsedDefinition => Boolean(item));
+		if (!parsedDefinitions.length) continue;
 		const isPos = isPartOfSpeech(normalized);
 		const parent = nearestParentHeading(headings, heading);
-		const resolvedPartOfSpeech = isPos ? partOfSpeech : parent && isPartOfSpeech(headingText(parent).toLocaleLowerCase()) ? headingText(parent) : partOfSpeech;
-		const labels = isPos ? [] : [partOfSpeech];
-		meanings.push({ partOfSpeech: resolvedPartOfSpeech, ...(labels.length ? { labels } : {}), etymology: currentEtymology, definitions });
+		const parentPartOfSpeech = parent && isPartOfSpeech(headingText(parent).toLocaleLowerCase()) ? headingText(parent) : undefined;
+		const resolvedPartOfSpeech = isPos ? partOfSpeech : parentPartOfSpeech ?? partOfSpeech;
+		const listIndex = block.indexOf(list);
+		const contextLabels = extractContextLabels(listIndex < 0 ? block : block.slice(0, listIndex));
+		const headingLabels = isPos ? [...new Set([...extractLabels(partOfSpeech), ...contextLabels])] : [partOfSpeech];
+		const cleanPartOfSpeech = isPos ? stripLabelsFromPartOfSpeech(partOfSpeech) : resolvedPartOfSpeech;
+		const groups: Array<{ labels: string[]; definitions: Definition[] }> = [];
+		for (const parsed of parsedDefinitions) {
+			const labels = parsed.labels.length ? parsed.labels : headingLabels;
+			const previous = groups.at(-1);
+			if (previous && sameLabels(previous.labels, labels)) previous.definitions.push(parsed.definition);
+			else groups.push({ labels, definitions: [parsed.definition] });
+		}
+		groups.forEach((group) => meanings.push({
+			partOfSpeech: cleanPartOfSpeech,
+			...(group.labels.length ? { labels: group.labels } : {}),
+			etymology: currentEtymology,
+			definitions: group.definitions,
+		}));
 	}
 	return meanings;
 }
@@ -155,13 +172,69 @@ function isNonMeaningHeading(value: string, language: string) {
 		.some((alias) => value === alias.toLocaleLowerCase());
 }
 
-function parseDefinition(item: Element): Definition | undefined {
+interface ParsedDefinition { definition: Definition; labels: string[]; }
+
+function parseDefinition(item: Element): ParsedDefinition | undefined {
+	if (isFormOfDefinition(item)) return undefined;
+	const labels = extractDefinitionLabels(item);
 	const clone = item.cloneNode(true) as Element;
-	Array.from(clone.querySelectorAll('ol, ul, dl, blockquote, style, script, template, .citation, .reference, .references, .quotation, .quote, [class*="quote"], sup')).forEach((node) => node.remove());
-	const text = cleanText(clone.textContent ?? '');
+	Array.from(clone.querySelectorAll('ol, ul, dl, blockquote, style, script, template, .citation, .reference, .references, .quotation, .quote, [class*="quote"], [class*="usage-label"], [class*="qualifier-content"], [class*="ib-content"], [class*="gender"], sup')).forEach((node) => node.remove());
+	const text = cleanText((clone.textContent ?? '').replace(/^\s*\((?:transitive|intransitive|untransitive|countable|uncountable|mass noun|usually transitive|usually intransitive)[^)]*\)\s*/i, ''));
 	if (!text) return undefined;
 	const examples = Array.from(item.querySelectorAll('dl dd, .example, .e-example, .usage-example')).filter((node) => !isQuoteElement(node)).map((node) => cleanText(node.textContent ?? '')).filter(Boolean);
-	return { text, examples: [...new Set(examples)] };
+	return { definition: { text, examples: [...new Set(examples)] }, labels };
+}
+
+const DEFINITION_LABELS = new Set([
+	'transitive', 'intransitive', 'untransitive', 'ditransitive', 'ambitransitive', 'reflexive',
+	'countable', 'uncountable', 'mass noun', 'usually transitive', 'usually intransitive',
+	'plural', 'singular', 'archaic', 'obsolete', 'rare', 'formal', 'informal', 'literary',
+]);
+const LABEL_SELECTORS = '[class*="usage-label"], [class*="qualifier-content"], [class*="ib-content"], [class*="gender"]';
+
+function extractDefinitionLabels(item: Element): string[] {
+	const values = Array.from(item.querySelectorAll(LABEL_SELECTORS))
+		.flatMap((node) => splitLabels(node.textContent ?? ''));
+	const leading = cleanText(item.textContent ?? '').match(/^\(?\s*([^)]{2,50})\s*\)?\s*(?=\S)/)?.[1];
+	if (leading && DEFINITION_LABELS.has(leading.trim().toLocaleLowerCase())) values.push(leading);
+	return [...new Set(values.map(normalizeLabel).filter(Boolean))];
+}
+
+function extractContextLabels(nodes: Element[]) {
+	return [...new Set(nodes.flatMap((node) => {
+		const labelNodes = [
+			...(node.matches(LABEL_SELECTORS) ? [node] : []),
+			...Array.from(node.querySelectorAll(LABEL_SELECTORS)),
+		];
+		return labelNodes.flatMap((label) => splitLabels(label.textContent ?? '')).map(normalizeLabel);
+	}))];
+}
+
+function splitLabels(value: string) {
+	return value.split(/[,;·]|\s+or\s+/i).map((item) => cleanText(item)).filter((item) => DEFINITION_LABELS.has(item.toLocaleLowerCase()));
+}
+
+function normalizeLabel(value: string) { return value.trim().replace(/^./, (character) => character.toLocaleUpperCase()); }
+
+function extractLabels(value: string) {
+	const matches = value.match(/\(([^)]+)\)|\b(?:transitive|intransitive|untransitive|countable|uncountable|mass noun)\b/gi) ?? [];
+	return [...new Set(matches.flatMap(splitLabels).map(normalizeLabel))];
+}
+
+function stripLabelsFromPartOfSpeech(value: string) {
+	return value.replace(/\s*\([^)]*\)\s*$/, '').trim();
+}
+
+function sameLabels(left: string[], right: string[]) { return left.join('|').toLocaleLowerCase() === right.join('|').toLocaleLowerCase(); }
+
+function isFormOfDefinition(item: Element) {
+	if (item.querySelector('[class*="form-of"], [class*="form_of"]')) return true;
+	const text = cleanText(item.textContent ?? '');
+	return looksLikeFormOfText(text);
+}
+
+function looksLikeFormOfText(value: string) {
+	return /^(?:the )?(?:simple|third-person|first-person|second-person|past|present|future|comparative|superlative|participle|infinitive|plural|singular)\b[^.]{0,100}\b(?:forms? of|of)\b/i.test(value);
 }
 
 function parsePhonetics(nodes: Element[], language: string): Pronunciation[] {
@@ -339,6 +412,25 @@ function nextAnyHeading(nodes: Element[], start: Element): Element | undefined {
 }
 
 function headingText(element: Element) { return cleanText(element.querySelector('.mw-headline')?.textContent ?? element.textContent ?? ''); }
+
+function formOfTarget(link: HTMLAnchorElement, language: string): string | undefined {
+	const href = link.getAttribute('href') ?? '';
+	try {
+		const url = new URL(href, `https://${language}.wiktionary.org`);
+		const hostLanguage = url.hostname.match(/^([a-z-]+)\.wiktionary\.org$/i)?.[1];
+		if (hostLanguage && hostLanguage.toLocaleLowerCase() !== language.toLocaleLowerCase()) return undefined;
+		const title = url.pathname.startsWith('/wiki/') ? url.pathname.slice('/wiki/'.length) : url.searchParams.get('title') ?? '';
+		if (title) {
+			const decoded = decodeURIComponent(title).replace(/_/g, ' ').trim();
+			if (!/^(?:category|template|appendix|special):/i.test(decoded)) return cleanText(decoded.split('#')[0] ?? decoded);
+		}
+	} catch {
+		// Fall back to the visible label for malformed or relative links.
+	}
+	const text = cleanText(link.textContent ?? '');
+	return text || undefined;
+}
+
 function matchesHeading(element: Element, aliases: string[]) {
 	const value = headingText(element).toLocaleLowerCase();
 	return aliases.some((alias) => value === alias.toLocaleLowerCase());
