@@ -24,4 +24,22 @@ export interface Translation {
 }
 export interface DictionarySource { id: string; name: string; url: string; }
 export interface DictionaryEntry { word: string; language: string; phonetics: Pronunciation[]; meanings: Meaning[]; translations: Translation[]; synonyms: string[]; antonyms: string[]; etymology?: string; source: DictionarySource; fetchedAt: number; }
+export interface DictionaryPackManifest {
+	format: 'mynary-pack-v1';
+	id: string;
+	kind: 'core' | 'bilingual';
+	language: string;
+	targetLanguage?: string;
+	name: string;
+	version: string;
+	entryCount: number;
+	indexFile: string;
+	entriesFile: string;
+	compressed?: boolean;
+	source?: string;
+	license?: string;
+	sha256?: string;
+	indexSha256?: string;
+	entriesSha256?: string;
+}
 export interface TemplateDefinition { id: string; name: string; content: string; }

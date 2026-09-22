@@ -1,0 +1,525 @@
+{
+  "format": "mynary-pack-catalog-v1",
+  "generatedAt": "2026-09-22",
+  "source": "https://kaikki.org/",
+  "packs": [
+    {
+      "id": "ar-core",
+      "kind": "core",
+      "language": "ar",
+      "name": "Arabic Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 26710,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/ar/manifest.json"
+    },
+    {
+      "id": "bg-core",
+      "kind": "core",
+      "language": "bg",
+      "name": "Bulgarian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 55375,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/bg/manifest.json"
+    },
+    {
+      "id": "cs-core",
+      "kind": "core",
+      "language": "cs",
+      "name": "Czech Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 68566,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/cs/manifest.json"
+    },
+    {
+      "id": "da-core",
+      "kind": "core",
+      "language": "da",
+      "name": "Danish Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 54336,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/da/manifest.json"
+    },
+    {
+      "id": "de-core",
+      "kind": "core",
+      "language": "de",
+      "name": "German Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 344274,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/de/manifest.json"
+    },
+    {
+      "id": "de-en-bilingual",
+      "kind": "bilingual",
+      "language": "de",
+      "targetLanguage": "en",
+      "name": "German-English Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 344271,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/de-en/manifest.json"
+    },
+    {
+      "id": "en-core",
+      "kind": "core",
+      "language": "en",
+      "name": "English Core Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 1355096,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/en/manifest.json"
+    },
+    {
+      "id": "en-de-bilingual",
+      "kind": "bilingual",
+      "language": "en",
+      "targetLanguage": "de",
+      "name": "English-German Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 55164,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/en-de/manifest.json"
+    },
+    {
+      "id": "en-es-bilingual",
+      "kind": "bilingual",
+      "language": "en",
+      "targetLanguage": "es",
+      "name": "English-Spanish Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 17986,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/en-es/manifest.json"
+    },
+    {
+      "id": "en-fr-bilingual",
+      "kind": "bilingual",
+      "language": "en",
+      "targetLanguage": "fr",
+      "name": "English-French Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 177549,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/en-fr/manifest.json"
+    },
+    {
+      "id": "en-ja-bilingual",
+      "kind": "bilingual",
+      "language": "en",
+      "targetLanguage": "ja",
+      "name": "English-Japanese Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 57769,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/en-ja/manifest.json"
+    },
+    {
+      "id": "en-ko-bilingual",
+      "kind": "bilingual",
+      "language": "en",
+      "targetLanguage": "ko",
+      "name": "English-Korean Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 15292,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/en-ko/manifest.json"
+    },
+    {
+      "id": "en-ru-bilingual",
+      "kind": "bilingual",
+      "language": "en",
+      "targetLanguage": "ru",
+      "name": "English-Russian Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 57503,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/en-ru/manifest.json"
+    },
+    {
+      "id": "en-th-bilingual",
+      "kind": "bilingual",
+      "language": "en",
+      "targetLanguage": "th",
+      "name": "English-Thai Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 480764,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/en-th/manifest.json"
+    },
+    {
+      "id": "en-vi-bilingual",
+      "kind": "bilingual",
+      "language": "en",
+      "targetLanguage": "vi",
+      "name": "English-Vietnamese Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 118944,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/en-vi/manifest.json"
+    },
+    {
+      "id": "en-zh-bilingual",
+      "kind": "bilingual",
+      "language": "en",
+      "targetLanguage": "zh",
+      "name": "English-Chinese Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 85615,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/en-zh/manifest.json"
+    },
+    {
+      "id": "es-core",
+      "kind": "core",
+      "language": "es",
+      "name": "Spanish Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 770654,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/es/manifest.json"
+    },
+    {
+      "id": "es-en-bilingual",
+      "kind": "bilingual",
+      "language": "es",
+      "targetLanguage": "en",
+      "name": "Spanish-English Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 770604,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/es-en/manifest.json"
+    },
+    {
+      "id": "et-core",
+      "kind": "core",
+      "language": "et",
+      "name": "Estonian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 12345,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/et/manifest.json"
+    },
+    {
+      "id": "fi-core",
+      "kind": "core",
+      "language": "fi",
+      "name": "Finnish Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 250051,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/fi/manifest.json"
+    },
+    {
+      "id": "fr-core",
+      "kind": "core",
+      "language": "fr",
+      "name": "French Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 386710,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/fr/manifest.json"
+    },
+    {
+      "id": "fr-en-bilingual",
+      "kind": "bilingual",
+      "language": "fr",
+      "targetLanguage": "en",
+      "name": "French-English Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 386668,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/fr-en/manifest.json"
+    },
+    {
+      "id": "he-core",
+      "kind": "core",
+      "language": "he",
+      "name": "Hebrew Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 14327,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/he/manifest.json"
+    },
+    {
+      "id": "hi-core",
+      "kind": "core",
+      "language": "hi",
+      "name": "Hindi Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 35880,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/hi/manifest.json"
+    },
+    {
+      "id": "hu-core",
+      "kind": "core",
+      "language": "hu",
+      "name": "Hungarian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 72495,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/hu/manifest.json"
+    },
+    {
+      "id": "id-core",
+      "kind": "core",
+      "language": "id",
+      "name": "Indonesian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 34538,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/id/manifest.json"
+    },
+    {
+      "id": "it-core",
+      "kind": "core",
+      "language": "it",
+      "name": "Italian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 585468,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/it/manifest.json"
+    },
+    {
+      "id": "ja-core",
+      "kind": "core",
+      "language": "ja",
+      "name": "Japanese Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 122460,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/ja/manifest.json"
+    },
+    {
+      "id": "ja-en-bilingual",
+      "kind": "bilingual",
+      "language": "ja",
+      "targetLanguage": "en",
+      "name": "Japanese-English Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 122422,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/ja-en/manifest.json"
+    },
+    {
+      "id": "ko-core",
+      "kind": "core",
+      "language": "ko",
+      "name": "Korean Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 51310,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/ko/manifest.json"
+    },
+    {
+      "id": "ko-en-bilingual",
+      "kind": "bilingual",
+      "language": "ko",
+      "targetLanguage": "en",
+      "name": "Korean-English Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 51161,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/ko-en/manifest.json"
+    },
+    {
+      "id": "lt-core",
+      "kind": "core",
+      "language": "lt",
+      "name": "Lithuanian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 28859,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/lt/manifest.json"
+    },
+    {
+      "id": "lv-core",
+      "kind": "core",
+      "language": "lv",
+      "name": "Latvian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 124454,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/lv/manifest.json"
+    },
+    {
+      "id": "nl-core",
+      "kind": "core",
+      "language": "nl",
+      "name": "Dutch Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 137499,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/nl/manifest.json"
+    },
+    {
+      "id": "pl-core",
+      "kind": "core",
+      "language": "pl",
+      "name": "Polish Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 172649,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/pl/manifest.json"
+    },
+    {
+      "id": "pt-core",
+      "kind": "core",
+      "language": "pt",
+      "name": "Portuguese Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 423302,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/pt/manifest.json"
+    },
+    {
+      "id": "ro-core",
+      "kind": "core",
+      "language": "ro",
+      "name": "Romanian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 122381,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/ro/manifest.json"
+    },
+    {
+      "id": "ru-core",
+      "kind": "core",
+      "language": "ru",
+      "name": "Russian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 426926,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/ru/manifest.json"
+    },
+    {
+      "id": "ru-en-bilingual",
+      "kind": "bilingual",
+      "language": "ru",
+      "targetLanguage": "en",
+      "name": "Russian-English Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 426855,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/ru-en/manifest.json"
+    },
+    {
+      "id": "sk-core",
+      "kind": "core",
+      "language": "sk",
+      "name": "Slovak Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 17069,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/sk/manifest.json"
+    },
+    {
+      "id": "sl-core",
+      "kind": "core",
+      "language": "sl",
+      "name": "Slovenian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 7252,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/sl/manifest.json"
+    },
+    {
+      "id": "sv-core",
+      "kind": "core",
+      "language": "sv",
+      "name": "Swedish Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 302789,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/sv/manifest.json"
+    },
+    {
+      "id": "th-core",
+      "kind": "core",
+      "language": "th",
+      "name": "Thai Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 17629,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/th/manifest.json"
+    },
+    {
+      "id": "th-en-bilingual",
+      "kind": "bilingual",
+      "language": "th",
+      "targetLanguage": "en",
+      "name": "Thai-English Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 17621,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/th-en/manifest.json"
+    },
+    {
+      "id": "tr-core",
+      "kind": "core",
+      "language": "tr",
+      "name": "Turkish Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 41266,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/tr/manifest.json"
+    },
+    {
+      "id": "uk-core",
+      "kind": "core",
+      "language": "uk",
+      "name": "Ukrainian Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 55300,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/uk/manifest.json"
+    },
+    {
+      "id": "vi-core",
+      "kind": "core",
+      "language": "vi",
+      "name": "Vietnamese Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 39408,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/vi/manifest.json"
+    },
+    {
+      "id": "vi-en-bilingual",
+      "kind": "bilingual",
+      "language": "vi",
+      "targetLanguage": "en",
+      "name": "Vietnamese-English Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 39389,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/vi-en/manifest.json"
+    },
+    {
+      "id": "zh-core",
+      "kind": "core",
+      "language": "zh",
+      "name": "Chinese Core Dictionary",
+      "version": "2026-09-08",
+      "entryCount": 182000,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/zh/manifest.json"
+    },
+    {
+      "id": "zh-en-bilingual",
+      "kind": "bilingual",
+      "language": "zh",
+      "targetLanguage": "en",
+      "name": "Chinese-English Dictionary",
+      "version": "2026-09-09",
+      "entryCount": 176477,
+      "compressed": true,
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/zh-en/manifest.json"
+    }
+  ]
+}

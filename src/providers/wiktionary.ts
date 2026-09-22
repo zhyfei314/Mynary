@@ -1,6 +1,7 @@
 import { DictionaryEntry } from '../types';
 import { normalizeEntry, parseWiktionaryHtml } from './wiktionary-html-parser';
 import type { TtsProvider } from './supertonic';
+import type { OfflineDictionaryProvider } from './offline-dictionary';
 
 export interface WiktionaryHttpResponse { status: number; json: unknown; }
 export type WiktionaryRequester = (url: string) => Promise<WiktionaryHttpResponse>;
@@ -11,6 +12,7 @@ export class WiktionaryProvider {
 		private readonly request: WiktionaryRequester,
 		private readonly tts?: TtsProvider,
 		private readonly autoTts = false,
+		private readonly offlineForLanguage?: (language: string) => OfflineDictionaryProvider,
 	) {}
 
 	get ttsAvailable() { return Boolean(this.tts); }
@@ -22,6 +24,11 @@ export class WiktionaryProvider {
 	}
 
 	async lookup(word: string, language: string): Promise<DictionaryEntry> {
+		const offline = this.offlineForLanguage?.(language);
+		if (offline) {
+			const offlineEntry = await offline.lookup(word);
+			if (offlineEntry && offlineEntry.language === language) return offlineEntry;
+		}
 		const baseUrl = `https://${language}.wiktionary.org/w/api.php`;
 		const requestedTitle = word.trim();
 		const direct = await this.fetchPage(baseUrl, requestedTitle);

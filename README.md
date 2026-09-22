@@ -39,6 +39,24 @@ To keep the sidebar open, select the book icon in the ribbon or run **Mynary Dic
 
 Mynary accepts selections up to 80 characters or 8 words by default. Longer selections can still be looked up exactly or reduced to their first word.
 
+## Optional offline dictionary packs
+
+Mynary can use a small local dictionary pack before falling back to Wiktionary. Run **Mynary Dictionary: Install offline dictionary pack from URL**, then enter a pack `manifest.json` URL. Packs contain only indexed definitions, pronunciation, examples, and selected translations; audio is not included. A missing pack or missing entry falls back to the normal Wiktionary lookup.
+
+Pack files are installed under `.mynary/dictionaries/<language>/`. Downloads are written to temporary files and verified with SHA-256 when the manifest provides checksums. To build a pack from a Kaikki JSONL dump:
+
+```bash
+npm run build:pack -- path/to/vi-extract.jsonl ./dist/vi vi "Vietnamese Core Dictionary"
+```
+
+Pack manifests use the same schema for core and bilingual packs. Core packs use `kind: "core"` and `language`; bilingual packs use `kind: "bilingual"`, `language` as the source language, and `targetLanguage` as the translation language. `entriesFile` may end in `.gz`; its checksum is always the SHA-256 of the exact downloadable bytes.
+
+The small GitHub-side catalog is [dictionary-catalog/catalog.json](dictionary-catalog/catalog.json). It points to the large pack assets in the Hugging Face Dataset repository. The current local release set can be uploaded with `hf upload zhyfei314/Mynary-Offline-Dictionary ./release --repo-type dataset` after `hf auth login`.
+
+## Optional local translation
+
+Mynary can send selected text to a locally running [MTranServer](https://github.com/xxnuo/MTranServer). Enable **MTranServer translation** in settings, configure the local endpoint (normally `http://127.0.0.1:8989`), and use **Translate selected text with MTranServer**. The plugin sends text only when this command is used; it does not send vault content automatically.
+
 ## What you will see
 
 Depending on the entry, Mynary can show:
@@ -55,6 +73,34 @@ plural of [[run]]
 ```
 
 Select a linked word to look it up directly in Mynary. The popup and dictionary sidebar use the same result renderer, so definitions, labels, examples, and Wiktionary links stay consistent between both views.
+
+## Translate text locally
+
+Mynary provides a separate translation action powered by a local [MTranServer](https://github.com/xxnuo/MTranServer). It does not send vault content automatically.
+
+1. Install and start MTranServer locally. The default endpoint is `http://127.0.0.1:8989`.
+2. Open **Settings → Mynary Dictionary** and enable **MTranServer translation**.
+3. Check the endpoint, optional bearer token, source-language mode, timeout, and default target language.
+4. Select text in a note and choose **Translate selected text with MTranServer**, or use **Translate selected text** in the dictionary sidebar.
+5. In the translation panel, choose a supported target language and select **Translate**.
+
+The lookup popup also includes **Translate this text**, while the sidebar includes **Translate current query**. The default target language is English (`en`). The source can use the current dictionary language or `auto` for MTranServer builds that support automatic detection.
+
+## Offline dictionary packs
+
+Open **Settings → Mynary Dictionary → Offline dictionary packs** and select **Choose language**. Mynary loads the public catalog from GitHub, with a Hugging Face fallback, lets you choose a language and pack, downloads only the pack files, verifies SHA-256 checksums, and stores the pack in the vault under `.mynary/dictionaries/<language>/`.
+
+Core packs contain definitions and pronunciation. Bilingual packs contain translations for a specific direction such as English → Vietnamese. Only one pack can be active for a source language; installing another pack for that source replaces the previous one. If an installed pack has no matching entry, Mynary falls back to Wiktionary when online.
+
+## Data and licenses
+
+Dictionary data is generated from Wiktionary extracts provided by Kaikki.org and is distributed according to the applicable source terms. Pack manifests identify the source snapshot and license. The repository includes the full license texts used by the data catalog:
+
+- [CC BY-SA 3.0](LICENSE-CC-BY-SA-3.0.txt)
+- [CC BY-SA 4.0](LICENSE-CC-BY-SA-4.0.txt)
+- [GNU Free Documentation License 1.3](LICENSE-GFDL-1.3.txt)
+
+The plugin source itself remains MIT-licensed. Do not add audio, source HTML, or third-party data unless its redistribution terms are documented in the relevant pack manifest.
 
 ## Save what you learned
 

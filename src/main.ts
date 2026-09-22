@@ -13,23 +13,33 @@ import {
 	requestUrl,
 	WorkspaceLeaf,
 } from 'obsidian';
-import { DictionaryEntry } from './types';
-import { DictionarySettings, isRecord, migrateTemplates, normalizeSettings } from './settings';
+import { DictionaryEntry, DictionaryPackManifest } from './types';
+import { DictionarySettings, isRecord, migrateTemplates, MTRAN_LANGUAGE_OPTIONS, normalizeSettings } from './settings';
 import { WiktionaryProvider } from './providers/wiktionary';
 import type { WiktionaryHttpResponse, WiktionaryRequester } from './providers/wiktionary';
 import { CacheManager } from './services/cache';
 import { SupertonicProvider } from './providers/supertonic';
 import type { SupertonicRequester } from './providers/supertonic';
 import { SupertonicWebProvider } from './providers/supertonic-web';
+import { OfflineDictionaryProvider } from './providers/offline-dictionary';
+import { MTranServerProvider } from './providers/mtranserver';
+import { AssetManager } from './services/asset-manager';
 import { renderEntry } from './utils/format';
 import { createVocabularyNote, renderTemplate } from './templates/template';
 import { analyzeSelection, normalizeSelection } from './utils/selection';
 import { openTemplatePicker, TemplateManagerModal } from './ui/template-modals';
 import type { TemplateAction } from './ui/template-modals';
 import type { DeclarativeSettingDefinition } from './settings-definitions';
+import { TranslationModal } from './ui/translation-modal';
 
 export const VIEW_TYPE_DICTIONARY = 'mynary-dictionary-view';
 const CACHE_FORMAT_VERSION = 'v7';
+const SUPERTONIC_WASM_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/ort-wasm-simd-threaded.jsep.wasm';
+const SUPERTONIC_WASM_SHA256 = '78feeeb3d08f6bcee94d938ed322f69073bb8076b5f9d34697a574ffba8deb48';
+const PACK_CATALOG_URLS = [
+	'https://raw.githubusercontent.com/zhyfei314/Mynary-Offline-Dictionary/main/dictionary-catalog/catalog.json',
+	'https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/catalog.json',
+];
 const requestWiktionary: WiktionaryRequester = async (url): Promise<WiktionaryHttpResponse> => {
 	const response = await requestUrl(url);
 	return { status: response.status, json: response.json as unknown };
@@ -37,6 +47,12 @@ const requestWiktionary: WiktionaryRequester = async (url): Promise<WiktionaryHt
 const requestSupertonic: SupertonicRequester = async (url, body) => {
 	const response = await requestUrl({ url, method: 'POST', headers: { 'content-type': 'application/json' }, body });
 	return { status: response.status, arrayBuffer: response.arrayBuffer, mimeType: response.headers['content-type'] };
+};
+const requestMTranServer = async (url: string, body: string, token: string) => {
+	const headers: Record<string, string> = { 'content-type': 'application/json' };
+	if (token.trim()) headers.authorization = `Bearer ${token.trim()}`;
+	const response = await requestUrl({ url, method: 'POST', headers, body });
+	return { status: response.status, json: response.json as unknown };
 };
 type LookupStatus = 'idle' | 'loading' | 'success' | 'error';
 type LookupListener = (status: LookupStatus) => void;
@@ -90,6 +106,7 @@ export default class MynaryPlugin extends Plugin {
 			if (!editor.getSelection().trim()) return;
 			menu.addItem((item) => item.setTitle('Lookup').setIcon('search').onClick(() => void this.lookupSelected(editor)));
 			menu.addItem((item) => item.setTitle('Read with supertonic').setIcon('volume-2').onClick(() => void this.readSelected(editor)));
+			menu.addItem((item) => item.setTitle('Translate with MTranServer').setIcon('languages').onClick(() => void this.translateSelected(editor)));
 		}));
 
 		this.addRibbonIcon('book-open', 'Open dictionary sidebar', () => this.activateView());
@@ -99,6 +116,12 @@ export default class MynaryPlugin extends Plugin {
 			icon: 'search',
 			hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'L' }],
 			editorCallback: (editor) => void this.lookupSelected(editor),
+		});
+		this.addCommand({
+			id: 'translate-selected-text',
+			name: 'Translate selected text with MTranServer',
+			icon: 'languages',
+			editorCallback: (editor) => void this.translateSelected(editor),
 		});
 		this.addCommand({
 			id: 'read-selected-word',
@@ -111,6 +134,8 @@ export default class MynaryPlugin extends Plugin {
 		this.addCommand({ id: 'create-vocabulary-note', name: 'Create vocabulary note from lookup', checkCallback: (checking) => this.commandWithEntry(checking, () => this.createNote()) });
 		this.addCommand({ id: 'insert-lookup-result', name: 'Insert lookup result', checkCallback: (checking) => this.commandWithEntry(checking, () => this.insertResult()) });
 		this.addCommand({ id: 'clear-dictionary-cache', name: 'Clear dictionary cache', callback: async () => { await this.cache.clear(); new Notice('Dictionary cache cleared.'); } });
+		this.addCommand({ id: 'install-dictionary-pack', name: 'Install offline dictionary pack from URL', callback: () => void this.installDictionaryPackFromUrl() });
+		this.addCommand({ id: 'install-supertonic-web-runtime', name: 'Install supertonic web runtime', callback: () => void this.installWebTtsRuntime() });
 		this.addSettingTab(new DictionarySettingTab(this.app, this));
 
 		// Cache loading is independent of the popup and the command lifecycle.
@@ -139,7 +164,93 @@ export default class MynaryPlugin extends Plugin {
 				? new SupertonicProvider(requestSupertonic, this.settings.supertonicEndpoint, this.settings.supertonicVoice, this.settings.supertonicSteps, this.settings.supertonicSpeed)
 				: new SupertonicWebProvider(this.settings.supertonicVoice, this.settings.supertonicSteps, this.settings.supertonicSpeed, this.app.vault.adapter.getResourcePath(`${this.manifest.dir}/ort-wasm-simd-threaded.jsep.wasm`))
 			: undefined;
-		this.provider = new WiktionaryProvider(requestWiktionary, tts, this.settings.ttsAutoGenerate);
+		const offline = this.settings.offlineDictionaryEnabled
+			? (language: string) => new OfflineDictionaryProvider(this.app.vault.adapter, this.dictionaryPackPath(language))
+			: undefined;
+		this.provider = new WiktionaryProvider(requestWiktionary, tts, this.settings.ttsAutoGenerate, offline);
+	}
+
+	dictionaryPackPath(language: string) { return `.mynary/dictionaries/${language}`; }
+
+	async installDictionaryPackFromUrl(onComplete?: () => void) {
+		const manifestUrl = await requestDictionaryManifestUrl(this.app);
+		if (!manifestUrl) return;
+		await this.installDictionaryPack(manifestUrl, onComplete);
+	}
+
+	async installDictionaryPackFromCatalog(onComplete?: () => void) {
+		try {
+			let response: Awaited<ReturnType<typeof requestUrl>> | undefined;
+			let lastError: unknown;
+			for (const catalogUrl of PACK_CATALOG_URLS) {
+				try {
+					response = await requestUrl(catalogUrl);
+					break;
+				} catch (error) {
+					lastError = error;
+				}
+			}
+			if (!response) throw lastError instanceof Error ? lastError : new Error('Could not load the dictionary catalog.');
+			const catalog = response.json as { packs?: Array<{ id?: string; kind?: string; language?: string; targetLanguage?: string; name?: string; entryCount?: number; manifestUrl?: string }> };
+			const packs = (catalog.packs ?? []).filter((pack) => typeof pack.manifestUrl === 'string' && typeof pack.language === 'string');
+			if (!packs.length) throw new Error('The dictionary catalog is empty.');
+			new DictionaryPackCatalogModal(this.app, packs, (url) => void this.installDictionaryPack(url, onComplete)).open();
+		} catch (error) {
+			new Notice(error instanceof Error ? error.message : 'Could not load the dictionary catalog.');
+		}
+	}
+
+	private async installDictionaryPack(manifestUrl: string, onComplete?: () => void) {
+		try {
+			new Notice('Downloading dictionary pack manifest…');
+			const manifestResponse = await requestUrl(manifestUrl.trim());
+			const manifest = manifestResponse.json as Partial<DictionaryPackManifest>;
+			if (manifest.format !== 'mynary-pack-v1' || (manifest.kind !== 'core' && manifest.kind !== 'bilingual') || typeof manifest.language !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.language) || (manifest.kind === 'bilingual' && (typeof manifest.targetLanguage !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.targetLanguage))) || typeof manifest.indexFile !== 'string' || typeof manifest.entriesFile !== 'string') throw new Error('The URL is not a valid Mynary pack manifest.');
+			const baseUrl = manifestUrl.trim().replace(/\/[^/]*$/u, '/');
+			const fetchAsset = async (file: string) => (await requestUrl(new URL(file, baseUrl).toString())).arrayBuffer;
+			const index = await fetchAsset(manifest.indexFile);
+			const entries = await fetchAsset(manifest.entriesFile);
+			const manager = new AssetManager(this.app.vault.adapter);
+			const root = this.dictionaryPackPath(manifest.language);
+			await manager.install({ id: `${manifest.id ?? manifest.language}-index`, url: 'inline', destination: `${root}/${manifest.indexFile}`, sha256: manifest.indexSha256 }, async () => index);
+			await manager.install({ id: `${manifest.id ?? manifest.language}-entries`, url: 'inline', destination: `${root}/${manifest.entriesFile}`, sha256: manifest.entriesSha256 ?? manifest.sha256 }, async () => entries);
+			await this.app.vault.adapter.write(`${root}/manifest.json`, JSON.stringify(manifest, null, 2));
+			this.rebuildProvider();
+			await this.cache.clear();
+			new Notice(`Installed offline ${manifest.name ?? manifest.language} dictionary.`);
+			onComplete?.();
+		} catch (error) {
+			new Notice(error instanceof Error ? error.message : 'Could not install dictionary pack.');
+		}
+	}
+
+	async getInstalledDictionaryPacks() {
+		const root = '.mynary/dictionaries';
+		if (!(await this.app.vault.adapter.exists(root))) return [];
+		const listing = await this.app.vault.adapter.list(root);
+		const packs: DictionaryPackManifest[] = [];
+		for (const folder of listing.folders) {
+			try {
+				const manifest = JSON.parse(await this.app.vault.adapter.read(`${folder}/manifest.json`)) as DictionaryPackManifest;
+				if (manifest.format === 'mynary-pack-v1' && typeof manifest.language === 'string') packs.push(manifest);
+			} catch {
+				// Ignore incomplete or manually removed packs.
+			}
+		}
+		return packs.sort((left, right) => left.language.localeCompare(right.language));
+	}
+
+	async removeDictionaryPack(language: string) {
+		if (!/^[a-z]{2,3}$/u.test(language)) return;
+		const path = this.dictionaryPackPath(language);
+		if (await this.app.vault.adapter.exists(path)) await this.app.vault.adapter.rmdir(path, true);
+		this.rebuildProvider();
+		await this.cache.clear();
+		new Notice(`Removed offline ${language.toUpperCase()} dictionary.`);
+	}
+
+	openDictionaryPackManager() {
+		new DictionaryPackManagerModal(this.app, this).open();
 	}
 
 	async generateTts(pronunciationIndex: number, word: string, language: string) {
@@ -212,8 +323,22 @@ export default class MynaryPlugin extends Plugin {
 	private async hasWebTtsRuntime() {
 		const path = `${this.manifest.dir}/ort-wasm-simd-threaded.jsep.wasm`;
 		if (await this.app.vault.adapter.exists(path)) return true;
-		new Notice('Web supertonic runtime is not installed. Add the optional wasm file to the plugin folder, or select local server in settings.');
-		return false;
+		new Notice('Installing the supertonic web runtime…');
+		return this.installWebTtsRuntime();
+	}
+
+	async installWebTtsRuntime(): Promise<boolean> {
+		const path = `${this.manifest.dir}/ort-wasm-simd-threaded.jsep.wasm`;
+		try {
+			new Notice('Downloading supertonic web runtime…');
+			const manager = new AssetManager(this.app.vault.adapter);
+			await manager.install({ id: 'supertonic-web-wasm', url: SUPERTONIC_WASM_URL, destination: path, sha256: SUPERTONIC_WASM_SHA256 }, async (url) => (await requestUrl(url)).arrayBuffer);
+			new Notice('Supertonic web runtime installed.');
+			return true;
+		} catch (error) {
+			new Notice(error instanceof Error ? error.message : 'Could not install the Supertonic web runtime.');
+			return false;
+		}
 	}
 
 	private clearReadAudioCache() {
@@ -252,6 +377,37 @@ export default class MynaryPlugin extends Plugin {
 			}
 		}
 		new Notice('Select a word in a note first.');
+	}
+
+	async translateSelected(editor: Editor) {
+		const text = editor.getSelection().trim();
+		if (!text) { new Notice('Select text first.'); return; }
+		if (!this.settings.mtranServerEnabled) { new Notice('Enable MTranServer in Mynary settings first.'); return; }
+		new TranslationModal(this.app, this, text).open();
+	}
+
+	async translateCurrentSelection() {
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (activeView?.editor.getSelection().trim()) { this.openTranslation(activeView.editor.getSelection()); return; }
+		for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
+			if (!(leaf.view instanceof MarkdownView)) continue;
+			const selection = leaf.view.editor.getSelection().trim();
+			if (selection) { this.openTranslation(selection); return; }
+		}
+		new Notice('Select text in a note first.');
+	}
+
+	openTranslation(text: string) {
+		const normalized = text.trim();
+		if (!normalized) { new Notice('Select text first.'); return; }
+		if (!this.settings.mtranServerEnabled) { new Notice('Enable MTranServer in Mynary settings first.'); return; }
+		new TranslationModal(this.app, this, normalized).open();
+	}
+
+	async translate(text: string, targetLanguage = this.settings.mtranTargetLanguage) {
+		const provider = new MTranServerProvider(requestMTranServer, this.settings.mtranServerEndpoint, this.settings.mtranServerToken, this.settings.mtranServerTimeoutMs);
+		const sourceLanguage = this.settings.mtranSourceLanguage === 'auto' ? 'auto' : this.activeLanguage;
+		return provider.translate(text, sourceLanguage, targetLanguage);
 	}
 
 	async lookup(word: string, language = this.activeLanguage, forceRefresh = false): Promise<DictionaryEntry | undefined> {
@@ -424,6 +580,8 @@ export class LookupModal extends Modal {
 		}
 		if (this.plugin.lastEntry) {
 			renderEntry(el, this.plugin.lastEntry, this.plugin);
+			const translate = el.createEl('button', { text: 'Translate this text', cls: 'mynary-secondary-action' });
+			translate.addEventListener('click', () => this.plugin.openTranslation(this.word));
 			const sidebar = el.createEl('button', { text: 'Open in sidebar', cls: 'mynary-secondary-action' });
 			sidebar.addEventListener('click', () => { this.close(); void this.plugin.activateView(); });
 		} else {
@@ -449,6 +607,101 @@ function normalizeHistory(raw: unknown): string[] {
 	return history.slice(0, 20);
 }
 
+async function requestDictionaryManifestUrl(app: App): Promise<string | undefined> {
+	return new Promise((resolve) => new DictionaryPackUrlModal(app, resolve).open());
+}
+
+class DictionaryPackUrlModal extends Modal {
+	private input?: HTMLInputElement;
+
+	constructor(app: App, private resolveUrl: (url?: string) => void) { super(app); }
+
+	onOpen() {
+		this.titleEl.setText('Install offline dictionary pack');
+		this.contentEl.createEl('p', { text: 'Enter a URL to the pack manifest.json.' });
+		this.input = this.contentEl.createEl('input', { type: 'url', placeholder: 'https://example.com/manifest.json' });
+		this.input.addClass('mynary-pack-url-input');
+		const actions = this.contentEl.createDiv('mynary-modal-actions');
+		const cancel = actions.createEl('button', { text: 'Cancel' });
+		cancel.addEventListener('click', () => { this.resolveUrl(); this.close(); });
+		const install = actions.createEl('button', { text: 'Install', cls: 'mod-cta' });
+		install.addEventListener('click', () => this.submit());
+		this.input.addEventListener('keydown', (event) => { if (event.key === 'Enter') this.submit(); });
+		window.setTimeout(() => this.input?.focus(), 0);
+	}
+
+	onClose() {
+		this.resolveUrl = () => undefined;
+		this.contentEl.empty();
+	}
+
+	private submit() {
+		const value = this.input?.value.trim();
+		if (!value) return;
+		try { new URL(value); } catch { new Notice('Enter a valid manifest URL.'); return; }
+		const resolve = this.resolveUrl;
+		this.resolveUrl = () => undefined;
+		resolve(value);
+		this.close();
+	}
+}
+
+interface CatalogPackOption { id?: string; kind?: string; language?: string; targetLanguage?: string; name?: string; entryCount?: number; manifestUrl?: string; }
+
+class DictionaryPackCatalogModal extends Modal {
+	constructor(app: App, private readonly packs: CatalogPackOption[], private readonly install: (url: string) => void) { super(app); }
+
+	onOpen() {
+		this.titleEl.setText('Choose offline dictionary');
+		this.contentEl.createEl('p', { text: 'Choose one pack. Packs are downloaded from Hugging Face and verified with SHA-256.' });
+		const select = this.contentEl.createEl('select');
+		for (const pack of this.packs) {
+			if (!pack.manifestUrl || !pack.language) continue;
+			const direction = pack.targetLanguage ? ` ${pack.language.toUpperCase()} → ${pack.targetLanguage.toUpperCase()}` : ` ${pack.language.toUpperCase()}`;
+			const label = `${pack.name ?? pack.id ?? 'Dictionary'} ·${direction} · ${(pack.entryCount ?? 0).toLocaleString()} entries`;
+			select.createEl('option', { value: pack.manifestUrl, text: label });
+		}
+		const actions = this.contentEl.createDiv('mynary-modal-actions');
+		actions.createEl('button', { text: 'Cancel' }).addEventListener('click', () => this.close());
+		actions.createEl('button', { text: 'Install', cls: 'mod-cta' }).addEventListener('click', () => { const url = select.value; if (!url) return; this.install(url); this.close(); });
+	}
+
+	onClose() { this.contentEl.empty(); }
+}
+
+class DictionaryPackManagerModal extends Modal {
+	constructor(app: App, private readonly plugin: MynaryPlugin) { super(app); }
+
+	onOpen() {
+		this.titleEl.setText('Offline dictionaries');
+		void this.render();
+	}
+
+	onClose() { this.contentEl.empty(); }
+
+	private async render() {
+		this.contentEl.empty();
+		this.contentEl.createEl('p', { text: 'Installed packs are used before wiktionary when offline dictionaries are enabled.' });
+		const installActions = this.contentEl.createDiv('mynary-modal-actions');
+		installActions.createEl('button', { text: 'Choose language', cls: 'mod-cta' }).addEventListener('click', () => { void this.plugin.installDictionaryPackFromCatalog(() => { void this.render(); }); });
+		installActions.createEl('button', { text: 'Install from URL' }).addEventListener('click', () => { void this.plugin.installDictionaryPackFromUrl(() => { void this.render(); }); });
+		const list = this.contentEl.createDiv('mynary-pack-manager');
+		new Setting(list).setName('Installed dictionaries').setHeading();
+		const packs = await this.plugin.getInstalledDictionaryPacks();
+		if (!packs.length) {
+			list.createDiv({ cls: 'mynary-empty', text: 'No offline dictionary packs installed.' });
+			return;
+		}
+		for (const pack of packs) {
+			const row = list.createDiv('mynary-pack-row');
+			const details = row.createDiv('mynary-pack-details');
+			details.createEl('strong', { text: pack.name || pack.id });
+			details.createDiv({ text: `${pack.language.toUpperCase()} · ${pack.entryCount.toLocaleString()} entries · ${pack.version}` });
+			row.createEl('button', { text: 'Remove' }).addEventListener('click', () => void this.plugin.removeDictionaryPack(pack.language).then(() => this.render()));
+		}
+	}
+}
+
 export class DictionaryView extends ItemView {
 	constructor(leaf: WorkspaceLeaf, private plugin: MynaryPlugin) { super(leaf); }
 	getViewType() { return VIEW_TYPE_DICTIONARY; }
@@ -472,6 +725,8 @@ export class DictionaryView extends ItemView {
 		submit.addEventListener('click', submitLookup);
 		const selectionLookup = search.createEl('button', { text: 'Lookup selected text', cls: 'mynary-selection-lookup' });
 		selectionLookup.addEventListener('click', () => void this.plugin.lookupCurrentSelection());
+		const selectionTranslate = search.createEl('button', { text: 'Translate selected text', cls: 'mynary-selection-lookup' });
+		selectionTranslate.addEventListener('click', () => void this.plugin.translateCurrentSelection());
 		const selectionRead = search.createEl('button', { text: 'Read selected text', cls: 'mynary-selection-read' });
 		selectionRead.addEventListener('click', () => void this.plugin.readCurrentSelection());
 		const language = search.createEl('select');
@@ -492,6 +747,8 @@ export class DictionaryView extends ItemView {
 			retry.addEventListener('click', submitLookup);
 		} else if (this.plugin.lastEntry) {
 			renderEntry(el, this.plugin.lastEntry, this.plugin);
+			const translate = el.createEl('button', { text: 'Translate current query', cls: 'mynary-secondary-action' });
+			translate.addEventListener('click', () => this.plugin.openTranslation(this.plugin.currentQuery));
 		} else {
 			el.createDiv({ text: 'Select a word in a note or search above.', cls: 'mynary-empty' });
 		}
@@ -507,6 +764,11 @@ class DictionarySettingTab extends PluginSettingTab {
 
 	/** Obsidian 1.13+ uses this for native settings rendering and Settings Search. */
 	getSettingDefinitions(): DeclarativeSettingDefinition[] {
+		// Keep the standard PluginSettingTab display as the single source of truth.
+		// The declarative renderer flattens these settings and hides the grouped UI.
+		return [];
+
+		/*
 		const languageOptions = Object.fromEntries(this.plugin.settings.languages.map((language) => [language.code, language.name]));
 		const templateOptions = Object.fromEntries(this.plugin.settings.templates.map((template) => [template.id, template.name]));
 		return [
@@ -515,6 +777,24 @@ class DictionarySettingTab extends PluginSettingTab {
 				desc: 'Wiktionary language section to search.',
 				aliases: ['dictionary language', 'lookup language'],
 				control: { type: 'dropdown', key: 'defaultLanguage', options: languageOptions, defaultValue: 'en' },
+			},
+			{
+				name: 'Use offline dictionary packs',
+				desc: 'Use installed local packs before requesting Wiktionary online.',
+				aliases: ['local dictionary', 'offline dictionary'],
+				control: { type: 'dropdown', key: 'offlineDictionaryEnabled', options: { 'false': 'Disabled', 'true': 'Enabled' }, defaultValue: this.plugin.settings.offlineDictionaryEnabled === false ? 'false' : 'true' },
+			},
+			{ name: 'Manage offline dictionaries', desc: 'Install or remove local dictionary packs.', aliases: ['dictionary packs', 'local dictionaries'], action: () => this.plugin.openDictionaryPackManager() },
+			{ name: 'MTranServer endpoint', desc: 'Base URL of the local translation server, normally http://127.0.0.1:8989.', aliases: ['translation endpoint', 'translation api'], control: { type: 'text', key: 'mtranServerEndpoint', placeholder: 'http://127.0.0.1:8989' } },
+			{ name: 'MTranServer token', desc: 'Optional bearer token for a protected local server.', aliases: ['translation token', 'translation api key'], control: { type: 'text', key: 'mtranServerToken', placeholder: 'Optional token' } },
+			{ name: 'MTranServer timeout', desc: 'Maximum request time in seconds.', aliases: ['translation timeout'], control: { type: 'slider', key: 'mtranServerTimeoutMs', min: 1000, max: 120000, step: 1000, defaultValue: 15000 } },
+			{ name: 'Translation source language', desc: 'Use the current dictionary language or send auto to MTranServer.', aliases: ['source language', 'auto detect'], control: { type: 'dropdown', key: 'mtranSourceLanguage', options: { current: 'Current dictionary language', auto: 'Auto detect' }, defaultValue: this.plugin.settings.mtranSourceLanguage } },
+			{ name: 'MTranServer target language', desc: 'Default supported target language; the translation panel can override it per request.', aliases: ['translation target', 'translate to'], control: { type: 'dropdown', key: 'mtranTargetLanguage', options: Object.fromEntries(MTRAN_LANGUAGE_OPTIONS.map((language) => [language.code, `${language.name} (${language.code})`])) , defaultValue: 'en' } },
+			{
+				name: 'Enable MTranServer translation',
+				desc: 'Translate selected text through a local MTranServer instance.',
+				aliases: ['offline translation', 'local translation'],
+				control: { type: 'dropdown', key: 'mtranServerEnabled', options: { 'false': 'Disabled', 'true': 'Enabled' }, defaultValue: this.plugin.settings.mtranServerEnabled ? 'true' : 'false' },
 			},
 			{
 				name: 'Note folder',
@@ -558,6 +838,7 @@ class DictionarySettingTab extends PluginSettingTab {
 				aliases: ['tts runtime', 'web tts', 'local tts server'],
 				control: { type: 'dropdown', key: 'ttsRuntime', options: { web: 'Web (recommended)', server: 'Local server' }, defaultValue: this.plugin.settings.ttsRuntime },
 			},
+			{ name: 'Install supertonic web runtime', desc: 'Download the required WASM runtime automatically.', aliases: ['install wasm', 'tts runtime file'], action: () => void this.plugin.installWebTtsRuntime() },
 			{
 				name: 'Supertonic endpoint',
 				desc: 'Used only by the Local server runtime. Normally http://127.0.0.1:7788/v1/tts.',
@@ -597,25 +878,83 @@ class DictionarySettingTab extends PluginSettingTab {
 			{ name: 'Templates', desc: 'Create, edit, duplicate, preview and restore Markdown templates.', action: () => this.plugin.openTemplateManager() },
 			{ name: 'Clear dictionary cache', desc: 'Remove all locally cached lookup results.', action: () => { void this.plugin.cache.clear().then(() => new Notice('Dictionary cache cleared.')); } },
 		];
+		*/
 	}
 
 	display() {
 		const el = this.containerEl; el.empty();
-		new Setting(el).setName('Default language').setDesc('Wiktionary language section to search.').addDropdown((dropdown) => { this.plugin.settings.languages.forEach((item) => { dropdown.addOption(item.code, item.name); }); dropdown.setValue(this.plugin.settings.defaultLanguage).onChange((value) => { this.plugin.settings.defaultLanguage = value; void this.plugin.saveSettings(); }); });
-		new Setting(el).setName('Note folder').setDesc('Folder for vocabulary notes. Leave empty for the vault root.').addText((text) => text.setValue(this.plugin.settings.noteFolder).onChange((value) => { this.plugin.settings.noteFolder = value.trim(); void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Filename template').setDesc('Supports {{word}} and {{language}}.').addText((text) => text.setValue(this.plugin.settings.filenameTemplate).onChange((value) => { this.plugin.settings.filenameTemplate = value || '{{word}}'; void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Cache ttl (days)').addText((text) => text.setValue(String(this.plugin.settings.cacheTtlDays)).onChange((value) => { const n = Math.max(1, Number(value) || 7); this.plugin.settings.cacheTtlDays = n; void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Maximum cached entries').addText((text) => text.setValue(String(this.plugin.settings.maxCacheEntries)).onChange((value) => { const n = Math.max(1, Number(value) || 100); this.plugin.settings.maxCacheEntries = n; void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Supertonic local tts').setDesc(`${this.plugin.settings.ttsEnabled ? 'Enabled' : 'Disabled'}. Optional audio supplement and selected-text reader.`).addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsEnabled).onChange((value) => { this.plugin.settings.ttsEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
-		new Setting(el).setName('Auto-generate tts when audio is missing').setDesc('Creates a supertonic audio source during lookup when wiktionary has ipa but no recording.').addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsAutoGenerate).onChange((value) => { this.plugin.settings.ttsAutoGenerate = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Supertonic runtime').setDesc('Web is recommended and does not need a terminal.').addDropdown((dropdown) => dropdown.addOption('web', 'Web (recommended)').addOption('server', 'Local server').setValue(this.plugin.settings.ttsRuntime).onChange((value) => { this.plugin.settings.ttsRuntime = value === 'server' ? 'server' : 'web'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Supertonic endpoint').setDesc('Used only by the local server runtime.').addText((text) => text.setValue(this.plugin.settings.supertonicEndpoint).onChange((value) => { this.plugin.settings.supertonicEndpoint = value.trim() || 'http://127.0.0.1:7788/v1/tts'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Supertonic voice').addText((text) => text.setValue(this.plugin.settings.supertonicVoice).onChange((value) => { this.plugin.settings.supertonicVoice = value.trim() || 'M1'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Supertonic steps').addText((text) => text.setValue(String(this.plugin.settings.supertonicSteps)).onChange((value) => { this.plugin.settings.supertonicSteps = Math.min(16, Math.max(4, Math.floor(Number(value) || 8))); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Supertonic speed').addText((text) => text.setValue(String(this.plugin.settings.supertonicSpeed)).onChange((value) => { this.plugin.settings.supertonicSpeed = Math.min(2, Math.max(0.7, Number(value) || 1.05)); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Default template').addDropdown((dropdown) => { this.plugin.settings.templates.forEach((template) => { dropdown.addOption(template.id, template.name); }); dropdown.setValue(this.plugin.settings.defaultTemplateId).onChange((value) => { this.plugin.settings.defaultTemplateId = value; void this.plugin.saveSettings(); }); });
-		new Setting(el).setName('Existing note behavior').setDesc('Update section preserves content outside mynary markers and replaces only the generated section.').addDropdown((dropdown) => dropdown.addOption('ask', 'Ask before replacing').addOption('overwrite', 'Replace automatically').addOption('update-section', 'Update section').setValue(this.plugin.settings.existingNoteBehavior).onChange((value) => { this.plugin.settings.existingNoteBehavior = value as DictionarySettings['existingNoteBehavior']; void this.plugin.saveSettings(); }));
-		new Setting(el).setName('Templates').setDesc('Choose a template separately each time you copy, insert or create a note. Manage names, content, variables and default template in a larger editor.').addButton((button) => button.setButtonText('Manage templates').onClick(() => this.plugin.openTemplateManager()));
-		new Setting(el).setName('Clear cache').addButton((button) => button.setButtonText('Clear').setWarning().onClick(() => { void this.plugin.cache.clear().then(() => { new Notice('Dictionary cache cleared.'); this.display(); }); }));
+		const createGroup = (title: string, description: string, open = false) => {
+			const group = el.createEl('details', { cls: 'mynary-settings-group' });
+			group.open = open;
+			const summary = group.createEl('summary');
+			summary.createEl('strong', { text: title });
+			group.createEl('p', { cls: 'mynary-settings-group-description', text: description });
+			return group;
+		};
+
+		const dictionary = createGroup('Dictionary', 'Choose the language used for dictionary lookup.', true);
+		new Setting(dictionary).setName('Default language').setDesc('Wiktionary language section to search.').addDropdown((dropdown) => { this.plugin.settings.languages.forEach((item) => { dropdown.addOption(item.code, item.name); }); dropdown.setValue(this.plugin.settings.defaultLanguage).onChange((value) => { this.plugin.settings.defaultLanguage = value; void this.plugin.saveSettings(); }); });
+
+		const offline = createGroup('Offline dictionary', 'Install, verify, and manage local dictionary packs.');
+		new Setting(offline).setName('Offline dictionary packs').setDesc('Installed packs are checked before Wiktionary. Core packs provide definitions; bilingual packs add translations.').addToggle((toggle) => toggle.setValue(this.plugin.settings.offlineDictionaryEnabled !== false).onChange((value) => { this.plugin.settings.offlineDictionaryEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); })).addButton((button) => button.setButtonText('Choose language').onClick(() => void this.plugin.installDictionaryPackFromCatalog(() => this.display()))).addButton((button) => button.setButtonText('Install from URL').onClick(() => void this.plugin.installDictionaryPackFromUrl(() => this.display())));
+		const packPanel = offline.createDiv('mynary-pack-manager');
+		new Setting(packPanel).setName('Installed dictionaries').setHeading();
+		packPanel.createEl('p', { text: 'How to install: select Choose language to load the catalog, pick a language, and select Install. Use Install from URL only for a custom manifest. Packs are verified with SHA-256. If a word is missing, Mynary falls back to Wiktionary when online.' });
+		packPanel.createDiv({ cls: 'mynary-state mynary-loading', text: 'Checking installed packs…' });
+		void this.renderInstalledPacks(packPanel);
+
+		const translate = createGroup('Translate', 'Configure the local MTranServer connection and translation defaults.');
+		new Setting(translate).setName('MTranServer translation').setDesc('Translate selected text using a local MTranServer instance.').addToggle((toggle) => toggle.setValue(this.plugin.settings.mtranServerEnabled).onChange((value) => { this.plugin.settings.mtranServerEnabled = value; void this.plugin.saveSettings(); this.display(); }));
+		new Setting(translate).setName('MTranServer endpoint').setDesc('Usually http://127.0.0.1:8989').addText((text) => text.setValue(this.plugin.settings.mtranServerEndpoint).onChange((value) => { this.plugin.settings.mtranServerEndpoint = value.trim().replace(/\/+$/u, '') || 'http://127.0.0.1:8989'; void this.plugin.saveSettings(); }));
+		new Setting(translate).setName('MTranServer token').setDesc('Optional bearer token configured on the local server.').addText((text) => text.setPlaceholder('Optional token').setValue(this.plugin.settings.mtranServerToken).onChange((value) => { this.plugin.settings.mtranServerToken = value; void this.plugin.saveSettings(); }));
+		new Setting(translate).setName('Translation source language').setDesc('Use the current dictionary language, or send auto for servers that support automatic detection.').addDropdown((dropdown) => dropdown.addOption('current', 'Current dictionary language').addOption('auto', 'Auto detect').setValue(this.plugin.settings.mtranSourceLanguage).onChange((value) => { this.plugin.settings.mtranSourceLanguage = value === 'auto' ? 'auto' : 'current'; void this.plugin.saveSettings(); }));
+		new Setting(translate).setName('Translation target language').setDesc('Default language supported by MTranServer. The translation panel can override this per request.').addDropdown((dropdown) => {
+			for (const language of MTRAN_LANGUAGE_OPTIONS) dropdown.addOption(language.code, `${language.name} (${language.code})`);
+			dropdown.setValue(this.plugin.settings.mtranTargetLanguage);
+			dropdown.onChange((value) => {
+				this.plugin.settings.mtranTargetLanguage = value;
+				void this.plugin.saveSettings();
+			});
+		});
+		new Setting(translate).setName('Translation request timeout').setDesc('Maximum wait time in seconds for the local server.').addText((text) => text.setValue(String(this.plugin.settings.mtranServerTimeoutMs / 1000)).onChange((value: string) => { const seconds = Math.min(120, Math.max(1, Number(value) || 15)); this.plugin.settings.mtranServerTimeoutMs = Math.round(seconds * 1000); void this.plugin.saveSettings(); }));
+
+		const tts = createGroup('TTS', 'Configure optional local speech generation and reading.', false);
+		new Setting(tts).setName('Supertonic local TTS').setDesc(`${this.plugin.settings.ttsEnabled ? 'Enabled' : 'Disabled'}. Optional audio supplement and selected-text reader.`).addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsEnabled).onChange((value) => { this.plugin.settings.ttsEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
+		new Setting(tts).setName('Auto-generate TTS when audio is missing').setDesc('Creates a Supertonic audio source during lookup when Wiktionary has IPA but no recording.').addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsAutoGenerate).onChange((value) => { this.plugin.settings.ttsAutoGenerate = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(tts).setName('Supertonic runtime').setDesc('Web is recommended and does not need a terminal.').addDropdown((dropdown) => dropdown.addOption('web', 'Web (recommended)').addOption('server', 'Local server').setValue(this.plugin.settings.ttsRuntime).onChange((value) => { this.plugin.settings.ttsRuntime = value === 'server' ? 'server' : 'web'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(tts).setName('Supertonic web runtime file').setDesc('Downloads the required WASM runtime automatically into the plugin folder.').addButton((button) => button.setButtonText('Install WASM').onClick(() => void this.plugin.installWebTtsRuntime()));
+		new Setting(tts).setName('Supertonic endpoint').setDesc('Used only by the local server runtime.').addText((text) => text.setValue(this.plugin.settings.supertonicEndpoint).onChange((value) => { this.plugin.settings.supertonicEndpoint = value.trim() || 'http://127.0.0.1:7788/v1/tts'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(tts).setName('Supertonic voice').addText((text) => text.setValue(this.plugin.settings.supertonicVoice).onChange((value) => { this.plugin.settings.supertonicVoice = value.trim() || 'M1'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(tts).setName('Supertonic steps').addText((text) => text.setValue(String(this.plugin.settings.supertonicSteps)).onChange((value) => { this.plugin.settings.supertonicSteps = Math.min(16, Math.max(4, Math.floor(Number(value) || 8))); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(tts).setName('Supertonic speed').addText((text) => text.setValue(String(this.plugin.settings.supertonicSpeed)).onChange((value) => { this.plugin.settings.supertonicSpeed = Math.min(2, Math.max(0.7, Number(value) || 1.05)); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+
+		const notes = createGroup('Notes, templates, and cache', 'Manage generated notes and local lookup storage.', false);
+		new Setting(notes).setName('Note folder').setDesc('Folder for vocabulary notes. Leave empty for the vault root.').addText((text) => text.setValue(this.plugin.settings.noteFolder).onChange((value) => { this.plugin.settings.noteFolder = value.trim(); void this.plugin.saveSettings(); }));
+		new Setting(notes).setName('Filename template').setDesc('Supports {{word}} and {{language}}.').addText((text) => text.setValue(this.plugin.settings.filenameTemplate).onChange((value) => { this.plugin.settings.filenameTemplate = value || '{{word}}'; void this.plugin.saveSettings(); }));
+		new Setting(notes).setName('Default template').addDropdown((dropdown) => { this.plugin.settings.templates.forEach((template) => { dropdown.addOption(template.id, template.name); }); dropdown.setValue(this.plugin.settings.defaultTemplateId).onChange((value) => { this.plugin.settings.defaultTemplateId = value; void this.plugin.saveSettings(); }); });
+		new Setting(notes).setName('Existing note behavior').setDesc('Update section preserves content outside Mynary markers and replaces only the generated section.').addDropdown((dropdown) => dropdown.addOption('ask', 'Ask before replacing').addOption('overwrite', 'Replace automatically').addOption('update-section', 'Update section').setValue(this.plugin.settings.existingNoteBehavior).onChange((value) => { this.plugin.settings.existingNoteBehavior = value as DictionarySettings['existingNoteBehavior']; void this.plugin.saveSettings(); }));
+		new Setting(notes).setName('Templates').setDesc('Choose a template separately each time you copy, insert or create a note.').addButton((button) => button.setButtonText('Manage templates').onClick(() => this.plugin.openTemplateManager()));
+		new Setting(notes).setName('Cache TTL (days)').addText((text) => text.setValue(String(this.plugin.settings.cacheTtlDays)).onChange((value) => { const n = Math.max(1, Number(value) || 7); this.plugin.settings.cacheTtlDays = n; void this.plugin.saveSettings(); }));
+		new Setting(notes).setName('Maximum cached entries').addText((text) => text.setValue(String(this.plugin.settings.maxCacheEntries)).onChange((value) => { const n = Math.max(1, Number(value) || 100); this.plugin.settings.maxCacheEntries = n; void this.plugin.saveSettings(); }));
+		new Setting(notes).setName('Clear dictionary cache').addButton((button) => button.setButtonText('Clear').setWarning().onClick(() => { void this.plugin.cache.clear().then(() => { new Notice('Dictionary cache cleared.'); this.display(); }); }));
+	}
+
+	private async renderInstalledPacks(panel: HTMLElement) {
+		const packs = await this.plugin.getInstalledDictionaryPacks();
+		panel.empty();
+		new Setting(panel).setName('Installed dictionaries').setHeading();
+		if (!packs.length) {
+			panel.createDiv({ cls: 'mynary-empty', text: 'No offline dictionary packs installed.' });
+			return;
+		}
+		for (const pack of packs) {
+			const row = panel.createDiv('mynary-pack-row');
+			const details = row.createDiv('mynary-pack-details');
+			details.createEl('strong', { text: pack.name || pack.id });
+			details.createDiv({ text: `${pack.language.toUpperCase()} · ${pack.entryCount.toLocaleString()} entries · ${pack.version}` });
+			row.createEl('button', { text: 'Remove' }).addEventListener('click', () => {
+				void this.plugin.removeDictionaryPack(pack.language).then(() => this.display());
+			});
+		}
 	}
 }
