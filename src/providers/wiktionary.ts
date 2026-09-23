@@ -1,7 +1,7 @@
 import { DictionaryEntry } from '../types';
-import { normalizeEntry, parseFormOfLinks, parseWiktionaryHtml } from './wiktionary-html-parser';
+import { normalizeEntry, parseWiktionaryHtml } from './wiktionary-html-parser';
 import type { TtsProvider } from './supertonic';
-import { getEnglishDeinflections } from './english-deinflector';
+import type { OfflineDictionaryProvider } from './offline-dictionary';
 
 export interface WiktionaryHttpResponse { status: number; json: unknown; }
 export type WiktionaryRequester = (url: string) => Promise<WiktionaryHttpResponse>;
@@ -12,6 +12,7 @@ export class WiktionaryProvider {
 		private readonly request: WiktionaryRequester,
 		private readonly tts?: TtsProvider,
 		private readonly autoTts = false,
+		private readonly offlineForLanguage?: (language: string) => OfflineDictionaryProvider | OfflineDictionaryProvider[] | Promise<OfflineDictionaryProvider | OfflineDictionaryProvider[]>,
 	) {}
 
 	get ttsAvailable() { return Boolean(this.tts); }
@@ -23,30 +24,35 @@ export class WiktionaryProvider {
 	}
 
 	async lookup(word: string, language: string): Promise<DictionaryEntry> {
+		const offlineResult = await this.offlineForLanguage?.(language);
+		if (offlineResult) {
+			const offlinePacks = Array.isArray(offlineResult) ? offlineResult : [offlineResult];
+			let combined: DictionaryEntry | undefined;
+			for (const offline of offlinePacks) {
+				const offlineEntry = await offline.lookup(word);
+				if (!offlineEntry || offlineEntry.language !== language) continue;
+				if (!combined) combined = offlineEntry;
+				else {
+					combined.translations = uniqueTranslations([...combined.translations, ...offlineEntry.translations]);
+					if (!combined.meanings.length && offlineEntry.meanings.length) combined.meanings = offlineEntry.meanings;
+					if (!combined.phonetics.length && offlineEntry.phonetics.length) combined.phonetics = offlineEntry.phonetics;
+				}
+			}
+			if (combined) return combined;
+		}
 		const baseUrl = `https://${language}.wiktionary.org/w/api.php`;
 		const requestedTitle = word.trim();
 		const direct = await this.fetchPage(baseUrl, requestedTitle);
 		if (direct.html && direct.title) {
 			const entry = await this.parsePage(baseUrl, word, language, direct.title, direct.html);
-			if (entry.meanings.length) return entry;
-			const formOfEntry = await this.lookupFormOfLinks(baseUrl, direct.html, word, language);
-			if (formOfEntry) return formOfEntry;
+			return entry;
 		}
 		const lowercaseTitle = requestedTitle.toLocaleLowerCase();
 		if (lowercaseTitle !== requestedTitle) {
 			const lowercase = await this.fetchPage(baseUrl, lowercaseTitle);
 			if (lowercase.html && lowercase.title) {
 				const entry = await this.parsePage(baseUrl, word, language, lowercase.title, lowercase.html);
-				if (entry.meanings.length) return entry;
-			}
-		}
-		if (language === 'en') {
-			for (const candidate of getEnglishDeinflections(requestedTitle)) {
-				let page: { title?: string; html?: string };
-				try { page = await this.fetchPage(baseUrl, candidate.word); } catch { continue; }
-				if (!page.html || !page.title) continue;
-				const entry = await this.parsePage(baseUrl, word, language, page.title, page.html);
-				if (entry.meanings.length) return { ...entry, baseWord: page.title, inflection: candidate.reason };
+				return entry;
 			}
 		}
 
@@ -61,22 +67,10 @@ export class WiktionaryProvider {
 			const resolved = await this.fetchPage(baseUrl, resolvedTitle);
 			if (resolved.html && resolved.title) {
 				const entry = await this.parsePage(baseUrl, word, language, resolved.title, resolved.html);
-				if (entry.meanings.length) return entry;
+				return entry;
 			}
 		}
 		throw new Error(`No entry found for “${word}”.`);
-	}
-
-	private async lookupFormOfLinks(baseUrl: string, html: string, word: string, language: string) {
-		for (const lemma of parseFormOfLinks(html, language)) {
-			if (lemma.toLocaleLowerCase() === word.trim().toLocaleLowerCase()) continue;
-			let page: { title?: string; html?: string };
-			try { page = await this.fetchPage(baseUrl, lemma); } catch { continue; }
-			if (!page.html || !page.title) continue;
-			const entry = await this.parsePage(baseUrl, word, language, page.title, page.html);
-			if (entry.meanings.length) return { ...entry, baseWord: page.title, inflection: 'Wiktionary form-of link' };
-		}
-		return undefined;
 	}
 
 	private async fetchPage(baseUrl: string, title: string): Promise<{ title?: string; html?: string }> {
@@ -135,4 +129,14 @@ export class WiktionaryProvider {
 	private assertSuccess(status: number) {
 		if (status < 200 || status >= 300) throw new Error(`Wiktionary request failed (${status}).`);
 	}
+}
+
+function uniqueTranslations(translations: DictionaryEntry['translations']) {
+	const seen = new Set<string>();
+	return translations.filter((translation) => {
+		const key = `${translation.languageCode ?? translation.language ?? ''}\u0000${translation.word.toLocaleLowerCase()}`;
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
 }

@@ -1,9 +1,9 @@
-import { DictionaryEntry, Definition, Meaning, Pronunciation, Translation } from '../types';
+import { Definition, DictionaryEntry, Meaning, Pronunciation, Translation } from '../types';
 import { getLanguageHeadingAliases, getSectionAliases } from './language-registry';
 
 const NON_MEANING_HEADINGS = new Set([
 	'alternative forms', 'alternative spellings', 'etymology', 'pronunciation', 'usage notes',
-	'derived terms', 'descendants', 'translations', 'synonyms', 'antonyms', 'references',
+	'derived terms', 'descendants', 'translations', 'synonyms', 'antonyms', 'references', 'conjugation', 'inflection',
 	'further reading', 'see also', 'anagrams', 'related words', 'coordinate terms',
 	'từ nguyên', 'cách phát âm', 'bản dịch', 'từ đồng nghĩa', 'từ trái nghĩa', 'tham khảo',
 	'語源', '発音', '翻訳', '類義語', '対義語', '参考',
@@ -31,17 +31,6 @@ const PARTS_OF_SPEECH = new Set([
 ]);
 
 export type DocumentFactory = (html: string) => Document;
-
-/** Extracts lemma links from Wiktionary's rendered form-of explanations. */
-export function parseFormOfLinks(html: string, language: string, documentFactory: DocumentFactory = (value) => new DOMParser().parseFromString(value, 'text/html')): string[] {
-	const document = documentFactory(html);
-	const values = Array.from(document.querySelectorAll('a')).filter((link) => {
-		const className = link.className.toString().toLocaleLowerCase();
-		const text = link.parentElement?.textContent?.toLocaleLowerCase() ?? '';
-		return className.includes('form-of') || /\b(?:form|forms) of\b/.test(text);
-	}).map((link) => cleanText(link.textContent ?? '')).filter(Boolean);
-	return [...new Set(values)].filter((value) => value.toLocaleLowerCase() !== language.toLocaleLowerCase());
-}
 
 export function parseWiktionaryHtml(
 	html: string,
@@ -90,6 +79,7 @@ export function normalizeEntry(entry: DictionaryEntry): DictionaryEntry {
 				definitions: uniqueBy(meaning.definitions.map((definition) => ({
 					text: cleanText(definition.text),
 					examples: uniqueBy(definition.examples.map(cleanText).filter((example) => !isQuoteText(example)), (example) => example.toLocaleLowerCase()),
+					...(definition.links?.length ? { links: uniqueBy(definition.links.map((link) => ({ ...link, text: cleanText(link.text), target: cleanText(link.target) })).filter((link) => link.text && link.target), (link) => `${link.text}|${link.target}|${link.url}`) } : {}),
 				})), (definition) => definition.text.toLocaleLowerCase()),
 			}))
 			.filter((meaning) => meaning.definitions.length > 0),
@@ -121,7 +111,7 @@ function parseMeanings(nodes: Element[], language: string): Meaning[] {
 		const block = nodesBetween(nodes, heading, nextAnyHeading(nodes, heading));
 		const list = block.find((node) => node.tagName === 'OL' && node.querySelector(':scope > li'));
 		if (!list) continue;
-		const definitions = Array.from(list.querySelectorAll(':scope > li')).map((item) => parseDefinition(item)).filter((item): item is Definition => Boolean(item));
+		const definitions = Array.from(list.querySelectorAll(':scope > li')).map((item) => parseDefinition(item, language)).filter((item): item is Definition => Boolean(item));
 		if (!definitions.length) continue;
 		const isPos = isPartOfSpeech(normalized);
 		const parent = nearestParentHeading(headings, heading);
@@ -155,13 +145,33 @@ function isNonMeaningHeading(value: string, language: string) {
 		.some((alias) => value === alias.toLocaleLowerCase());
 }
 
-function parseDefinition(item: Element): Definition | undefined {
+function parseDefinition(item: Element, language: string): Definition | undefined {
 	const clone = item.cloneNode(true) as Element;
 	Array.from(clone.querySelectorAll('ol, ul, dl, blockquote, style, script, template, .citation, .reference, .references, .quotation, .quote, [class*="quote"], sup')).forEach((node) => node.remove());
 	const text = cleanText(clone.textContent ?? '');
 	if (!text) return undefined;
 	const examples = Array.from(item.querySelectorAll('dl dd, .example, .e-example, .usage-example')).filter((node) => !isQuoteElement(node)).map((node) => cleanText(node.textContent ?? '')).filter(Boolean);
-	return { text, examples: [...new Set(examples)] };
+	const links = Array.from(item.querySelectorAll('a'))
+		.filter((link) => !link.closest('dl, blockquote, .citation, .reference, .references, .quotation, .quote, [class*="quote"]'))
+		.map((link) => parseDefinitionLink(link, language)).filter((link): link is NonNullable<typeof link> => Boolean(link));
+	return { text, examples: [...new Set(examples)], ...(links.length ? { links: uniqueBy(links, (link) => `${link.text}|${link.target}|${link.url}`) } : {}) };
+}
+
+function parseDefinitionLink(link: Element, language: string) {
+	const text = cleanText(link.textContent ?? '');
+	const href = link.getAttribute('href') ?? '';
+	if (!text || !href) return undefined;
+	try {
+		const url = new URL(href, `https://${language}.wiktionary.org`);
+		const hostLanguage = url.hostname.match(/^([a-z-]+)\.wiktionary\.org$/i)?.[1];
+		if (hostLanguage && hostLanguage.toLocaleLowerCase() !== language.toLocaleLowerCase()) return undefined;
+		const title = url.pathname.startsWith('/wiki/') ? url.pathname.slice('/wiki/'.length) : url.searchParams.get('title') ?? '';
+		const target = decodeURIComponent(title).replace(/_/g, ' ').split('#')[0]?.trim();
+		if (!target || /^(?:category|template|appendix|special):/i.test(target)) return undefined;
+		return { text, target: cleanText(target), url: url.toString() };
+	} catch {
+		return undefined;
+	}
 }
 
 function parsePhonetics(nodes: Element[], language: string): Pronunciation[] {
@@ -339,6 +349,7 @@ function nextAnyHeading(nodes: Element[], start: Element): Element | undefined {
 }
 
 function headingText(element: Element) { return cleanText(element.querySelector('.mw-headline')?.textContent ?? element.textContent ?? ''); }
+
 function matchesHeading(element: Element, aliases: string[]) {
 	const value = headingText(element).toLocaleLowerCase();
 	return aliases.some((alias) => value === alias.toLocaleLowerCase());

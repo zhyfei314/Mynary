@@ -8,7 +8,6 @@ export function renderEntry(container: HTMLElement, entry: DictionaryEntry, plug
 	const metadata = container.createDiv('mynary-entry-metadata');
 	metadata.createSpan({ text: plugin.lastLookupWasCached ? 'Cached result' : 'Fresh result' });
 	metadata.createSpan({ text: ` · ${entry.language.toUpperCase()}` });
-	if (entry.baseWord) metadata.createSpan({ text: ` · Base form: ${entry.baseWord} (${entry.inflection ?? 'inflected form'})` });
 	if (entry.phonetics.length) renderPronunciations(container, entry.phonetics, plugin, entry.word, entry.language);
 	const definitions = container.createDiv('mynary-definitions');
 	const totalDefinitions = entry.meanings.reduce((total, meaning) => total + meaning.definitions.length, 0);
@@ -24,7 +23,8 @@ export function renderEntry(container: HTMLElement, entry: DictionaryEntry, plug
 			if (meaning.etymology) section.createDiv({ text: meaning.etymology, cls: 'mynary-meaning-context' });
 			const list = section.createEl('ol');
 			visible.forEach((definition) => {
-				const li = list.createEl('li', { text: definition.text });
+				const li = list.createEl('li');
+				renderLinkedText(li, definition.text, definition.links ?? [], entry.language, plugin);
 				definition.examples.forEach((example) => li.createEl('blockquote', { text: example }));
 			});
 			remaining -= visible.length;
@@ -52,6 +52,27 @@ export function renderEntry(container: HTMLElement, entry: DictionaryEntry, plug
 	const refresh = actions.createEl('button', { text: 'Refresh' });
 	refresh.addEventListener('click', () => void plugin.refreshLookup());
 	const source = container.createEl('a', { text: `Source: ${entry.source.name}`, href: entry.source.url, cls: 'mynary-source' }); source.target = '_blank';
+}
+
+function renderLookupLink(container: HTMLElement, word: string, language: string, plugin: MynaryPlugin, label = word) {
+	const link = container.createEl('a', { text: label, href: '#', cls: 'mynary-word-link' });
+	link.setAttribute('aria-label', `Look up ${word}`);
+	link.addEventListener('click', (event) => {
+		event.preventDefault();
+		void plugin.lookup(word, language);
+	});
+}
+
+function renderLinkedText(container: HTMLElement, text: string, links: NonNullable<DictionaryEntry['meanings'][number]['definitions'][number]['links']>, language: string, plugin: MynaryPlugin) {
+	let cursor = 0;
+	for (const link of links) {
+		const index = text.indexOf(link.text, cursor);
+		if (index < cursor) continue;
+		if (index > cursor) container.appendText(text.slice(cursor, index));
+		renderLookupLink(container, link.target, language, plugin, link.text);
+		cursor = index + link.text.length;
+	}
+	if (cursor < text.length) container.appendText(text.slice(cursor));
 }
 
 function renderPronunciations(container: HTMLElement, pronunciations: DictionaryEntry['phonetics'], plugin: MynaryPlugin, word: string, language: string) {

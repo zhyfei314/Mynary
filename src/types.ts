@@ -11,7 +11,8 @@ export interface AudioSource {
 	confidence?: number;
 }
 export interface Pronunciation { text: string; type?: string; audio?: AudioSource[]; }
-export interface Definition { text: string; examples: string[]; }
+export interface DefinitionLink { text: string; target: string; url: string; }
+export interface Definition { text: string; examples: string[]; links?: DefinitionLink[]; }
 export interface Meaning { partOfSpeech?: string; labels?: string[]; etymology?: string; definitions: Definition[]; }
 export interface Translation {
 	word: string;
@@ -22,5 +23,23 @@ export interface Translation {
 	labels?: string[];
 }
 export interface DictionarySource { id: string; name: string; url: string; }
-export interface DictionaryEntry { word: string; baseWord?: string; inflection?: string; language: string; phonetics: Pronunciation[]; meanings: Meaning[]; translations: Translation[]; synonyms: string[]; antonyms: string[]; etymology?: string; source: DictionarySource; fetchedAt: number; }
+export interface DictionaryEntry { word: string; language: string; phonetics: Pronunciation[]; meanings: Meaning[]; translations: Translation[]; synonyms: string[]; antonyms: string[]; etymology?: string; source: DictionarySource; fetchedAt: number; }
+export interface DictionaryPackManifest {
+	format: 'mynary-pack-v1';
+	id: string;
+	kind: 'core' | 'bilingual';
+	language: string;
+	targetLanguage?: string;
+	name: string;
+	version: string;
+	entryCount: number;
+	indexFile: string;
+	entriesFile: string;
+	compressed?: boolean;
+	source?: string;
+	license?: string;
+	sha256?: string;
+	indexSha256?: string;
+	entriesSha256?: string;
+}
 export interface TemplateDefinition { id: string; name: string; content: string; }

@@ -20,7 +20,7 @@ function fakePlugin(initial: Record<string, unknown> = {}) {
 }
 
 function settings(overrides: Partial<DictionarySettings> = {}): DictionarySettings {
-	return { defaultLanguage: 'en', languages: [], noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: [], existingNoteBehavior: 'ask', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'web', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, ...overrides };
+	return { defaultLanguage: 'en', languages: [], noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: [], existingNoteBehavior: 'ask', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'web', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'vi', mtranTargetLanguages: {}, ...overrides };
 }
 
 describe('cache manager', () => {

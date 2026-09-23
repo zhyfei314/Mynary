@@ -1,6 +1,6 @@
 {
 	"name": "mynary-dictionary",
-	"version": "1.1.0",
+	"version": "1.1.3",
 	"description": "Wiktionary dictionary lookup and personalized vocabulary notes for Obsidian.",
 	"main": "main.js",
 	"type": "module",
@@ -8,6 +8,11 @@
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"test": "vitest run",
+		"build:pack": "node scripts/build-dictionary-pack.mjs",
+		"build:packs": "node scripts/build-all-dictionary-packs.mjs",
+		"migrate:packs": "node scripts/migrate-dictionary-packs.mjs",
+		"catalog:packs": "node scripts/build-pack-catalog.mjs release dictionary-catalog/catalog.json",
+		"verify:packs": "node scripts/verify-dictionary-packs.mjs release",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint ."
 	},

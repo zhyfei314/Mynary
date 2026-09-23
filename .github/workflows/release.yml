@@ -3,15 +3,13 @@ name: Release Obsidian plugin
 on:
     push:
         tags:
-            - '*'
+            - '*.*.*'
 
 jobs:
     build:
         runs-on: ubuntu-latest
         permissions:
             contents: write
-            id-token: write
-            attestations: write
         steps:
             - uses: actions/checkout@v6
 
@@ -24,19 +22,25 @@ jobs:
             - name: Build plugin
               run: |
                   npm ci
+                  npm test
+                  npm run lint
                   npm run build
+
+            - name: Validate release version
+              run: |
+                  tag="${GITHUB_REF#refs/tags/}"
+                  version=$(node -p "require('./manifest.json').version")
+                  package_version=$(node -p "require('./package.json').version")
+                  test "$tag" = "$version"
+                  test "$tag" = "$package_version"
 
             - name: Check for optional styles
               id: styles
               run: |
                   [ -f styles.css ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
 
-            - name: Attest build provenance
-              uses: actions/attest@v4
-              with:
-                  subject-path: |
-                      main.js
-                      ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
+            - name: Generate SHA-256 checksums
+              run: sha256sum main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }} > SHA256SUMS
 
             - name: Create release
               env:
@@ -46,5 +50,5 @@ jobs:
 
                   gh release create "$tag" \
                     --title="$tag" \
-                    --draft \
-                    main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
+                    --generate-notes \
+                    main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }} SHA256SUMS

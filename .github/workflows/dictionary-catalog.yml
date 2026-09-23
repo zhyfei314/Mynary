@@ -1,0 +1,77 @@
+name: Refresh dictionary catalog
+
+on:
+    workflow_dispatch:
+    push:
+        tags:
+            - '*.*.*'
+    schedule:
+        - cron: '23 4 * * 1'
+
+jobs:
+    refresh:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+            - name: Install Hugging Face client
+              run: python -m pip install 'huggingface_hub>=0.30'
+            - name: Download pack manifests and build catalog
+              env:
+                  HF_TOKEN: ${{ secrets.HF_TOKEN }}
+              run: |
+                  python - <<'PY'
+                  import os
+                  from huggingface_hub import snapshot_download
+
+                  snapshot_download(
+                      repo_id='zhyfei314/Mynary-Offline-Dictionary',
+                      repo_type='dataset',
+                      allow_patterns='release/**',
+                      local_dir='hf-dataset',
+                      token=os.environ.get('HF_TOKEN') or None,
+                  )
+                  PY
+                  node scripts/verify-dictionary-packs.mjs hf-dataset/release
+                  node scripts/build-pack-catalog.mjs hf-dataset/release dictionary-catalog/catalog.json
+                  cp dictionary-catalog/catalog.json /tmp/mynary-pack-catalog.json
+            - name: Upload catalog to Dataset repository
+              env:
+                  HF_TOKEN: ${{ secrets.HF_TOKEN }}
+              run: |
+                  python - <<'PY'
+                  import os
+                  from huggingface_hub import HfApi
+
+                  token = os.environ.get('HF_TOKEN')
+                  if token:
+                      HfApi(token=token).upload_file(
+                          path_or_fileobj='dictionary-catalog/catalog.json',
+                          path_in_repo='catalog.json',
+                          repo_id='zhyfei314/Mynary-Offline-Dictionary',
+                          repo_type='dataset',
+                          commit_message='Refresh offline dictionary pack catalog',
+                      )
+                  else:
+                      print('HF_TOKEN is not configured; the GitHub catalog will still be refreshed.')
+                  PY
+            - name: Update GitHub catalog copy
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  git fetch origin master
+                  git checkout -B master origin/master
+                  cp /tmp/mynary-pack-catalog.json dictionary-catalog/catalog.json
+                  git config user.name github-actions[bot]
+                  git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+                  git add dictionary-catalog/catalog.json
+                  if git diff --cached --quiet; then
+                    echo "Catalog has no changes."
+                  else
+                    git commit -m "chore: refresh offline dictionary catalog"
+                    git push origin master
+                  fi

@@ -15,8 +15,6 @@ function page(title: string, html: string): WiktionaryHttpResponse {
 const mainWithTranslationLink = '<h2>English</h2><h3>Etymology 1</h3><h4>Noun</h4><ol><li>Affection.</li></ol><h4>Translations</h4><p>See <a href="/wiki/love/translations#Noun">love/translations § Noun</a>.</p>';
 const translationPage = '<h2>English</h2><h3>Noun</h3><h4>Translations</h4><h5>strong affection</h5><ul><li><a lang="vi">Vietnamese</a>: <a>tình yêu</a></li><li><a lang="ja">Japanese</a>: <a>愛</a></li></ul>';
 const ipaOnlyPage = '<h2>English</h2><h3>Pronunciation</h3><ul><li><span class="IPA">/hɛˈloʊ/</span></li></ul><h3>Noun</h3><ol><li>A greeting.</li></ol>';
-const inflectedPage = '<h2>English</h2><h3>Verb</h3><p>simple past and past participle of walk</p>';
-const lemmaPage = '<h2>English</h2><h3>Verb</h3><ol><li>To move by placing one foot in front of the other.</li></ol>';
 
 describe('Wiktionary provider integration', () => {
 	it('fails with a timeout when Wiktionary does not respond', async () => {
@@ -85,16 +83,19 @@ describe('Wiktionary provider integration', () => {
 		await expect(missing.lookup('not-a-real-word', 'en')).rejects.toThrow('No entry found');
 	});
 
-	it('resolves an English inflected page to a lemma when it has no meanings', async () => {
-		const responses = [page('walked', inflectedPage), page('walked/translations', ''), page('walk', lemmaPage), page('walk/translations', '')];
-		const provider = new WiktionaryProvider(async () => responses.shift() ?? { status: 404, json: {} });
+	it('returns an inflected page as Wiktionary presents it instead of resolving a lemma', async () => {
+		const destroysPage = '<h2>English</h2><h3>Verb</h3><ol><li>third-person singular simple present indicative of <a href="/wiki/destroy">destroy</a></li></ol>';
+		const responses = [page('destroys', destroysPage), { status: 404, json: {} }];
+		const urls: string[] = [];
+		const provider = new WiktionaryProvider(async (url) => { urls.push(url); return responses.shift() ?? { status: 404, json: {} }; });
 
-		const entry = await provider.lookup('walked', 'en');
+		const entry = await provider.lookup('destroys', 'en');
 
-		expect(entry.word).toBe('walked');
-		expect(entry.baseWord).toBe('walk');
-		expect(entry.inflection).toBe('past tense');
-		expect(entry.meanings[0]?.definitions[0]?.text).toContain('move by placing');
+		expect(entry.word).toBe('destroys');
+		expect(entry.meanings[0]?.definitions[0]?.text).toBe('third-person singular simple present indicative of destroy');
+		expect(entry.meanings[0]?.definitions[0]?.links?.[0]?.target).toBe('destroy');
+		expect(urls).toHaveLength(2);
+		expect(urls.some((url) => /[?&]page=destroy(?:&|$)/.test(url))).toBe(false);
 	});
 
 	it('adds Supertonic as a secondary track only when auto-generation is enabled', async () => {

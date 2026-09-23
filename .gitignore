@@ -8,12 +8,23 @@
 # npm
 node_modules
 
+# Local dictionary build output and large pack archives.
+dictionary-packs/
+release/
+*.tar.gz
+
+# Local vault/plugin state.
+.mynary/
+
 # Don't include the compiled main.js file in the repo.
 # They should be uploaded to GitHub releases instead.
 main.js
 
 # Exclude sourcemaps
 *.map
+
+# Downloaded optional runtime; install it from Mynary settings when needed.
+ort-wasm-simd-threaded.jsep.wasm
 
 # obsidian
 data.json

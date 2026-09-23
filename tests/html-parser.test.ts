@@ -90,6 +90,22 @@ describe('rendered Wiktionary HTML parser', () => {
 		expect(entry.phonetics).toEqual([{ text: '/ˈkɒn.tɛkst/' }]);
 	});
 
+	it('preserves Wiktionary form-of text and its link target', () => {
+		const html = '<h2>English</h2><h3>Verb</h3><ol><li>third-person singular simple present indicative of <a href="/wiki/destroy">destroy</a></li></ol>';
+		const entry = parseWiktionaryHtml(html, 'destroys', 'en', 'destroys', 1700000000000, (value) => new JSDOM(value).window.document);
+
+		expect(entry.meanings[0]?.definitions[0]?.text).toBe('third-person singular simple present indicative of destroy');
+		expect(entry.meanings[0]?.definitions[0]?.links).toEqual([{ text: 'destroy', target: 'destroy', url: 'https://en.wiktionary.org/wiki/destroy' }]);
+	});
+
+	it('keeps an entry definition alongside a Wiktionary form-of definition', () => {
+		const html = '<h2>English</h2><h3>Noun</h3><ol><li>plural of <a href="/wiki/run">run</a></li></ol><h3>Noun</h3><ol><li>Diarrhea.</li></ol>';
+		const entry = parseWiktionaryHtml(html, 'runs', 'en', 'runs', 1700000000000, (value) => new JSDOM(value).window.document);
+
+		expect(entry.meanings.flatMap((meaning) => meaning.definitions.map((definition) => definition.text))).toEqual(['plural of run', 'Diarrhea.']);
+		expect(entry.meanings[0]?.definitions[0]?.links?.[0]?.target).toBe('run');
+	});
+
 	it('parses translation subpages and keeps sense groups', () => {
 		const html = fixture('love-translations.html');
 		const entry = parseWiktionaryHtml(html, 'love', 'en', 'love', 1700000000000, (value) => new JSDOM(value).window.document);

@@ -19,6 +19,14 @@ export interface DictionarySettings {
 	supertonicVoice: string;
 	supertonicSteps: number;
 	supertonicSpeed: number;
+	offlineDictionaryEnabled?: boolean;
+	mtranServerEnabled: boolean;
+	mtranServerEndpoint: string;
+	mtranServerToken: string;
+	mtranServerTimeoutMs: number;
+	mtranSourceLanguage: 'current' | 'auto';
+	mtranTargetLanguage: string;
+	mtranTargetLanguages: Record<string, string>;
 }
 
 export const FLASHCARD_TEMPLATE = `# flashcards/{{language}}_Definition
@@ -54,6 +62,15 @@ export const FLASHCARD_TEMPLATE = `# flashcards/{{language}}_Definition
 {{/if}}`;
 
 export const LANGUAGES: LanguageOption[] = WIKTIONARY_LANGUAGES.map(({ code, displayName }) => ({ code, name: displayName }));
+
+// MTranServer uses this major-language set for its downloadable translation models.
+export const MTRAN_LANGUAGE_OPTIONS: LanguageOption[] = [
+	{ code: 'ar', name: 'Arabic' }, { code: 'bg', name: 'Bulgarian' }, { code: 'cs', name: 'Czech' }, { code: 'da', name: 'Danish' }, { code: 'de', name: 'German' }, { code: 'el', name: 'Greek' },
+	{ code: 'en', name: 'English' }, { code: 'es', name: 'Spanish' }, { code: 'fi', name: 'Finnish' }, { code: 'fr', name: 'French' }, { code: 'he', name: 'Hebrew' }, { code: 'hi', name: 'Hindi' },
+	{ code: 'hu', name: 'Hungarian' }, { code: 'id', name: 'Indonesian' }, { code: 'it', name: 'Italian' }, { code: 'ja', name: 'Japanese' }, { code: 'ko', name: 'Korean' }, { code: 'nl', name: 'Dutch' },
+	{ code: 'no', name: 'Norwegian' }, { code: 'pl', name: 'Polish' }, { code: 'pt', name: 'Portuguese' }, { code: 'ro', name: 'Romanian' }, { code: 'ru', name: 'Russian' }, { code: 'sk', name: 'Slovak' },
+	{ code: 'sv', name: 'Swedish' }, { code: 'th', name: 'Thai' }, { code: 'tr', name: 'Turkish' }, { code: 'uk', name: 'Ukrainian' }, { code: 'vi', name: 'Vietnamese' }, { code: 'zh', name: 'Chinese' },
+];
 
 export const DEFAULT_TEMPLATES: TemplateDefinition[] = [
 	{ id: 'basic', name: 'Basic vocabulary', content: '---\nword: {{word}}\nlanguage: {{language}}\nsource: {{source}}\nsource_url: {{sourceUrl}}\nlookup_date: {{lookupDate}}\n---\n\n# {{word}}\n\n{{meaningsMarkdown}}\n\n{{#if examplesMarkdown}}## Examples\n{{examplesMarkdown}}\n{{/if}}' },
@@ -153,7 +170,7 @@ export function migrateTemplates(templates: TemplateDefinition[]): boolean {
 	return changed;
 }
 
-export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'web', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05 };
+export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'web', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, offlineDictionaryEnabled: true, mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'en', mtranTargetLanguages: {} };
 
 export function normalizeSettings(raw: unknown): DictionarySettings {
 	const data = isRecord(raw) ? raw : {};
@@ -162,6 +179,12 @@ export function normalizeSettings(raw: unknown): DictionarySettings {
 	const defaultLanguage = typeof data.defaultLanguage === 'string' && languages.some((language) => language.code === data.defaultLanguage) ? data.defaultLanguage : languages.find((language) => language.code === 'en')?.code ?? languages[0]?.code ?? 'en';
 	const defaultTemplateId = typeof data.defaultTemplateId === 'string' && templates.some((template) => template.id === data.defaultTemplateId) ? data.defaultTemplateId : templates[0]?.id ?? 'basic';
 	const existingNoteBehavior = data.existingNoteBehavior === 'overwrite' || data.existingNoteBehavior === 'update-section' ? data.existingNoteBehavior : 'ask';
+	const requestedMtranTarget = typeof data.mtranTargetLanguage === 'string' ? data.mtranTargetLanguage.trim().toLowerCase() : '';
+	const mtranTargetLanguage = MTRAN_LANGUAGE_OPTIONS.some((language) => language.code === requestedMtranTarget) ? requestedMtranTarget : DEFAULT_SETTINGS.mtranTargetLanguage;
+	const mtranTargetLanguages = isRecord(data.mtranTargetLanguages)
+		? Object.fromEntries(Object.entries(data.mtranTargetLanguages).filter(([source, target]) => /^[a-z]{2,3}$/u.test(source) && typeof target === 'string' && MTRAN_LANGUAGE_OPTIONS.some((language) => language.code === target)).map(([source, target]) => [source, target as string]))
+		: {};
+	const requestedMtranTimeout = typeof data.mtranServerTimeoutMs === 'number' && Number.isFinite(data.mtranServerTimeoutMs) && data.mtranServerTimeoutMs > 0 ? data.mtranServerTimeoutMs : DEFAULT_SETTINGS.mtranServerTimeoutMs;
 
 	return {
 		defaultLanguage,
@@ -180,6 +203,14 @@ export function normalizeSettings(raw: unknown): DictionarySettings {
 		supertonicVoice: typeof data.supertonicVoice === 'string' && data.supertonicVoice.trim() ? data.supertonicVoice.trim() : DEFAULT_SETTINGS.supertonicVoice,
 		supertonicSteps: Math.min(16, Math.max(4, Math.floor(positiveNumber(data.supertonicSteps, DEFAULT_SETTINGS.supertonicSteps)))),
 		supertonicSpeed: Math.min(2, Math.max(0.7, positiveNumber(data.supertonicSpeed, DEFAULT_SETTINGS.supertonicSpeed))),
+		offlineDictionaryEnabled: data.offlineDictionaryEnabled !== false,
+		mtranServerEnabled: data.mtranServerEnabled === true,
+		mtranServerEndpoint: typeof data.mtranServerEndpoint === 'string' && data.mtranServerEndpoint.trim() ? data.mtranServerEndpoint.trim().replace(/\/+$/u, '') : DEFAULT_SETTINGS.mtranServerEndpoint,
+		mtranServerToken: typeof data.mtranServerToken === 'string' ? data.mtranServerToken : '',
+		mtranServerTimeoutMs: Math.min(120000, Math.max(1000, Math.floor(requestedMtranTimeout))),
+		mtranSourceLanguage: data.mtranSourceLanguage === 'auto' ? 'auto' : 'current',
+		mtranTargetLanguage,
+		mtranTargetLanguages,
 	};
 }
 

@@ -23,6 +23,22 @@ describe('template renderer', () => {
 		expect(output).toContain('2023-11-14');
 	});
 
+	it('preserves Wiktionary links in generated Markdown', () => {
+		const linked = {
+			...entry,
+			meanings: [{
+				partOfSpeech: 'Verb',
+				definitions: [{
+					text: 'third-person singular simple present indicative of destroys',
+					examples: [],
+					links: [{ text: 'destroys', target: 'destroy', url: 'https://en.wiktionary.org/wiki/destroy' }],
+				}],
+			}],
+		};
+
+		expect(renderTemplate(linked, '{{definition}}\n{{definitionsMarkdown}}')).toContain('[[destroy|destroys]]');
+	});
+
 	it('replaces unknown variables with an empty string', () => {
 		expect(renderTemplate(entry, '{{missing}}|{{word}}')).toBe('|example');
 	});

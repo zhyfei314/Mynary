@@ -15,7 +15,7 @@ function fixture(name: string) {
 function settings(): DictionarySettings {
 	return {
 		defaultLanguage: 'en', languages: [], noteFolder: 'Vocabulary', filenameTemplate: '{{word}}', cacheTtlDays: 7,
-		maxCacheEntries: 100, defaultTemplateId: 'integration', templates: [{ id: 'integration', name: 'Integration', content: '# {{word}}\n\n{{meaningsMarkdown}}\n\n{{#if examplesMarkdown}}## Examples\n{{examplesMarkdown}}\n{{/if}}' }], existingNoteBehavior: 'ask', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'web', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05,
+		maxCacheEntries: 100, defaultTemplateId: 'integration', templates: [{ id: 'integration', name: 'Integration', content: '# {{word}}\n\n{{meaningsMarkdown}}\n\n{{#if examplesMarkdown}}## Examples\n{{examplesMarkdown}}\n{{/if}}' }], existingNoteBehavior: 'ask', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'web', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'vi', mtranTargetLanguages: {},
 	};
 }
 
