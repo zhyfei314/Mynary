@@ -9,6 +9,11 @@ function fixture(name: string) {
 }
 
 describe('Wiktionary parser', () => {
+	it('preserves nested subsenses and separates etymology paragraphs', () => {
+		const entry = parseWiktionaryHtml('<h2>English</h2><h3>Etymology 1</h3><p>First origin.</p><p>Second origin.</p><h3>Noun</h3><ol><li>A top-level meaning.<ol><li>A more specific meaning.</li></ol></li></ol>', 'sample', 'en', 'sample', Date.now(), (value) => new JSDOM(value).window.document);
+		expect(entry.meanings[0]?.definitions[0]?.subDefinitions).toEqual(['A more specific meaning.']);
+		expect(entry.etymology).toContain('\n\n');
+	});
 	it('keeps sense headings under their parent part of speech', () => {
 		const entry = parseWiktionaryHtml('<h2>English</h2><h3>Verb</h3><h4>Transitive</h4><ol><li>To grapple with someone.</li></ol><h4>Intransitive</h4><ol><li>To struggle physically.</li></ol>', 'wrestle', 'en', 'wrestle', Date.now(), (value) => new JSDOM(value).window.document);
 

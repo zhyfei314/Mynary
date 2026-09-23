@@ -6,6 +6,6 @@ import { createVocabularyNoteInVault } from './note-generator';
 
 export { renderTemplate } from './renderer';
 
-export async function createVocabularyNote(app: App, entry: DictionaryEntry, settings: DictionarySettings, templateId = settings.defaultTemplateId): Promise<TFile> {
-	return createVocabularyNoteInVault(app.vault, entry, settings, templateId, () => confirmAction(app, 'Replace existing note?', `Replace “${entry.word}” with the selected dictionary template?`));
+export async function createVocabularyNote(app: App, entry: DictionaryEntry, settings: DictionarySettings, templateId = settings.defaultTemplateId, context: { targetLanguage?: string } = {}): Promise<TFile> {
+	return createVocabularyNoteInVault(app.vault, entry, settings, templateId, () => confirmAction(app, 'Replace existing note?', `Replace “${entry.word}” with the selected dictionary template?`), context);
 }

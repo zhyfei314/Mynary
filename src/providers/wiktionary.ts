@@ -24,22 +24,8 @@ export class WiktionaryProvider {
 	}
 
 	async lookup(word: string, language: string): Promise<DictionaryEntry> {
-		const offlineResult = await this.offlineForLanguage?.(language);
-		if (offlineResult) {
-			const offlinePacks = Array.isArray(offlineResult) ? offlineResult : [offlineResult];
-			let combined: DictionaryEntry | undefined;
-			for (const offline of offlinePacks) {
-				const offlineEntry = await offline.lookup(word);
-				if (!offlineEntry || offlineEntry.language !== language) continue;
-				if (!combined) combined = offlineEntry;
-				else {
-					combined.translations = uniqueTranslations([...combined.translations, ...offlineEntry.translations]);
-					if (!combined.meanings.length && offlineEntry.meanings.length) combined.meanings = offlineEntry.meanings;
-					if (!combined.phonetics.length && offlineEntry.phonetics.length) combined.phonetics = offlineEntry.phonetics;
-				}
-			}
-			if (combined) return combined;
-		}
+		const offline = await this.lookupOffline(word, language);
+		if (offline) return offline;
 		const baseUrl = `https://${language}.wiktionary.org/w/api.php`;
 		const requestedTitle = word.trim();
 		const direct = await this.fetchPage(baseUrl, requestedTitle);
@@ -71,6 +57,24 @@ export class WiktionaryProvider {
 			}
 		}
 		throw new Error(`No entry found for “${word}”.`);
+	}
+
+	async lookupOffline(word: string, language: string): Promise<DictionaryEntry | undefined> {
+		const offlineResult = await this.offlineForLanguage?.(language);
+		const offlinePacks = offlineResult ? (Array.isArray(offlineResult) ? offlineResult : [offlineResult]) : [];
+		let combined: DictionaryEntry | undefined;
+		for (const pack of offlinePacks) {
+			const entry = await pack.lookup(word);
+			if (!entry || entry.language !== language) continue;
+			if (!combined) combined = entry;
+			else {
+				combined.translations = uniqueTranslations([...combined.translations, ...entry.translations]);
+				if (!combined.meanings.length && entry.meanings.length) combined.meanings = entry.meanings;
+				if (!combined.phonetics.length && entry.phonetics.length) combined.phonetics = entry.phonetics;
+			}
+		}
+		if (combined) return combined;
+		return undefined;
 	}
 
 	private async fetchPage(baseUrl: string, title: string): Promise<{ title?: string; html?: string }> {

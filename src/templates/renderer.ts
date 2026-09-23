@@ -1,6 +1,6 @@
 import { DictionaryEntry } from '../types';
 
-export function renderTemplate(entry: DictionaryEntry, template: string): string {
+export function renderTemplate(entry: DictionaryEntry, template: string, context: { targetLanguage?: string } = {}): string {
 	const definitions = entry.meanings.flatMap((meaning) => meaning.definitions.map(renderDefinitionMarkdown));
 	const examples = entry.meanings.flatMap((meaning) => meaning.definitions.flatMap((definition) => definition.examples));
 	const meaningsMarkdown = entry.meanings.map((meaning) => {
@@ -11,6 +11,9 @@ export function renderTemplate(entry: DictionaryEntry, template: string): string
 	const values: Record<string, string> = {
 		word: entry.word,
 		language: entry.language,
+		sourceLanguage: entry.language,
+		targetLanguage: context.targetLanguage ?? entry.translations[0]?.languageCode ?? entry.translations[0]?.language ?? '',
+		audio: entry.phonetics.flatMap((phonetic) => phonetic.audio ?? []).map((audio) => audio.url)[0] ?? '',
 		IPA: entry.phonetics.map((phonetic) => phonetic.text).join(', '),
 		partOfSpeech: entry.meanings.map((meaning) => meaning.partOfSpeech).filter(Boolean).join(', '),
 		definition: definitions[0] ?? '',
@@ -36,6 +39,8 @@ export function renderTemplate(entry: DictionaryEntry, template: string): string
 		part_of_speech: 'partOfSpeech',
 		source_url: 'sourceUrl',
 		lookup_date: 'lookupDate',
+		source_language: 'sourceLanguage',
+		target_language: 'targetLanguage',
 		definitions_markdown: 'definitionsMarkdown',
 		examples_markdown: 'examplesMarkdown',
 		translations_markdown: 'translationsMarkdown',
@@ -53,6 +58,7 @@ function renderDefinitionMarkdown(definition: DictionaryEntry['meanings'][number
 		const escaped = link.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 		output = output.replace(new RegExp(`\\b${escaped}\\b`), link.target === link.text ? `[[${link.target}]]` : `[[${link.target}|${link.text}]]`);
 	}
+	if (definition.subDefinitions?.length) output += `\n${definition.subDefinitions.map((item) => `  - ${item}`).join('\n')}`;
 	return output;
 }
 

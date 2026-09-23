@@ -26,11 +26,16 @@ import { MTranServerProvider } from './providers/mtranserver';
 import { AssetManager } from './services/asset-manager';
 import { renderEntry } from './utils/format';
 import { createVocabularyNote, renderTemplate } from './templates/template';
+import { prepareFlashcardNote } from './templates/flashcard-renderer';
 import { analyzeSelection, normalizeSelection } from './utils/selection';
 import { openTemplatePicker, TemplateManagerModal } from './ui/template-modals';
 import type { TemplateAction } from './ui/template-modals';
 import type { DeclarativeSettingDefinition } from './settings-definitions';
 import { TranslationModal } from './ui/translation-modal';
+import { VocabularyView, VIEW_TYPE_VOCABULARY } from './ui/vocabulary-view';
+import { addVocabularyCard, exportVocabulary, normalizeVocabulary, reviewVocabularyCard, setVocabularyStatus } from './services/vocabulary';
+import type { ReviewRating, VocabularyCard, VocabularyStatus } from './services/vocabulary';
+import { hasFlashcardSide, extractFlashcardSide } from './services/flashcard-markers';
 
 export const VIEW_TYPE_DICTIONARY = 'mynary-dictionary-view';
 const CACHE_FORMAT_VERSION = 'v7';
@@ -121,6 +126,7 @@ export default class MynaryPlugin extends Plugin {
 	provider!: WiktionaryProvider;
 	lastEntry?: DictionaryEntry;
 	private history: string[] = [];
+	private vocabulary: VocabularyCard[] = [];
 	private lookupListeners = new Set<LookupListener>();
 	private lookupSequence = 0;
 	private readAudioCache = new Map<string, { url: string; mimeType?: string }>();
@@ -136,18 +142,51 @@ export default class MynaryPlugin extends Plugin {
 		const raw = await this.loadData() as unknown;
 		this.settings = normalizeSettings(raw);
 		this.history = normalizeHistory(raw);
+		this.vocabulary = normalizeVocabulary(isRecord(raw) ? raw.vocabulary : undefined);
 		if (migrateTemplates(this.settings.templates)) await this.saveSettings();
 		this.cache = new CacheManager(this, this.settings);
 		this.rebuildProvider();
 		this.registerView(VIEW_TYPE_DICTIONARY, (leaf) => new DictionaryView(leaf, this));
+		this.registerView(VIEW_TYPE_VOCABULARY, (leaf) => new VocabularyView(leaf, this));
+		this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
+			let changed = false;
+			this.vocabulary = this.vocabulary.map((card) => {
+				const previousPath = card.filePath;
+				if (!previousPath || previousPath !== oldPath && !previousPath.startsWith(`${oldPath}/`)) return card;
+				changed = true;
+				const filePath = `${file.path}${previousPath.slice(oldPath.length)}`;
+				const root = `${this.settings.vocabularyFolder ?? 'Vocabulary'}/`;
+				const relative = filePath.startsWith(root) ? filePath.slice(root.length) : '';
+				const deck = relative.includes('/') ? relative.slice(0, relative.lastIndexOf('/')) : '';
+				return { ...card, filePath, ...(deck ? { deck } : {}) };
+			});
+			if (changed) { void this.persistVocabulary(); this.refreshVocabularyView(); }
+		}));
+		this.registerEvent(this.app.vault.on('delete', (file) => {
+			const remaining = this.vocabulary.filter((card) => card.filePath !== file.path && !card.filePath?.startsWith(`${file.path}/`));
+			if (remaining.length !== this.vocabulary.length) {
+				this.vocabulary = remaining;
+				void this.persistVocabulary();
+				this.refreshVocabularyView();
+			}
+		}));
 		this.registerEvent(this.app.workspace.on('editor-menu', (menu: Menu, editor: Editor) => {
 			if (!editor.getSelection().trim()) return;
 			menu.addItem((item) => item.setTitle('Lookup').setIcon('search').onClick(() => void this.lookupSelected(editor)));
 			menu.addItem((item) => item.setTitle('Read with supertonic').setIcon('volume-2').onClick(() => void this.readSelected(editor)));
 			menu.addItem((item) => item.setTitle('Translate with MTranServer').setIcon('languages').onClick(() => void this.translateSelected(editor)));
 		}));
+		this.registerDomEvent(document, 'dblclick', (event) => {
+			const target = event.target;
+			if (!(target instanceof HTMLElement) || !target.closest('.markdown-source-view, .markdown-preview-view')) return;
+			window.setTimeout(() => {
+				const selection = window.getSelection()?.toString().trim();
+				if (selection) new LookupModal(this.app, this, selection, analyzeSelection(selection).tooLong).open();
+			}, 0);
+		});
 
 		this.addRibbonIcon('book-open', 'Open dictionary sidebar', () => this.activateView());
+		this.addRibbonIcon('library', 'Open vocabulary study', () => this.activateVocabularyView());
 		this.addCommand({
 			id: 'lookup-selected-word',
 			name: 'Lookup selected word',
@@ -169,6 +208,8 @@ export default class MynaryPlugin extends Plugin {
 			editorCallback: (editor) => void this.readSelected(editor),
 		});
 		this.addCommand({ id: 'open-dictionary-sidebar', name: 'Open dictionary sidebar', callback: () => this.activateView() });
+		this.addCommand({ id: 'open-vocabulary-study', name: 'Open vocabulary study', callback: () => this.activateVocabularyView() });
+		this.addCommand({ id: 'review-due-vocabulary', name: 'Review due vocabulary', callback: () => this.activateVocabularyView(true) });
 		this.addCommand({ id: 'create-vocabulary-note', name: 'Create vocabulary note from lookup', checkCallback: (checking) => this.commandWithEntry(checking, () => this.createNote()) });
 		this.addCommand({ id: 'insert-lookup-result', name: 'Insert lookup result', checkCallback: (checking) => this.commandWithEntry(checking, () => this.insertResult()) });
 		this.addCommand({ id: 'clear-dictionary-cache', name: 'Clear dictionary cache', callback: async () => { await this.cache.clear(); new Notice('Dictionary cache cleared.'); } });
@@ -286,6 +327,34 @@ export default class MynaryPlugin extends Plugin {
 			}
 		}
 		return packs.sort((left, right) => `${left.language}-${left.targetLanguage ?? ''}-${left.id}`.localeCompare(`${right.language}-${right.targetLanguage ?? ''}-${right.id}`));
+	}
+
+	async hasInstalledOfflinePack(language = this.activeLanguage) {
+		return this.settings.offlineDictionaryEnabled !== false && (await this.getInstalledDictionaryPacks()).some((pack) => pack.language === language);
+	}
+
+	async lookupFromOfflinePack(word: string, pack: DictionaryPackManifest & { storagePath: string }) {
+		const query = normalizeSelection(word);
+		if (!query) return;
+		const requestId = ++this.lookupSequence;
+		this.lastEntry = undefined;
+		this.currentQuery = query;
+		this.lookupStatus = 'loading';
+		this.lookupError = '';
+		this.lastLookupWasCached = false;
+		this.notifyLookupListeners();
+		try {
+			const provider = new OfflineDictionaryProvider(this.app.vault.adapter, pack.storagePath);
+			const entry = await provider.lookup(query);
+			if (requestId !== this.lookupSequence) return;
+			if (!entry) throw new Error(`“${query}” is not available in ${pack.name}.`);
+			await this.setEntry(entry, query);
+		} catch (error) {
+			if (requestId !== this.lookupSequence) return;
+			this.lookupStatus = 'error';
+			this.lookupError = error instanceof Error ? error.message : 'Offline pack lookup failed.';
+			this.notifyLookupListeners();
+		}
 	}
 
 	async removeDictionaryPack(packId: string, storagePath?: string) {
@@ -424,6 +493,172 @@ export default class MynaryPlugin extends Plugin {
 	}
 	get activeLanguage() { return this.settings.defaultLanguage; }
 	getHistory() { return this.history; }
+	getVocabulary() { return this.vocabulary; }
+	getVocabularyDecks() { return [...new Set([...(this.settings.vocabularyDecks ?? []), ...this.vocabulary.map((card) => card.deck), 'General'])].sort((a, b) => a.localeCompare(b)); }
+	getNewCardsPerDay() { return this.settings.newCardsPerDay ?? 20; }
+
+	async addVocabulary(entry: DictionaryEntry, status: VocabularyStatus = 'learning', requestedDeck?: string) {
+		const choice = requestedDeck ? { deck: requestedDeck } : await this.chooseVocabularyDeck();
+		if (!choice) return;
+		const deck = choice.deck;
+		this.settings.vocabularyDecks ??= ['General'];
+		if (!this.settings.vocabularyDecks.includes(deck)) this.settings.vocabularyDecks.push(deck);
+		this.vocabulary = addVocabularyCard(this.vocabulary, entry, status, Date.now(), deck);
+		const card = this.vocabulary.find((item) => item.id === `${entry.language.toLocaleLowerCase()}:${entry.word.trim().toLocaleLowerCase()}`)!;
+		if (!card.filePath) card.filePath = await this.createVocabularyCardNote(card, choice.templateId);
+		await this.saveSettings();
+		await this.persistVocabulary();
+		new Notice(`Added “${entry.word}” to ${deck}.`);
+	}
+
+	async createVocabularyDeck() {
+		const choice = await this.chooseVocabularyDeck(true);
+		if (!choice) return;
+		const deck = choice.deck;
+		this.settings.vocabularyDecks ??= ['General'];
+		if (!this.settings.vocabularyDecks.includes(deck)) this.settings.vocabularyDecks.push(deck);
+		await this.ensureVaultFolder(`${this.settings.vocabularyFolder ?? 'Vocabulary'}/${deck}`);
+		await this.saveSettings();
+		this.refreshVocabularyView();
+	}
+
+	private chooseVocabularyDeck(createOnly = false): Promise<{ deck: string; templateId?: string } | undefined> {
+		const templates = this.settings.templates.filter((template) => template.type === 'flashcard');
+		return new Promise((resolve) => new VocabularyDeckModal(this.app, this.getVocabularyDecks(), this.settings.defaultVocabularyDeck ?? 'General', templates, this.settings.defaultVocabularyTemplateId ?? templates[0]?.id ?? '', resolve, createOnly).open());
+	}
+
+	async setVocabularyCardStatus(card: VocabularyCard, status: VocabularyStatus) {
+		this.vocabulary = this.vocabulary.map((item) => item.id === card.id ? setVocabularyStatus(item, status) : item);
+		await this.persistVocabulary();
+		this.refreshVocabularyView();
+	}
+
+	async moveVocabularyCard(card: VocabularyCard, deck: string) {
+		const updated = { ...card, deck };
+		if (card.filePath) {
+			const source = this.app.vault.getAbstractFileByPath(card.filePath);
+			if (source && 'extension' in source) {
+				const folder = `${this.settings.vocabularyFolder ?? 'Vocabulary'}/${deck}`;
+				await this.ensureVaultFolder(folder);
+				let destination = `${folder}/${card.entry.word.replace(/[\\/:*?"<>|]/gu, '-')}.md`;
+				let suffix = 2;
+				while (await this.app.vault.adapter.exists(destination) && destination !== card.filePath) destination = `${folder}/${card.entry.word.replace(/[\\/:*?"<>|]/gu, '-')}-${suffix++}.md`;
+				await this.app.fileManager.renameFile(source, destination);
+				updated.filePath = destination;
+			}
+		}
+		this.vocabulary = this.vocabulary.map((item) => item.id === card.id ? updated : item);
+		this.settings.vocabularyDecks ??= ['General'];
+		if (!this.settings.vocabularyDecks.includes(deck)) this.settings.vocabularyDecks.push(deck);
+		await this.saveSettings();
+		await this.persistVocabulary();
+		this.refreshVocabularyView();
+	}
+
+	async rateVocabularyCard(card: VocabularyCard, rating: ReviewRating) {
+		this.vocabulary = this.vocabulary.map((item) => item.id === card.id ? reviewVocabularyCard(item, rating) : item);
+		await this.persistVocabulary();
+		this.refreshVocabularyView();
+	}
+
+	async removeVocabularyCard(card: VocabularyCard) {
+		this.vocabulary = this.vocabulary.filter((item) => item.id !== card.id);
+		await this.persistVocabulary();
+		this.refreshVocabularyView();
+	}
+
+	async openVocabularyNote(card: VocabularyCard) {
+		const file = card.filePath ? this.app.vault.getAbstractFileByPath(card.filePath) : null;
+		if (file && 'extension' in file) await this.app.workspace.getLeaf(false).openFile(file as import('obsidian').TFile);
+		else new Notice('Card note is missing. Add this word again to create a note.');
+	}
+
+	async readVocabularyNote(card: VocabularyCard, side: 'front' | 'back' = 'back') {
+		const file = card.filePath ? this.app.vault.getAbstractFileByPath(card.filePath) : null;
+		if (!file || !('extension' in file)) return undefined;
+		const text = await this.app.vault.cachedRead(file as import('obsidian').TFile);
+		const extracted = extractFlashcardSide(text, side);
+		// Older generated notes accidentally nested the complete card body inside the back markers.
+		if (side === 'back' && extracted && hasFlashcardSide(extracted, 'front')) return undefined;
+		return extracted;
+	}
+
+	private async createVocabularyCardNote(card: VocabularyCard, templateId?: string) {
+		const folder = `${this.settings.vocabularyFolder ?? 'Vocabulary'}/${card.deck}`;
+		await this.ensureVaultFolder(folder);
+		const base = card.entry.word.replace(/[\\/:*?"<>|]/gu, '-').trim() || 'Vocabulary';
+		let path = `${folder}/${base}.md`;
+		let suffix = 2;
+		while (await this.app.vault.adapter.exists(path)) path = `${folder}/${base}-${suffix++}.md`;
+		const template = this.settings.templates.find((item) => item.id === templateId && item.type === 'flashcard') ?? this.settings.templates.find((item) => item.type === 'flashcard');
+		const targetLanguage = this.settings.vocabularyAnswerLanguage ?? '';
+		let content = prepareFlashcardNote(card.entry, template?.content ?? '', targetLanguage).content;
+		if (!content.startsWith('---')) content = `---\nmynary-vocabulary-id: ${JSON.stringify(card.id)}\nmynary-language: ${JSON.stringify(card.entry.language)}\nmynary-deck: ${JSON.stringify(card.deck)}\n---\n\n${content}`;
+		await this.app.vault.create(path, content);
+		return path;
+	}
+
+	private async ensureVaultFolder(path: string) {
+		let current = '';
+		for (const part of path.split('/').filter(Boolean)) {
+			current = current ? `${current}/${part}` : part;
+			if (!(await this.app.vault.adapter.exists(current))) await this.app.vault.createFolder(current);
+		}
+	}
+
+	async exportVocabularyFile(format: 'json' | 'csv' | 'anki') {
+		if (!this.vocabulary.length) { new Notice('Your vocabulary list is empty.'); return; }
+		const extension = format === 'anki' ? 'txt' : format;
+		const base = `Mynary-vocabulary-${new Date().toISOString().slice(0, 10)}.${extension}`;
+		let path = base;
+		let suffix = 2;
+		while (await this.app.vault.adapter.exists(path)) path = base.replace(`.${extension}`, `-${suffix++}.${extension}`);
+		await this.app.vault.create(path, exportVocabulary(this.vocabulary, format));
+		new Notice(`Exported vocabulary to ${path}.`);
+	}
+
+	async createVocabularyNotes(cards: VocabularyCard[]) {
+		let created = 0;
+		const failed: string[] = [];
+		for (const card of cards) {
+			try {
+				const templateId = this.settings.languageTemplateIds?.[card.entry.language] ?? this.settings.defaultTemplateId;
+				const noteSettings = { ...this.settings, noteFolder: `${this.settings.vocabularyFolder ?? 'Vocabulary'}/${card.deck}` };
+				await createVocabularyNote(this.app, card.entry, noteSettings, templateId, { targetLanguage: this.settings.mtranTargetLanguages[card.entry.language] ?? this.settings.mtranTargetLanguage });
+				created++;
+			} catch (error) {
+				failed.push(`${card.entry.word}: ${error instanceof Error ? error.message : 'failed'}`);
+			}
+		}
+		new Notice(`Created ${created} vocabulary note${created === 1 ? '' : 's'}${failed.length ? `. ${failed.length} skipped or failed: ${failed.join('; ')}` : '.'}`, 8000);
+	}
+
+	async activateVocabularyView(dueOnly = false) {
+		let leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_VOCABULARY)[0];
+		if (!leaf) {
+			const rightLeaf = this.app.workspace.getRightLeaf(false);
+			if (rightLeaf) { leaf = rightLeaf; await leaf.setViewState({ type: VIEW_TYPE_VOCABULARY, active: true }); }
+		}
+		if (leaf) {
+			(leaf.view as VocabularyView).setDueOnly(dueOnly);
+			await this.app.workspace.revealLeaf(leaf);
+		}
+	}
+
+	private async persistVocabulary() {
+		const raw = await this.loadData() as unknown;
+		await this.saveData({ ...(isRecord(raw) ? raw : {}), vocabulary: this.vocabulary });
+	}
+
+	private refreshVocabularyView() {
+		this.app.workspace.getLeavesOfType(VIEW_TYPE_VOCABULARY).forEach((leaf) => (leaf.view as VocabularyView).render());
+	}
+
+	async removeHistoryItem(word: string) {
+		this.history = this.history.filter((item) => item !== word);
+		await this.persistHistory();
+		this.notifyLookupListeners();
+	}
 
 	private commandWithEntry(checking: boolean, action: () => Promise<void>) {
 		if (!this.lastEntry) return false;
@@ -484,7 +719,7 @@ export default class MynaryPlugin extends Plugin {
 		return provider.translate(text, sourceLanguage, targetLanguage);
 	}
 
-	async lookup(word: string, language = this.activeLanguage, forceRefresh = false): Promise<DictionaryEntry | undefined> {
+	async lookup(word: string, language = this.activeLanguage, forceRefresh = false, offlineOnly = false): Promise<DictionaryEntry | undefined> {
 		const normalized = normalizeSelection(word);
 		if (!normalized) return undefined;
 		const requestId = ++this.lookupSequence;
@@ -494,12 +729,17 @@ export default class MynaryPlugin extends Plugin {
 		this.lookupError = '';
 		this.lastLookupWasCached = false;
 		this.notifyLookupListeners();
-		const key = `${CACHE_FORMAT_VERSION}:${language}:${normalized.toLowerCase()}`;
+		const key = `${CACHE_FORMAT_VERSION}:${offlineOnly ? 'offline:' : ''}${language}:${normalized.toLowerCase()}`;
 		try {
 			const cached = await this.cache.get(key);
 			if (requestId !== this.lookupSequence) return undefined;
 			if (cached && !forceRefresh) { this.lastLookupWasCached = true; await this.setEntry(cached, normalized); return cached; }
-			const entry = await this.provider.lookup(normalized, language);
+			const entry = offlineOnly
+				? await this.provider.lookupOffline(normalized, language).then((result) => {
+					if (!result) throw new Error(`No offline entry found for “${normalized}” in ${language.toUpperCase()}. Install a matching pack or use regular lookup.`);
+					return result;
+				})
+				: await this.provider.lookup(normalized, language);
 			if (requestId !== this.lookupSequence) return undefined;
 			await this.cache.set(key, entry);
 			if (requestId !== this.lookupSequence) return undefined;
@@ -564,10 +804,11 @@ export default class MynaryPlugin extends Plugin {
 	}
 
 	async applyTemplateAction(action: TemplateAction, templateId: string, entry: DictionaryEntry) {
-		const template = this.settings.templates.find((item) => item.id === templateId);
+		const selectedTemplateId = action === 'note' ? this.settings.languageTemplateIds?.[entry.language] ?? templateId : templateId;
+		const template = this.settings.templates.find((item) => item.id === selectedTemplateId);
 		if (!template) { new Notice('Template not found.'); return; }
 		try {
-			const content = renderTemplate(entry, template.content);
+			const content = renderTemplate(entry, template.content, { targetLanguage: this.settings.mtranTargetLanguages[entry.language] ?? this.settings.mtranTargetLanguage });
 			if (action === 'copy') {
 				await navigator.clipboard.writeText(content);
 				new Notice(`Copied using “${template.name}”.`);
@@ -580,7 +821,7 @@ export default class MynaryPlugin extends Plugin {
 				new Notice(`Inserted using “${template.name}”.`);
 				return;
 			}
-			const file = await createVocabularyNote(this.app, entry, this.settings, template.id);
+			const file = await createVocabularyNote(this.app, entry, this.settings, template.id, { targetLanguage: this.settings.mtranTargetLanguages[entry.language] ?? this.settings.mtranTargetLanguage });
 			new Notice(`Created ${file.path} using “${template.name}”.`);
 		} catch (error) {
 			new Notice(error instanceof Error ? error.message : 'Template action failed.');
@@ -597,6 +838,37 @@ export default class MynaryPlugin extends Plugin {
 
 	openTemplatePickerForEntry(entry: DictionaryEntry, action: TemplateAction) {
 		openTemplatePicker(this.app, this, entry, action);
+	}
+
+	renderLookupActions(container: HTMLElement, entry: DictionaryEntry) {
+		const actions = container.createDiv('mynary-actions');
+		const save = actions.createEl('details', { cls: 'mynary-action-menu' });
+		const summary = save.createEl('summary', { attr: { title: 'Copy, insert, or create a note', 'aria-label': 'Save lookup result' } });
+		setIcon(summary, 'save'); summary.createSpan({ text: ' Save' });
+		for (const [action, icon, label] of [['copy', 'copy', 'Copy'], ['insert', 'text-cursor-input', 'Insert'], ['note', 'file-plus-2', 'Create note']] as const) {
+			const option = save.createEl('button', { cls: 'mynary-action-menu-item' });
+			setIcon(option, icon); option.createSpan({ text: label });
+			option.addEventListener('click', () => { save.open = false; this.openTemplatePickerForEntry(entry, action); });
+		}
+		const iconButton = (icon: string, label: string, handler: (button: HTMLButtonElement) => void) => {
+			const button = actions.createEl('button', { cls: 'mynary-icon-action', attr: { title: label, 'aria-label': label } });
+			setIcon(button, icon); button.addEventListener('click', () => handler(button)); return button;
+		};
+		iconButton('refresh-cw', 'Refresh lookup', () => void this.refreshLookup());
+		iconButton('languages', 'Translate this word or phrase', () => this.openTranslation(entry.word));
+		iconButton('bookmark-plus', 'Add to vocabulary', () => void this.addVocabulary(entry));
+		const offline = iconButton('hard-drive-download', 'Choose an installed offline pack', (button) => {
+			void this.getInstalledDictionaryPacks().then((packs) => {
+				const matching = packs.filter((pack) => pack.language === entry.language);
+				if (!matching.length) { button.disabled = true; return; }
+				const menu = new Menu();
+				matching.forEach((pack) => menu.addItem((item) => item.setTitle(`${pack.name} (${pack.language.toUpperCase()}${pack.targetLanguage ? ` → ${pack.targetLanguage.toUpperCase()}` : ''})`).onClick(() => void this.lookupFromOfflinePack(entry.word, pack))));
+				const bounds = button.getBoundingClientRect();
+				menu.showAtPosition({ x: bounds.left, y: bounds.bottom, width: bounds.width });
+			});
+		});
+		offline.disabled = true;
+		void this.getInstalledDictionaryPacks().then((packs) => { offline.disabled = !packs.some((pack) => pack.language === entry.language); });
 	}
 }
 
@@ -630,6 +902,14 @@ export class LookupModal extends Modal {
 		const el = this.contentEl;
 		el.empty();
 		el.createEl('h2', { text: `Lookup: ${this.word}` });
+		const offline = el.createEl('button', { text: 'Look up using offline packs only', cls: 'mynary-secondary-action' });
+		offline.disabled = true;
+		void this.plugin.hasInstalledOfflinePack().then((available) => {
+			if (!offline.isConnected) return;
+			offline.disabled = !available;
+			offline.title = available ? 'Search installed packs without contacting Wiktionary.' : 'Install and enable a matching offline dictionary pack first.';
+		});
+		offline.addEventListener('click', () => void this.plugin.lookup(this.word, this.plugin.activeLanguage, false, true));
 		if (this.selectionChoice) {
 			el.createDiv({ cls: 'mynary-state', text: 'The selected text is longer than 80 characters or 8 words.' });
 			el.createDiv({ cls: 'mynary-selection-preview', text: this.word });
@@ -654,8 +934,6 @@ export class LookupModal extends Modal {
 		}
 		if (this.plugin.lastEntry) {
 			renderEntry(el, this.plugin.lastEntry, this.plugin);
-			const translate = el.createEl('button', { text: 'Translate this text', cls: 'mynary-secondary-action' });
-			translate.addEventListener('click', () => this.plugin.openTranslation(this.word));
 			const sidebar = el.createEl('button', { text: 'Open in sidebar', cls: 'mynary-secondary-action' });
 			sidebar.addEventListener('click', () => { this.close(); void this.plugin.activateView(); });
 		} else {
@@ -685,12 +963,62 @@ async function requestDictionaryManifestUrl(app: App): Promise<string | undefine
 	return new Promise((resolve) => new DictionaryPackUrlModal(app, resolve).open());
 }
 
+class VocabularyDeckModal extends Modal {
+	private completed = false;
+	private select?: HTMLSelectElement;
+	private newDeck?: HTMLInputElement;
+	private templateSelect?: HTMLSelectElement;
+
+	constructor(app: App, private decks: string[], private defaultDeck: string, private templates: DictionarySettings['templates'], private defaultTemplateId: string, private resolveDeck: (choice?: { deck: string; templateId?: string }) => void, private createOnly = false) { super(app); }
+
+	onOpen() {
+		this.modalEl.addClass('mynary-vocabulary-modal');
+		this.titleEl.setText(this.createOnly ? 'Create vocabulary deck' : 'Add to vocabulary');
+		this.contentEl.createEl('p', { text: 'Choose a deck or create a nested deck using /, for example english/verbs.' });
+		if (!this.createOnly) {
+			const deckGroup = this.contentEl.createDiv('mynary-modal-field');
+			deckGroup.createEl('label', { text: 'Deck' });
+			this.select = deckGroup.createEl('select');
+			this.decks.forEach((deck) => this.select!.createEl('option', { value: deck, text: deck }));
+			this.select.value = this.decks.includes(this.defaultDeck) ? this.defaultDeck : this.decks[0] ?? 'General';
+		}
+		const deckInput = this.contentEl.createDiv('mynary-modal-field');
+		deckInput.createEl('label', { text: this.createOnly ? 'Deck name' : 'Or create a deck' });
+		this.newDeck = deckInput.createEl('input', { type: 'text', placeholder: 'New deck or subdeck (optional)' });
+		if (!this.createOnly && this.templates.length) {
+			const templateField = this.contentEl.createDiv('mynary-modal-field');
+			templateField.createEl('label', { text: 'Flashcard template' });
+			this.templateSelect = templateField.createEl('select');
+			this.templates.forEach((template) => this.templateSelect!.createEl('option', { value: template.id, text: template.name }));
+			this.templateSelect.value = this.templates.some((template) => template.id === this.defaultTemplateId) ? this.defaultTemplateId : this.templates[0]!.id;
+		}
+		const actions = this.contentEl.createDiv('mynary-modal-actions');
+		actions.createEl('button', { text: 'Cancel' }).addEventListener('click', () => this.close());
+		actions.createEl('button', { text: this.createOnly ? 'Create deck' : 'Add word', cls: 'mod-cta' }).addEventListener('click', () => this.submit());
+	}
+
+	onClose() { if (!this.completed) this.resolveDeck(); this.contentEl.empty(); }
+
+	private submit() {
+		const requested = this.newDeck?.value.trim() || this.select?.value || '';
+		const deck = requested.split('/').map((part) => part.trim()).filter(Boolean).join('/');
+		if (!deck || deck.split('/').some((part) => part === '.' || part === '..' || /[\\:*?"<>|]/u.test(part))) {
+			new Notice('Enter a valid deck name.');
+			return;
+		}
+		this.completed = true;
+		this.resolveDeck({ deck, ...(this.templateSelect?.value ? { templateId: this.templateSelect.value } : {}) });
+		this.close();
+	}
+}
+
 class DictionaryPackUrlModal extends Modal {
 	private input?: HTMLInputElement;
 
 	constructor(app: App, private resolveUrl: (url?: string) => void) { super(app); }
 
 	onOpen() {
+		this.modalEl.addClass('mynary-pack-modal');
 		this.titleEl.setText('Install offline dictionary pack');
 		this.contentEl.createEl('p', { text: 'Enter a URL to the pack manifest.json.' });
 		this.input = this.contentEl.createEl('input', { type: 'url', placeholder: 'https://example.com/manifest.json' });
@@ -726,6 +1054,7 @@ class DictionaryPackCatalogModal extends Modal {
 	constructor(app: App, private readonly packs: CatalogPackOption[], private readonly install: (url: string) => void) { super(app); }
 
 	onOpen() {
+		this.modalEl.addClass('mynary-pack-modal');
 		this.titleEl.setText('Choose offline dictionary');
 		this.contentEl.createEl('p', { text: 'Choose one pack. Packs are downloaded from Hugging Face and verified with SHA-256.' });
 		const select = this.contentEl.createEl('select');
@@ -748,6 +1077,7 @@ class DictionaryPackManagerModal extends Modal {
 	constructor(app: App, private readonly plugin: MynaryPlugin) { super(app); }
 
 	onOpen() {
+		this.modalEl.addClass('mynary-pack-modal');
 		this.titleEl.setText('Offline dictionaries');
 		void this.render();
 	}
@@ -825,14 +1155,24 @@ export class DictionaryView extends ItemView {
 			retry.addEventListener('click', submitLookup);
 		} else if (this.plugin.lastEntry) {
 			renderEntry(el, this.plugin.lastEntry, this.plugin);
-			const translate = el.createEl('button', { text: 'Translate current query', cls: 'mynary-secondary-action' });
-			translate.addEventListener('click', () => this.plugin.openTranslation(this.plugin.currentQuery));
 		} else {
 			el.createDiv({ text: 'Select a word in a note or search above.', cls: 'mynary-empty' });
 		}
 		if (this.plugin.getHistory().length) {
-			const history = el.createDiv('mynary-history'); history.createEl('h4', { text: 'Recent' });
-			this.plugin.getHistory().forEach((word) => { const button = history.createEl('button', { text: word }); button.addEventListener('click', () => void this.plugin.lookup(word)); });
+			const history = el.createDiv('mynary-history'); history.createEl('h4', { text: 'Recent lookups' });
+			const historySearch = history.createEl('input', { type: 'search', placeholder: 'Search history…' });
+			const historyItems = history.createDiv('mynary-history-items');
+			const drawHistory = () => {
+				historyItems.empty();
+				this.plugin.getHistory().filter((word) => word.toLocaleLowerCase().includes(historySearch.value.trim().toLocaleLowerCase())).forEach((word) => {
+					const row = historyItems.createDiv('mynary-history-row');
+					const button = row.createEl('button', { text: word }); button.addEventListener('click', () => void this.plugin.lookup(word));
+					const remove = row.createEl('button', { text: '×', attr: { 'aria-label': `Remove ${word} from history`, title: 'Remove from history' } });
+					remove.addEventListener('click', () => void this.plugin.removeHistoryItem(word));
+				});
+			};
+			historySearch.addEventListener('input', drawHistory);
+			drawHistory();
 		}
 	}
 }
@@ -974,7 +1314,10 @@ class DictionarySettingTab extends PluginSettingTab {
 		new Setting(dictionary).setName('Default language').setDesc('Wiktionary language section to search.').addDropdown((dropdown) => { this.plugin.settings.languages.forEach((item) => { dropdown.addOption(item.code, item.name); }); dropdown.setValue(this.plugin.settings.defaultLanguage).onChange((value) => { this.plugin.settings.defaultLanguage = value; void this.plugin.saveSettings(); }); });
 
 		const offline = createGroup('Offline dictionary', 'Install, verify, and manage local dictionary packs.');
-		new Setting(offline).setName('Offline dictionary packs').setDesc('Installed packs are checked before Wiktionary. Core packs provide definitions; bilingual packs add translations.').addToggle((toggle) => toggle.setValue(this.plugin.settings.offlineDictionaryEnabled !== false).onChange((value) => { this.plugin.settings.offlineDictionaryEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); })).addButton((button) => button.setButtonText('Choose language').onClick(() => void this.plugin.installDictionaryPackFromCatalog(() => this.display()))).addButton((button) => button.setButtonText('Install from URL').onClick(() => void this.plugin.installDictionaryPackFromUrl(() => this.display())));
+		new Setting(offline).setName('Use installed packs').setDesc('Installed packs are checked before Wiktionary. Core packs provide definitions; bilingual packs add translations.').addToggle((toggle) => toggle.setValue(this.plugin.settings.offlineDictionaryEnabled !== false).onChange((value) => { this.plugin.settings.offlineDictionaryEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		const offlineActions = offline.createDiv('mynary-offline-actions');
+		offlineActions.createEl('button', { text: 'Choose language' }).addEventListener('click', () => void this.plugin.installDictionaryPackFromCatalog(() => this.display()));
+		offlineActions.createEl('button', { text: 'Install from URL' }).addEventListener('click', () => void this.plugin.installDictionaryPackFromUrl(() => this.display()));
 		const packPanel = offline.createDiv('mynary-pack-manager');
 		new Setting(packPanel).setName('Installed dictionaries').setHeading();
 		packPanel.createEl('p', { text: 'How to install: select Choose language to load the catalog, pick a language, and select Install. Use Install from URL only for a custom manifest. Packs are verified with SHA-256. If a word is missing, Mynary falls back to Wiktionary when online.' });
@@ -1009,11 +1352,32 @@ class DictionarySettingTab extends PluginSettingTab {
 		new Setting(tts).setName('Supertonic steps').addText((text) => text.setValue(String(this.plugin.settings.supertonicSteps)).onChange((value) => { this.plugin.settings.supertonicSteps = Math.min(16, Math.max(4, Math.floor(Number(value) || 8))); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
 		new Setting(tts).setName('Supertonic speed').addText((text) => text.setValue(String(this.plugin.settings.supertonicSpeed)).onChange((value) => { this.plugin.settings.supertonicSpeed = Math.min(2, Math.max(0.7, Number(value) || 1.05)); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
 
+		const vocabulary = createGroup('Vocabulary study', 'Add looked-up words to nested decks, review flashcards, and export them for Anki or spreadsheets.', false);
+		new Setting(vocabulary).setName('Vocabulary notes folder').setDesc('Bulk-created vocabulary notes are organized under this folder and its deck subfolders.').addText((text) => text.setValue(this.plugin.settings.vocabularyFolder ?? 'Vocabulary').onChange((value) => { this.plugin.settings.vocabularyFolder = value.trim() || 'Vocabulary'; void this.plugin.saveSettings(); }));
+		new Setting(vocabulary).setName('Optional translation language').setDesc('Flashcard answers default to the dictionary definition. Add a translation in this language when the lookup provides one; otherwise the definition remains the answer.').addDropdown((dropdown) => {
+			dropdown.addOption('', 'Definition only');
+			for (const language of MTRAN_LANGUAGE_OPTIONS) dropdown.addOption(language.code, `${language.name} (${language.code})`);
+			dropdown.setValue(this.plugin.settings.vocabularyAnswerLanguage ?? '').onChange((value) => { this.plugin.settings.vocabularyAnswerLanguage = value; void this.plugin.saveSettings(); });
+		});
+		new Setting(vocabulary).setName('Default flashcard deck').setDesc('Suggested destination when adding a lookup. Use / for nested decks, for example english/verbs.').addText((text) => text.setValue(this.plugin.settings.defaultVocabularyDeck ?? 'General').onChange((value) => { this.plugin.settings.defaultVocabularyDeck = value.trim() || 'General'; void this.plugin.saveSettings(); }));
+		new Setting(vocabulary).setName('New flashcards per day').setDesc('Maximum new cards introduced in a study session; due reviews are not limited.').addText((text) => text.setValue(String(this.plugin.settings.newCardsPerDay ?? 20)).onChange((value) => { this.plugin.settings.newCardsPerDay = Math.min(200, Math.max(1, Math.floor(Number(value) || 20))); void this.plugin.saveSettings(); }));
+
 		const notes = createGroup('Notes, templates, and cache', 'Manage generated notes and local lookup storage.', false);
 		new Setting(notes).setName('Note folder').setDesc('Folder for vocabulary notes. Leave empty for the vault root.').addText((text) => text.setValue(this.plugin.settings.noteFolder).onChange((value) => { this.plugin.settings.noteFolder = value.trim(); void this.plugin.saveSettings(); }));
 		new Setting(notes).setName('Filename template').setDesc('Supports {{word}} and {{language}}.').addText((text) => text.setValue(this.plugin.settings.filenameTemplate).onChange((value) => { this.plugin.settings.filenameTemplate = value || '{{word}}'; void this.plugin.saveSettings(); }));
 		new Setting(notes).setName('Default template').addDropdown((dropdown) => { this.plugin.settings.templates.forEach((template) => { dropdown.addOption(template.id, template.name); }); dropdown.setValue(this.plugin.settings.defaultTemplateId).onChange((value) => { this.plugin.settings.defaultTemplateId = value; void this.plugin.saveSettings(); }); });
+		new Setting(notes).setName(`Template for ${this.plugin.activeLanguage.toUpperCase()} notes`).setDesc('Overrides the global default for notes in the current dictionary language.').addDropdown((dropdown) => {
+			dropdown.addOption('', 'Use global default');
+			this.plugin.settings.templates.forEach((template) => { dropdown.addOption(template.id, template.name); });
+			dropdown.setValue(this.plugin.settings.languageTemplateIds?.[this.plugin.activeLanguage] ?? '').onChange((value) => {
+				this.plugin.settings.languageTemplateIds ??= {};
+				if (value) this.plugin.settings.languageTemplateIds[this.plugin.activeLanguage] = value;
+				else delete this.plugin.settings.languageTemplateIds[this.plugin.activeLanguage];
+				void this.plugin.saveSettings();
+			});
+		});
 		new Setting(notes).setName('Existing note behavior').setDesc('Update section preserves content outside Mynary markers and replaces only the generated section.').addDropdown((dropdown) => dropdown.addOption('ask', 'Ask before replacing').addOption('overwrite', 'Replace automatically').addOption('update-section', 'Update section').setValue(this.plugin.settings.existingNoteBehavior).onChange((value) => { this.plugin.settings.existingNoteBehavior = value as DictionarySettings['existingNoteBehavior']; void this.plugin.saveSettings(); }));
+		new Setting(notes).setName('Create bilingual notes').setDesc('Append the available translations as a managed translation section when creating or updating notes.').addToggle((toggle) => toggle.setValue(this.plugin.settings.bilingualNotes === true).onChange((value) => { this.plugin.settings.bilingualNotes = value; void this.plugin.saveSettings(); }));
 		new Setting(notes).setName('Templates').setDesc('Choose a template separately each time you copy, insert or create a note.').addButton((button) => button.setButtonText('Manage templates').onClick(() => this.plugin.openTemplateManager()));
 		new Setting(notes).setName('Cache TTL (days)').addText((text) => text.setValue(String(this.plugin.settings.cacheTtlDays)).onChange((value) => { const n = Math.max(1, Number(value) || 7); this.plugin.settings.cacheTtlDays = n; void this.plugin.saveSettings(); }));
 		new Setting(notes).setName('Maximum cached entries').addText((text) => text.setValue(String(this.plugin.settings.maxCacheEntries)).onChange((value) => { const n = Math.max(1, Number(value) || 100); this.plugin.settings.maxCacheEntries = n; void this.plugin.saveSettings(); }));

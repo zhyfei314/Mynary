@@ -79,6 +79,7 @@ export function normalizeEntry(entry: DictionaryEntry): DictionaryEntry {
 				definitions: uniqueBy(meaning.definitions.map((definition) => ({
 					text: cleanText(definition.text),
 					examples: uniqueBy(definition.examples.map(cleanText).filter((example) => !isQuoteText(example)), (example) => example.toLocaleLowerCase()),
+					...(definition.subDefinitions?.length ? { subDefinitions: uniqueBy(definition.subDefinitions.map(cleanText).filter(Boolean), (item) => item.toLocaleLowerCase()) } : {}),
 					...(definition.links?.length ? { links: uniqueBy(definition.links.map((link) => ({ ...link, text: cleanText(link.text), target: cleanText(link.target) })).filter((link) => link.text && link.target), (link) => `${link.text}|${link.target}|${link.url}`) } : {}),
 				})), (definition) => definition.text.toLocaleLowerCase()),
 			}))
@@ -92,7 +93,7 @@ export function normalizeEntry(entry: DictionaryEntry): DictionaryEntry {
 		})).filter((translation) => translation.word && !isLanguageLabel(translation.word, translation.languageCode, translation.languageName)), (translation) => `${translation.sense ?? ''}|${translation.languageCode ?? translation.languageName ?? ''}|${translation.word}`.toLocaleLowerCase()),
 		synonyms: uniqueBy(entry.synonyms.map(cleanText).filter(Boolean), (item) => item.toLocaleLowerCase()),
 		antonyms: uniqueBy(entry.antonyms.map(cleanText).filter(Boolean), (item) => item.toLocaleLowerCase()),
-		etymology: entry.etymology ? cleanText(entry.etymology) : undefined,
+		etymology: entry.etymology ? cleanParagraphs(entry.etymology) : undefined,
 	};
 }
 
@@ -147,6 +148,14 @@ function isNonMeaningHeading(value: string, language: string) {
 
 function parseDefinition(item: Element, language: string): Definition | undefined {
 	const clone = item.cloneNode(true) as Element;
+	const subDefinitions = Array.from(item.children)
+		.filter((child) => child.tagName === 'OL' || child.tagName === 'UL')
+		.flatMap((list) => Array.from(list.children).filter((child) => child.tagName === 'LI'))
+		.map((child) => {
+			const nested = child.cloneNode(true) as Element;
+			Array.from(nested.querySelectorAll('ol, ul, dl, blockquote, sup, .citation, .reference, .references, .quotation, .quote, [class*="quote"]')).forEach((node) => node.remove());
+			return cleanText(nested.textContent ?? '');
+		}).filter(Boolean);
 	Array.from(clone.querySelectorAll('ol, ul, dl, blockquote, style, script, template, .citation, .reference, .references, .quotation, .quote, [class*="quote"], sup')).forEach((node) => node.remove());
 	const text = cleanText(clone.textContent ?? '');
 	if (!text) return undefined;
@@ -154,7 +163,7 @@ function parseDefinition(item: Element, language: string): Definition | undefine
 	const links = Array.from(item.querySelectorAll('a'))
 		.filter((link) => !link.closest('dl, blockquote, .citation, .reference, .references, .quotation, .quote, [class*="quote"]'))
 		.map((link) => parseDefinitionLink(link, language)).filter((link): link is NonNullable<typeof link> => Boolean(link));
-	return { text, examples: [...new Set(examples)], ...(links.length ? { links: uniqueBy(links, (link) => `${link.text}|${link.target}|${link.url}`) } : {}) };
+	return { text, examples: [...new Set(examples)], ...(links.length ? { links: uniqueBy(links, (link) => `${link.text}|${link.target}|${link.url}`) } : {}), ...(subDefinitions.length ? { subDefinitions: [...new Set(subDefinitions)] } : {}) };
 }
 
 function parseDefinitionLink(link: Element, language: string) {
@@ -300,9 +309,9 @@ function parseTranslations(nodes: Element[], language: string): Translation[] {
 function parseSectionText(nodes: Element[], target: string): string | undefined {
 	const headings = nodes.filter((node): node is HTMLHeadingElement => /^H[3-6]$/.test(node.tagName) && isTargetHeading(node, target));
 	const sections = headings.flatMap((heading) => nodesBetween(nodes, heading, nextAnyHeading(nodes, heading))
-		.filter((node) => !/^H[3-5]$/.test(node.tagName))
+		.filter((node) => !/^H[3-5]$/.test(node.tagName) && (['P', 'UL', 'OL', 'TABLE'].includes(node.tagName) || node.tagName === 'DIV' && !node.querySelector('p, div')))
 		.map((node) => cleanText(node.textContent ?? '')).filter(Boolean));
-	return [...new Set(sections)].join(' ') || undefined;
+	return [...new Set(sections)].join('\n\n') || undefined;
 }
 
 function translationWords(element: Element): string[] {
@@ -366,6 +375,7 @@ function cleanText(value: string) {
 		.replace(/(?:^|\s)[.#][\w-]+\s*\{[^}]*\}/g, ' ')
 		.replace(/\s+/g, ' ').trim());
 }
+function cleanParagraphs(value: string) { return value.split(/\n\s*\n/u).map(cleanText).filter(Boolean).join('\n\n'); }
 function isAfter(start: Element, candidate: Element) { return Boolean(start.compareDocumentPosition(candidate) & 4); }
 function documentOrderDistance(start: Element, candidate: Element) {
 	const position = start.compareDocumentPosition(candidate);

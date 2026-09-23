@@ -8,7 +8,7 @@ const VALID_VARIABLES = new Set([
 	'word', 'title', 'language', 'definition', 'definitions', 'definitionsmarkdown', 'meaningsmarkdown',
 	'ipa', 'partofspeech', 'example', 'examples', 'examplesmarkdown', 'translation', 'translations',
 	'translationsmarkdown', 'synonyms', 'antonyms', 'etymology', 'source', 'sourceurl', 'lookupdate',
-	'source_url', 'lookup_date', 'definitions_markdown', 'examples_markdown', 'translations_markdown', 'meanings_markdown',
+	'source_url', 'lookup_date', 'definitions_markdown', 'examples_markdown', 'translations_markdown', 'meanings_markdown', 'audio', 'sourcelanguage', 'targetlanguage', 'source_language', 'target_language',
 ]);
 
 export function validateTemplate(template: string): TemplateValidationIssue[] {

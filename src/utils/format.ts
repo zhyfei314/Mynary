@@ -22,10 +22,14 @@ export function renderEntry(container: HTMLElement, entry: DictionaryEntry, plug
 			if (meaning.partOfSpeech) section.createEl('h3', { text: [meaning.partOfSpeech, ...(meaning.labels ?? [])].join(' · ') });
 			if (meaning.etymology) section.createDiv({ text: meaning.etymology, cls: 'mynary-meaning-context' });
 			const list = section.createEl('ol');
-			visible.forEach((definition) => {
-				const li = list.createEl('li');
-				renderLinkedText(li, definition.text, definition.links ?? [], entry.language, plugin);
-				definition.examples.forEach((example) => li.createEl('blockquote', { text: example }));
+				visible.forEach((definition) => {
+					const li = list.createEl('li');
+					renderLinkedText(li, definition.text, definition.links ?? [], entry.language, plugin);
+					if (definition.subDefinitions?.length) {
+						const nested = li.createEl('ul', { cls: 'mynary-sub-definitions' });
+						definition.subDefinitions.forEach((text) => nested.createEl('li', { text }));
+					}
+					definition.examples.forEach((example) => li.createEl('blockquote', { text: example }));
 			});
 			remaining -= visible.length;
 		});
@@ -41,17 +45,16 @@ export function renderEntry(container: HTMLElement, entry: DictionaryEntry, plug
 	if (entry.translations.length) renderTranslations(container, entry.translations);
 	if (entry.synonyms.length) renderCollapsible(container, 'Synonyms', entry.synonyms);
 	if (entry.antonyms.length) renderCollapsible(container, 'Antonyms', entry.antonyms);
-	if (entry.etymology) renderCollapsible(container, 'Etymology', [entry.etymology]);
-	const actions = container.createDiv('mynary-actions');
-	const copy = actions.createEl('button', { text: 'Copy' });
-	copy.addEventListener('click', () => plugin.openTemplatePickerForEntry(entry, 'copy'));
-	const insert = actions.createEl('button', { text: 'Insert' });
-	insert.addEventListener('click', () => plugin.openTemplatePickerForEntry(entry, 'insert'));
-	const note = actions.createEl('button', { text: 'Create note' });
-	note.addEventListener('click', () => plugin.openTemplatePickerForEntry(entry, 'note'));
-	const refresh = actions.createEl('button', { text: 'Refresh' });
-	refresh.addEventListener('click', () => void plugin.refreshLookup());
+	if (entry.etymology) renderEtymology(container, entry.etymology);
+	plugin.renderLookupActions(container, entry);
 	const source = container.createEl('a', { text: `Source: ${entry.source.name}`, href: entry.source.url, cls: 'mynary-source' }); source.target = '_blank';
+}
+
+function renderEtymology(container: HTMLElement, etymology: string) {
+	const details = container.createEl('details', { cls: 'mynary-collapsible mynary-etymology' });
+	details.createEl('summary', { text: 'Etymology' });
+	const body = details.createDiv('mynary-etymology-content');
+	etymology.split(/\n\s*\n/u).map((part) => part.trim()).filter(Boolean).forEach((part) => body.createEl('p', { text: part }));
 }
 
 function renderLookupLink(container: HTMLElement, word: string, language: string, plugin: MynaryPlugin, label = word) {

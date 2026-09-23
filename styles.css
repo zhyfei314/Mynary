@@ -21,8 +21,20 @@
 .mynary-meaning h3 { color: var(--text-accent); font-size: var(--font-ui-small); font-style: italic; }
 .mynary-meaning-context { color: var(--text-muted); font-size: var(--font-ui-smaller); margin: -8px 0 6px; }
 .mynary-meaning blockquote { margin: 6px 0; color: var(--text-muted); font-size: var(--font-ui-small); }
-.mynary-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
-.mynary-actions button { min-width: 0; width: 100%; }
+.mynary-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
+.mynary-actions > * { flex: 0 0 auto; }
+.mynary-icon-action { align-items: center; display: inline-flex; height: 34px; justify-content: center; min-width: 36px; padding: 5px; }
+.mynary-action-menu { position: relative; }
+.mynary-action-menu summary { align-items: center; cursor: pointer; display: flex; height: 34px; list-style: none; padding: 0 8px; }
+.mynary-action-menu summary::-webkit-details-marker { display: none; }
+.mynary-action-menu[open] { position: relative; }
+.mynary-action-menu-item { align-items: center; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); display: flex; gap: 8px; left: 0; min-width: 160px; padding: 8px 10px; position: absolute; text-align: left; top: calc(100% + 4px); white-space: nowrap; z-index: 8; }
+.mynary-action-menu-item + .mynary-action-menu-item { margin-top: 39px; }
+.mynary-action-menu-item + .mynary-action-menu-item + .mynary-action-menu-item { margin-top: 78px; }
+.mynary-sub-definitions { margin: 4px 0 8px; }
+.mynary-sub-definitions li { margin: 3px 0; }
+.mynary-etymology-content { line-height: 1.65; }
+.mynary-etymology-content p { margin: 8px 0; white-space: pre-wrap; }
 .mynary-source { display: block; font-size: var(--font-ui-smaller); margin-top: 12px; }
 .mynary-empty { color: var(--text-muted); padding: 12px 0; }
 .mynary-state { padding: 16px 0; }
@@ -48,9 +60,19 @@
 .mynary-selection-lookup { display: none; }
 .mynary-history { border-top: 1px solid var(--background-modifier-border); margin-top: 16px; padding-top: 10px; }
 .mynary-history h4 { margin: 0 0 6px; }
-.mynary-history button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 4px; cursor: pointer; }
+.mynary-history input { box-sizing: border-box; margin: 4px 0 8px; width: 100%; }
+.mynary-history-row { align-items: center; display: flex; gap: 6px; }
+.mynary-history-row button:first-child { background: transparent; border: 0; cursor: pointer; flex: 1; min-width: 0; overflow: hidden; padding: 6px 4px; text-align: left; text-overflow: ellipsis; }
+.mynary-history-row button:last-child { flex: 0 0 auto; }
 .mynary-template-picker { width: min(760px, calc(100vw - 32px)); max-width: calc(100vw - 32px); }
 .mynary-template-picker .modal-content, .mynary-template-manager .modal-content { max-height: 82vh; overflow-y: auto; }
+.mynary-vocabulary-modal .modal-content, .mynary-pack-modal .modal-content { max-height: 82vh; overflow-x: hidden; overflow-y: auto; }
+.mynary-modal-field { display: grid; gap: 7px; margin: 12px 0; min-width: 0; }
+.mynary-modal-field label { color: var(--text-muted); font-size: var(--font-ui-small); font-weight: var(--font-semibold); }
+.mynary-modal-field input, .mynary-modal-field select,
+.mynary-pack-modal .modal-content > input, .mynary-pack-modal .modal-content > select { box-sizing: border-box; display: block; margin: 0; max-width: 100%; min-width: 0; width: 100%; }
+.mynary-vocabulary-modal .mynary-modal-actions, .mynary-pack-modal .mynary-modal-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+.mynary-vocabulary-modal .mynary-modal-actions button, .mynary-pack-modal .mynary-modal-actions button { min-height: 36px; min-width: 88px; }
 .mynary-template-select { min-width: 220px; max-width: 100%; }
 .mynary-template-preview { background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); max-height: 340px; min-height: 120px; overflow: auto; padding: 12px; white-space: pre-wrap; }
 .mynary-note-destination { background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); margin: 10px 0; padding: 10px; }
@@ -59,17 +81,27 @@
 .mynary-template-modal-actions, .mynary-template-editor-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 .mynary-template-manager { width: min(1040px, calc(100vw - 32px)); max-width: calc(100vw - 32px); }
 .mynary-template-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.mynary-template-type-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.mynary-template-type-tabs button.is-active { background: var(--interactive-accent); color: var(--text-on-accent); }
 .mynary-template-default-label { color: var(--text-accent); font-size: var(--font-ui-small); margin-right: auto; }
-.mynary-template-editor-layout { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.25fr) minmax(240px, .75fr); }
-.mynary-template-editor-form, .mynary-template-guide { min-width: 0; }
+.mynary-template-editor-layout { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.15fr) minmax(260px, .85fr); }
+.mynary-template-editor-form, .mynary-template-preview-pane, .mynary-template-guide { min-width: 0; }
+.mynary-template-preview-pane { grid-column: 2; grid-row: 1; }
+.mynary-template-preview-pane h3 { font-size: var(--font-ui-small); margin: 10px 0 6px; }
+.mynary-template-guide { border-top: 1px solid var(--background-modifier-border); grid-column: 1 / -1; padding-top: 12px; }
+.mynary-template-marker-tools { background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); margin: 8px 0; padding: 8px; }
+.mynary-template-marker-tools p { color: var(--text-muted); font-size: var(--font-ui-smaller); margin: 0 0 8px; }
+.mynary-template-marker-tools button { margin: 0 6px 4px 0; }
 .mynary-template-editor-form label { display: block; font-size: var(--font-ui-small); font-weight: var(--font-semibold); margin: 10px 0 6px; }
 .mynary-template-editor-form input { width: 100%; }
 .mynary-template-textarea { box-sizing: border-box; display: block; font-family: var(--font-monospace); font-size: var(--font-ui-small); line-height: 1.5; min-height: 480px; resize: vertical; width: 100%; }
-.mynary-template-guide { border-left: 1px solid var(--background-modifier-border); padding-left: 16px; }
 .mynary-template-guide h3 { font-size: var(--font-ui-small); margin: 10px 0 6px; }
 .mynary-template-guide p { color: var(--text-muted); font-size: var(--font-ui-small); }
 .mynary-template-guide pre { background: var(--background-secondary); overflow: auto; padding: 10px; white-space: pre-wrap; }
-.mynary-template-live-preview { max-height: 260px; }
+.mynary-template-live-preview { background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); max-height: 360px; overflow: auto; padding: 10px; }
+.mynary-template-preview-face { background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); margin: 8px 0; padding: 10px; }
+.mynary-template-preview-face > strong { color: var(--text-muted); display: block; font-size: var(--font-ui-smaller); margin-bottom: 8px; }
+.mynary-template-preview-face > div > :first-child { margin-top: 0; }
 .mynary-template-preview-controls { margin: 6px 0; }
 .mynary-template-preview-controls select { max-width: 100%; }
 .mynary-template-validation { color: var(--text-error); font-size: var(--font-ui-small); margin-top: 8px; }
@@ -79,14 +111,19 @@
 .mynary-template-variable-list button { font-family: var(--font-monospace); font-size: var(--font-ui-smaller); padding: 3px 6px; }
 .mynary-confirm-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 @media (max-width: 480px) {
-	.mynary-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.mynary-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
 	.mynary-template-editor-layout { grid-template-columns: 1fr; }
-	.mynary-template-guide { border-left: 0; border-top: 1px solid var(--background-modifier-border); padding-left: 0; padding-top: 12px; }
+	.mynary-template-guide { border-top: 1px solid var(--background-modifier-border); padding-left: 0; padding-top: 12px; }
+	.mynary-template-preview-pane { grid-column: 1; grid-row: auto; }
 	.mynary-template-textarea { min-height: 360px; }
 }
 @media (max-width: 600px) {
-	.mynary-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.mynary-actions { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 	.mynary-actions button { min-height: 36px; white-space: normal; }
+	.mynary-action-menu summary { min-height: 36px; }
+	.mynary-action-menu summary span { display: none; }
+	.mynary-vocabulary-row { flex-wrap: wrap; }
+	.mynary-vocabulary-row select { flex: 1 1 100px; }
 }
 .is-mobile .mynary-selection-lookup { display: block; margin: 0 0 10px; width: 100%; }
 .mynary-pack-manager {
@@ -145,4 +182,70 @@
 
 .mynary-settings-group .setting-item {
 	border-top: 1px solid var(--background-modifier-border-hover);
+}
+.mynary-settings-group .setting-item-control { flex-wrap: wrap; gap: 8px; }
+.mynary-settings-group .setting-item-control > * { min-width: 0; }
+.mynary-offline-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
+.mynary-offline-actions button { flex: 1 1 150px; min-width: 0; white-space: normal; }
+.mynary-vocabulary-view { height: 100%; overflow: auto; padding: 0 10px 12px; }
+.mynary-vocabulary-header h2 { margin-bottom: 8px; }
+.mynary-vocabulary-controls, .mynary-vocabulary-exports { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.mynary-vocabulary-controls > button, .mynary-vocabulary-exports > button { flex: 0 1 auto; min-height: 34px; }
+.mynary-vocabulary-decks { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); }
+.mynary-vocabulary-deck { align-items: flex-start; display: flex; flex-direction: column; gap: 6px; min-height: 72px; padding: 12px; text-align: left; }
+.mynary-vocabulary-deck span { font-size: var(--font-ui-smaller); }
+.mynary-vocabulary-deck-total { color: var(--text-muted); }
+.mynary-vocabulary-deck-counts { display: flex; flex-wrap: wrap; gap: 8px; }
+.mynary-vocabulary-queue-overview { align-items: baseline; display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+.mynary-vocabulary-queue-overview > span:first-child { color: var(--text-muted); }
+.mynary-queue-count { align-items: baseline; display: inline-flex; gap: 4px; }
+.mynary-queue-count strong { font-variant-numeric: tabular-nums; }
+.mynary-queue-new { color: #4b91d1; }
+.mynary-queue-learning { color: #d65b58; }
+.mynary-queue-review { color: #5a9b68; }
+.mynary-vocabulary-search { box-sizing: border-box; margin: 8px 0; width: 100%; }
+.mynary-vocabulary-row { align-items: center; border-top: 1px solid var(--background-modifier-border); display: grid; gap: 8px; grid-template-columns: auto minmax(0, 1fr) auto minmax(92px, auto) minmax(100px, auto) auto; padding: 8px 0; }
+.mynary-vocabulary-row > input[type="checkbox"] { flex: 0 0 auto; }
+.mynary-vocabulary-info { flex: 1; min-width: 0; }
+.mynary-vocabulary-info div { color: var(--text-muted); font-size: var(--font-ui-smaller); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mynary-vocabulary-row select { max-width: 150px; min-width: 0; width: 100%; }
+.mynary-vocabulary-batch { padding: 8px 0; }
+.mynary-flashcard { align-items: center; display: flex; flex-direction: column; gap: 12px; justify-content: center; min-height: 260px; padding: 12px; text-align: center; }
+.mynary-flashcard-progress { color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.mynary-flashcard-front { max-width: 100%; }
+.mynary-flashcard-front > :first-child { margin-top: 12px; }
+.mynary-flashcard-answer { background: var(--background-secondary); border-radius: var(--radius-m); line-height: 1.6; max-width: 100%; padding: 14px; text-align: left; white-space: normal; }
+.mynary-flashcard-ratings { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.mynary-flashcard-ratings button { align-items: center; border: 0; border-radius: var(--radius-m); color: #fff; display: inline-flex; flex-direction: column; gap: 2px; justify-content: center; min-height: 50px; min-width: 76px; padding: 6px 12px; }
+.mynary-flashcard-ratings button:hover { filter: brightness(1.08); }
+.mynary-rating-again { background: #c94b4b; }
+.mynary-rating-hard { background: #c78228; }
+.mynary-rating-good { background: #4c965b; }
+.mynary-rating-easy { background: #377fbd; }
+.mynary-rating-label { font-weight: var(--font-semibold); }
+.mynary-rating-interval { font-size: var(--font-ui-smaller); opacity: .92; }
+@media (max-width: 600px) {
+	.mynary-settings-group .setting-item { align-items: stretch; flex-direction: column; gap: 8px; }
+	.mynary-settings-group .setting-item-info { max-width: none; }
+	.mynary-settings-group .setting-item-control { justify-content: flex-start; width: 100%; }
+	.mynary-settings-group .setting-item-control > button,
+	.mynary-settings-group .setting-item-control > select,
+	.mynary-settings-group .setting-item-control > input { max-width: 100%; }
+}
+@media (max-width: 600px) {
+	.mynary-offline-actions { align-items: stretch; flex-direction: column; }
+	.mynary-offline-actions button { width: 100%; }
+	.mynary-history-row { min-width: 0; }
+	.mynary-vocabulary-controls > button, .mynary-vocabulary-exports > button { flex: 1 1 130px; }
+	.mynary-vocabulary-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+	.mynary-vocabulary-row > select { grid-row: 2; }
+	.mynary-vocabulary-row > select:nth-of-type(1) { grid-column: 2; }
+	.mynary-vocabulary-row > select:nth-of-type(2) { grid-column: 3; }
+	.mynary-vocabulary-row > .mynary-vocabulary-info { grid-column: 2 / 4; }
+	.mynary-vocabulary-row > input[type="checkbox"] { grid-column: 1; grid-row: 1; }
+	.mynary-vocabulary-row > .mynary-vocabulary-edit { grid-column: 1 / 3; grid-row: 3; justify-self: start; }
+	.mynary-vocabulary-row > button:not(.mynary-vocabulary-edit) { grid-column: 3; grid-row: 3; }
+	.mynary-vocabulary-modal .mynary-modal-actions, .mynary-pack-modal .mynary-modal-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.mynary-vocabulary-modal .mynary-modal-actions button, .mynary-pack-modal .mynary-modal-actions button { min-width: 0; width: 100%; }
+	.mynary-template-toolbar > *, .mynary-template-type-tabs > * { max-width: 100%; }
 }

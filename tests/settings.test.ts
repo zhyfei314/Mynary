@@ -22,7 +22,8 @@ describe('settings normalization', () => {
 
 		expect(settings.defaultLanguage).toBe('vi');
 		expect(settings.languages).toEqual([{ code: 'vi', name: 'Vietnamese' }]);
-		expect(settings.templates).toEqual([{ id: 'custom', name: 'Custom', content: '# {{word}}' }]);
+		expect(settings.templates.find((template) => template.id === 'custom')).toEqual({ id: 'custom', name: 'Custom', content: '# {{word}}' });
+		expect(settings.templates.some((template) => template.type === 'flashcard')).toBe(true);
 		expect(settings.defaultTemplateId).toBe('custom');
 		expect(settings.existingNoteBehavior).toBe('update-section');
 	});
@@ -43,5 +44,28 @@ describe('settings normalization', () => {
 		expect(settings.ttsEnabled).toBe(true);
 		expect(settings.ttsAutoGenerate).toBe(true);
 		expect(settings.ttsRuntime).toBe('server');
+	});
+
+	it('migrates legacy Flashcard templates into the flashcard template group', () => {
+		const settings = normalizeSettings({ templates: [
+			{ id: 'basic', name: 'Basic', content: '# {{word}}' },
+			{ id: 'flashcard-custom', name: 'Flashcard', content: '{{word}}()::\n{{definition}}' },
+		] });
+
+		expect(settings.templates.find((template) => template.id === 'flashcard-custom')?.type).toBe('flashcard');
+		expect(settings.defaultVocabularyTemplateId).toBe('flashcard-basic');
+	});
+
+	it('keeps the complete built-in card template and replaces an incomplete marker default', () => {
+		const settings = normalizeSettings({
+			defaultVocabularyTemplateId: 'flashcard-legacy',
+			templates: [{ id: 'flashcard-legacy', name: 'Flashcard', type: 'flashcard', content: '# {{word}}\n<!-- mynary:front:start -->' }],
+		});
+		const builtIn = settings.templates.find((template) => template.id === 'flashcard-basic');
+		expect(settings.defaultVocabularyTemplateId).toBe('flashcard-basic');
+		expect(builtIn?.content).toContain('<!-- mynary:front:start -->');
+		expect(builtIn?.content).toContain('<!-- mynary:front:end -->');
+		expect(builtIn?.content).toContain('<!-- mynary:back:start -->');
+		expect(builtIn?.content).toContain('<!-- mynary:back:end -->');
 	});
 });

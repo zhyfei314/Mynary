@@ -11,12 +11,16 @@ export interface NoteVault<TFile = unknown> {
 	modify(file: TFile, content: string): Promise<void>;
 }
 
-export async function createVocabularyNoteInVault<TFile>(vault: NoteVault<TFile>, entry: DictionaryEntry, settings: DictionarySettings, templateId = settings.defaultTemplateId, confirmReplace: () => Promise<boolean> = async () => true): Promise<TFile> {
+export async function createVocabularyNoteInVault<TFile>(vault: NoteVault<TFile>, entry: DictionaryEntry, settings: DictionarySettings, templateId = settings.defaultTemplateId, confirmReplace: () => Promise<boolean> = async () => true, context: { targetLanguage?: string } = {}): Promise<TFile> {
 	const template = settings.templates.find((item) => item.id === templateId) ?? settings.templates[0];
 	if (!template) throw new Error('No vocabulary template is configured.');
-	const generated = renderTemplate(entry, template.content);
+	const rendered = renderTemplate(entry, template.content, context);
+	const translations = settings.bilingualNotes && entry.translations.length
+		? `\n\n## Translation${context.targetLanguage ? ` (${context.targetLanguage.toUpperCase()})` : ''}\n\n${entry.translations.map((item) => `- ${item.word}`).join('\n')}`
+		: '';
+	const generated = `${rendered}${translations}`;
 	const content = settings.existingNoteBehavior === 'update-section' ? updateManagedSection('', generated) : generated;
-	const filename = renderTemplate(entry, settings.filenameTemplate).replace(/[\\/:*?"<>|]/g, '-').trim() || entry.word;
+	const filename = renderTemplate(entry, settings.filenameTemplate, context).replace(/[\\/:*?"<>|]/g, '-').trim() || entry.word;
 	const folder = normalizeVaultPath(settings.noteFolder.trim());
 	if (folder && !vault.getAbstractFileByPath(folder)) await vault.createFolder(folder);
 	const path = normalizeVaultPath(`${folder ? `${folder}/` : ''}${filename}.md`);

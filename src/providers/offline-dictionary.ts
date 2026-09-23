@@ -51,7 +51,7 @@ export class OfflineDictionaryProvider {
 export interface OfflineEntryPayload {
 	word?: string;
 	phonetics?: Array<{ text: string; type?: string }>;
-	meanings?: Array<{ partOfSpeech?: string; labels?: string[]; definitions: Array<{ text: string; examples?: string[] }> }>;
+	meanings?: Array<{ partOfSpeech?: string; labels?: string[]; definitions: Array<{ text: string; examples?: string[]; subDefinitions?: string[] }> }>;
 	translations?: Array<{ word: string; language?: string; languageCode?: string; languageName?: string; sense?: string; labels?: string[] }>;
 	synonyms?: string[];
 	antonyms?: string[];
@@ -63,7 +63,10 @@ function toDictionaryEntry(payload: OfflineEntryPayload, requestedWord: string, 
 	const meanings: Meaning[] = (payload.meanings ?? []).map((meaning) => ({
 		partOfSpeech: meaning.partOfSpeech,
 		labels: meaning.labels ?? [],
-		definitions: (meaning.definitions ?? []).filter((definition) => definition && typeof definition.text === 'string').map((definition): Definition => ({ text: definition.text, examples: definition.examples ?? [] })),
+		definitions: (meaning.definitions ?? []).filter((definition) => definition && typeof definition.text === 'string').map((definition): Definition => {
+			const subDefinitions = Array.isArray(definition.subDefinitions) ? definition.subDefinitions.filter((item): item is string => typeof item === 'string') : [];
+			return { text: definition.text, examples: definition.examples ?? [], ...(subDefinitions.length ? { subDefinitions } : {}) };
+		}),
 	}));
 	const translations: Translation[] = (payload.translations ?? []).filter((item) => item && typeof item.word === 'string').map((item) => ({ ...item }));
 	return {

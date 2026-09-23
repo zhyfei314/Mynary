@@ -1,8 +1,9 @@
-import { App, Modal } from 'obsidian';
+import { App, Component, MarkdownRenderer, Modal } from 'obsidian';
 import { renderTemplate } from '../templates/renderer';
 import { validateTemplate } from '../templates/validation';
 import { DEFAULT_TEMPLATES, FLASHCARD_TEMPLATE } from '../settings';
 import { confirmAction } from './confirm';
+import { prepareFlashcardNote } from '../templates/flashcard-renderer';
 import type MynaryPlugin from '../main';
 import type { DictionaryEntry } from '../types';
 
@@ -12,6 +13,9 @@ const TEMPLATE_VARIABLES = [
 	['{{word}}', 'Từ hoặc cụm từ'],
 	['{{Title}}', 'Alias của word, tiện dùng với template cũ'],
 	['{{language}}', 'Mã ngôn ngữ, ví dụ en'],
+	['{{sourceLanguage}}', 'Mã ngôn ngữ nguồn'],
+	['{{targetLanguage}}', 'Mã ngôn ngữ đích được cấu hình'],
+	['{{audio}}', 'URL audio pronunciation đầu tiên nếu có'],
 	['{{definition}}', 'Definition đầu tiên'],
 	['{{definitionsMarkdown}}', 'Tất cả definition dạng danh sách Markdown'],
 	['{{meaningsMarkdown}}', 'Meaning nhóm theo từ loại và etymology dạng Markdown'],
@@ -64,7 +68,7 @@ export class TemplatePickerModal extends Modal {
 
 	constructor(app: App, private plugin: MynaryPlugin, private entry: DictionaryEntry, private action: TemplateAction) {
 		super(app);
-		this.selectedId = plugin.settings.defaultTemplateId;
+		this.selectedId = plugin.settings.languageTemplateIds?.[entry.language] ?? plugin.settings.defaultTemplateId;
 	}
 
 	onOpen() {
@@ -80,7 +84,7 @@ export class TemplatePickerModal extends Modal {
 		el.createEl('p', { text: 'Choose how the lookup result should be formatted. The default template is preselected.' });
 
 		const select = el.createEl('select', { cls: 'mynary-template-select' });
-		this.plugin.settings.templates.forEach((template) => select.createEl('option', { value: template.id, text: template.name }));
+	this.plugin.settings.templates.filter((template) => template.type !== 'flashcard').forEach((template) => select.createEl('option', { value: template.id, text: template.name }));
 		select.value = this.selectedId;
 		if (select.value !== this.selectedId) this.selectedId = select.value;
 		const preview = el.createEl('pre', { cls: 'mynary-template-preview' });
@@ -122,6 +126,8 @@ function noteBehaviorLabel(behavior: MynaryPlugin['settings']['existingNoteBehav
 
 export class TemplateManagerModal extends Modal {
 	private selectedId: string;
+	private selectedType: 'note' | 'flashcard' = 'note';
+	private previewComponent?: Component;
 
 	constructor(app: App, private plugin: MynaryPlugin) {
 		super(app);
@@ -134,33 +140,39 @@ export class TemplateManagerModal extends Modal {
 	}
 
 	private render() {
+		this.previewComponent?.unload();
+		this.previewComponent = undefined;
 		const el = this.contentEl;
 		el.empty();
 		el.createEl('h2', { text: 'Template manager' });
-		el.createEl('p', { text: 'Use {{variable}} placeholders. Empty data produces an empty value; unknown variables are also left empty.' });
+		el.createEl('p', { text: 'Manage note and flashcard templates separately. Both support dictionary variables; flashcards also use front/back markers for study.' });
+		const typeTabs = el.createDiv('mynary-template-type-tabs');
+		for (const [type, label] of [['note', 'Note templates'], ['flashcard', 'Flashcard templates']] as const) {
+			const tab = typeTabs.createEl('button', { text: label, cls: this.selectedType === type ? 'is-active' : '' });
+				tab.addEventListener('click', () => {
+					this.selectedType = type;
+					const defaultId = type === 'flashcard' ? this.plugin.settings.defaultVocabularyTemplateId : this.plugin.settings.defaultTemplateId;
+					this.selectedId = this.templatesForType().some((template) => template.id === defaultId) ? defaultId ?? '' : this.templatesForType()[0]?.id ?? '';
+					this.render();
+				});
+		}
 
 		const toolbar = el.createDiv('mynary-template-toolbar');
 		const select = toolbar.createEl('select', { cls: 'mynary-template-select' });
-		this.plugin.settings.templates.forEach((template) => select.createEl('option', { value: template.id, text: template.name }));
+		this.templatesForType().forEach((template) => select.createEl('option', { value: template.id, text: template.name }));
 		select.value = this.selectedId;
 		if (select.value !== this.selectedId) this.selectedId = select.value;
 		const selected = () => this.plugin.settings.templates.find((template) => template.id === this.selectedId);
 		const defaultLabel = toolbar.createSpan({ cls: 'mynary-template-default-label' });
-		const updateDefaultLabel = () => { defaultLabel.setText(this.plugin.settings.defaultTemplateId === this.selectedId ? 'Default template' : ''); };
+		const activeDefaultId = () => this.selectedType === 'flashcard' ? this.plugin.settings.defaultVocabularyTemplateId : this.plugin.settings.defaultTemplateId;
+		const updateDefaultLabel = () => { defaultLabel.setText(activeDefaultId() === this.selectedId ? 'Default template' : ''); };
 		updateDefaultLabel();
 		select.addEventListener('change', () => { this.selectedId = select.value; this.render(); });
 
 		const add = toolbar.createEl('button', { text: 'Add template' });
 		add.addEventListener('click', () => {
 			const id = `custom-${Date.now()}`;
-			this.plugin.settings.templates.push({ id, name: 'Custom template', content: '# {{word}}\n\n{{definitionsMarkdown}}' });
-			this.selectedId = id;
-			void this.plugin.saveSettings().then(() => this.render());
-		});
-		const addFlashcard = toolbar.createEl('button', { text: 'Add flashcard example' });
-		addFlashcard.addEventListener('click', () => {
-			const id = `flashcard-${Date.now()}`;
-			this.plugin.settings.templates.push({ id, name: 'Flashcard', content: FLASHCARD_TEMPLATE });
+			this.plugin.settings.templates.push({ id, name: 'Custom template', type: this.selectedType, content: this.selectedType === 'flashcard' ? DEFAULT_TEMPLATES.find((item) => item.id === 'flashcard-basic')?.content ?? FLASHCARD_TEMPLATE : '# {{word}}\n\n{{definitionsMarkdown}}' });
 			this.selectedId = id;
 			void this.plugin.saveSettings().then(() => this.render());
 		});
@@ -170,7 +182,7 @@ export class TemplateManagerModal extends Modal {
 			const source = selected();
 			if (!source) return;
 			const id = `custom-${Date.now()}`;
-			this.plugin.settings.templates.push({ id, name: `${source.name} copy`, content: source.content });
+			this.plugin.settings.templates.push({ id, name: `${source.name} copy`, type: this.selectedType, content: source.content });
 			this.selectedId = id;
 			void this.plugin.saveSettings().then(() => this.render());
 		});
@@ -184,9 +196,31 @@ export class TemplateManagerModal extends Modal {
 		}
 		const editor = el.createDiv('mynary-template-editor-layout');
 		const form = editor.createDiv('mynary-template-editor-form');
-		let preview: HTMLPreElement | undefined;
+		let preview: HTMLElement | undefined;
 		let previewEntry = this.plugin.lastEntry ?? PREVIEW_ENTRY;
-		const updatePreview = () => { preview?.setText(renderTemplate(previewEntry, template.content)); };
+		const updatePreview = () => {
+			if (!preview) return;
+			this.previewComponent?.unload();
+			const rendererComponent = new Component();
+			rendererComponent.load();
+			this.previewComponent = rendererComponent;
+			preview.empty();
+			if (this.selectedType === 'flashcard') {
+				const rendered = prepareFlashcardNote(previewEntry, template.content, this.plugin.settings.vocabularyAnswerLanguage ?? '');
+				const front = preview.createDiv('mynary-template-preview-face mynary-template-preview-front');
+				front.createEl('strong', { text: 'Front' });
+				const frontContent = front.createDiv();
+				const back = preview.createDiv('mynary-template-preview-face mynary-template-preview-back');
+				back.createEl('strong', { text: 'Back' });
+				const backContent = back.createDiv();
+				void MarkdownRenderer.render(this.app, rendered.front, frontContent, '', rendererComponent);
+				void MarkdownRenderer.render(this.app, rendered.back, backContent, '', rendererComponent);
+				return;
+			}
+			let markdown = hideFrontmatter(renderTemplate(previewEntry, template.content));
+			if (this.plugin.settings.bilingualNotes && previewEntry.translations.length) markdown += `\n\n## Translation\n\n${previewEntry.translations.map((item) => `- ${item.word}`).join('\n')}`;
+			void MarkdownRenderer.render(this.app, markdown, preview, '', rendererComponent);
+		};
 		const validation = form.createDiv('mynary-template-validation');
 		const updateValidation = () => {
 			validation.empty();
@@ -205,29 +239,75 @@ export class TemplateManagerModal extends Modal {
 		const name = form.createEl('input', { type: 'text', value: template.name });
 		name.addEventListener('input', () => { template.name = name.value || 'Untitled template'; void this.plugin.saveSettings(); });
 		form.createEl('label', { text: 'Template content' });
+		if (this.selectedType === 'flashcard') {
+			const markerTools = form.createDiv('mynary-template-marker-tools');
+			markerTools.createEl('p', { text: 'Place a marker at the insertion point. Matching start/end markers define each card side.' });
+			for (const [label, marker] of [
+				['Front start', '<!-- mynary:front:start -->'], ['Front end', '<!-- mynary:front:end -->'],
+				['Back start', '<!-- mynary:back:start -->'], ['Back end', '<!-- mynary:back:end -->'],
+			] as const) {
+				const button = markerTools.createEl('button', { text: label, attr: { title: marker } });
+				button.addEventListener('click', () => {
+					const start = textarea.selectionStart;
+					const end = textarea.selectionEnd;
+					textarea.value = `${textarea.value.slice(0, start)}${marker}${textarea.value.slice(end)}`;
+					textarea.selectionStart = textarea.selectionEnd = start + marker.length;
+					textarea.focus();
+					template.content = textarea.value;
+					updateValidation();
+					updatePreview();
+					void this.plugin.saveSettings();
+				});
+			}
+		}
 		const textarea = form.createEl('textarea', { cls: 'mynary-template-textarea' });
 		textarea.value = template.content;
 		textarea.addEventListener('input', () => { template.content = textarea.value; updateValidation(); updatePreview(); void this.plugin.saveSettings(); });
 
 		const controls = form.createDiv('mynary-template-editor-actions');
 		const setDefault = controls.createEl('button', { text: 'Set as default' });
-		setDefault.disabled = this.plugin.settings.defaultTemplateId === template.id;
-		setDefault.addEventListener('click', () => { this.plugin.settings.defaultTemplateId = template.id; void this.plugin.saveSettings().then(() => { updateDefaultLabel(); this.render(); }); });
+		setDefault.disabled = activeDefaultId() === template.id;
+		setDefault.addEventListener('click', () => {
+			if (this.selectedType === 'flashcard') this.plugin.settings.defaultVocabularyTemplateId = template.id;
+			else this.plugin.settings.defaultTemplateId = template.id;
+			void this.plugin.saveSettings().then(() => { updateDefaultLabel(); this.render(); });
+		});
 		const remove = controls.createEl('button', { text: 'Delete template' });
-		remove.disabled = this.plugin.settings.templates.length <= 1;
+		remove.disabled = this.templatesForType().length <= 1;
 		remove.addEventListener('click', () => {
 			void confirmAction(this.app, 'Delete template?', `Delete “${template.name}”?`).then((confirmed) => {
 				if (!confirmed) return;
 			this.plugin.settings.templates = this.plugin.settings.templates.filter((item) => item.id !== template.id);
-			if (this.plugin.settings.defaultTemplateId === template.id) this.plugin.settings.defaultTemplateId = this.plugin.settings.templates[0]?.id ?? '';
-			this.selectedId = this.plugin.settings.defaultTemplateId;
+			if (this.selectedType === 'flashcard' && this.plugin.settings.defaultVocabularyTemplateId === template.id) this.plugin.settings.defaultVocabularyTemplateId = this.plugin.settings.templates.find((item) => item.type === 'flashcard')?.id ?? '';
+			if (this.selectedType === 'note' && this.plugin.settings.defaultTemplateId === template.id) this.plugin.settings.defaultTemplateId = this.plugin.settings.templates.find((item) => item.type !== 'flashcard')?.id ?? '';
+			this.selectedId = this.selectedType === 'flashcard' ? this.plugin.settings.defaultVocabularyTemplateId ?? '' : this.plugin.settings.defaultTemplateId;
 			void this.plugin.saveSettings().then(() => this.render());
 			});
 		});
 
+		const previewPane = editor.createDiv('mynary-template-preview-pane');
+		previewPane.createEl('h3', { text: 'Preview' });
+		const previewControls = previewPane.createDiv('mynary-template-preview-controls');
+		const previewSelect = previewControls.createEl('select', { attr: { 'aria-label': 'Preview data' } });
+		previewSelect.createEl('option', { value: 'rich', text: 'Rich entry' });
+		previewSelect.createEl('option', { value: 'sparse', text: 'Sparse entry' });
+		previewSelect.createEl('option', { value: 'translations', text: 'Many meanings and translations' });
+		if (this.plugin.lastEntry) previewSelect.createEl('option', { value: 'current', text: 'Current lookup' });
+		previewSelect.value = this.plugin.lastEntry ? 'current' : 'rich';
+		previewSelect.addEventListener('change', () => {
+			previewEntry = previewSelect.value === 'current' && this.plugin.lastEntry ? this.plugin.lastEntry : PREVIEW_ENTRIES[previewSelect.value] ?? PREVIEW_ENTRY;
+			updatePreview();
+		});
+		preview = previewPane.createDiv('mynary-template-live-preview');
+
 		const guide = editor.createDiv('mynary-template-guide');
-	guide.createEl('h3', { text: 'Available variables' });
+		guide.createEl('h3', { text: 'Available variables' });
 		guide.createEl('p', { text: 'Click a variable to insert it at the cursor. Names are case-insensitive; {{Title}} is an alias for {{word}}. Optional blocks use {{#if variable}}...{{/if}}.' });
+		if (this.selectedType === 'flashcard') {
+			guide.createEl('h3', { text: 'Study markers' });
+			guide.createEl('p', { text: 'Wrap the question and answer in paired markers. Front aliases: front, question, prompt. Back aliases: back, answer, reverse. Start/end also accept begin/close and open/stop.' });
+			guide.createEl('pre', { text: '<!-- mynary:front:start -->\n{{word}}\n<!-- mynary:front:end -->\n\n<!-- mynary:back:start -->\n{{definitionsMarkdown}}\n<!-- mynary:back:end -->' });
+		}
 		const variableList = guide.createDiv('mynary-template-variable-list');
 		TEMPLATE_VARIABLES.forEach(([variable, description]) => {
 			const button = variableList.createEl('button', { text: variable, attr: { title: description } });
@@ -245,25 +325,18 @@ export class TemplateManagerModal extends Modal {
 		});
 		guide.createEl('h3', { text: 'Example' });
 		guide.createEl('pre', { text: '{{word}} ({{IPA}})\n\n{{meaningsMarkdown}}\n\nSource: {{sourceUrl}}' });
-		guide.createEl('h3', { text: 'Preview' });
-		const previewControls = guide.createDiv('mynary-template-preview-controls');
-		const previewSelect = previewControls.createEl('select', { attr: { 'aria-label': 'Preview data' } });
-		previewSelect.createEl('option', { value: 'rich', text: 'Rich entry' });
-		previewSelect.createEl('option', { value: 'sparse', text: 'Sparse entry' });
-		previewSelect.createEl('option', { value: 'translations', text: 'Many meanings and translations' });
-		if (this.plugin.lastEntry) previewSelect.createEl('option', { value: 'current', text: 'Current lookup' });
-		previewSelect.value = this.plugin.lastEntry ? 'current' : 'rich';
-		previewSelect.addEventListener('change', () => {
-			previewEntry = previewSelect.value === 'current' && this.plugin.lastEntry ? this.plugin.lastEntry : PREVIEW_ENTRIES[previewSelect.value] ?? PREVIEW_ENTRY;
-			updatePreview();
-		});
-		preview = guide.createEl('pre', { cls: 'mynary-template-live-preview' });
 		updateValidation();
 		updatePreview();
 	}
 
+	onClose() {
+		this.previewComponent?.unload();
+		this.previewComponent = undefined;
+		this.contentEl.empty();
+	}
+
 	private async restoreBuiltIns() {
-		if (!(await confirmAction(this.app, 'Restore built-in templates?', 'This resets the names and content of the three built-in templates. Custom templates are kept.'))) return;
+		if (!(await confirmAction(this.app, 'Restore built-in templates?', 'This resets the built-in note and flashcard templates. Custom templates are kept.'))) return;
 		DEFAULT_TEMPLATES.forEach((defaultTemplate) => {
 			const existing = this.plugin.settings.templates.find((template) => template.id === defaultTemplate.id);
 			if (existing) Object.assign(existing, defaultTemplate);
@@ -271,11 +344,19 @@ export class TemplateManagerModal extends Modal {
 		});
 		if (!this.plugin.settings.templates.some((template) => template.id === this.plugin.settings.defaultTemplateId)) this.plugin.settings.defaultTemplateId = DEFAULT_TEMPLATES[0]?.id ?? '';
 		await this.plugin.saveSettings();
-		this.selectedId = this.plugin.settings.defaultTemplateId;
+		this.selectedId = this.selectedType === 'flashcard' ? this.plugin.settings.defaultVocabularyTemplateId ?? 'flashcard-basic' : this.plugin.settings.defaultTemplateId;
 		this.render();
+	}
+
+	private templatesForType() {
+		return this.plugin.settings.templates.filter((template) => (template.type === 'flashcard' ? 'flashcard' : 'note') === this.selectedType);
 	}
 }
 
 export function openTemplatePicker(app: App, plugin: MynaryPlugin, entry: DictionaryEntry, action: TemplateAction) {
 	new TemplatePickerModal(app, plugin, entry, action).open();
+}
+
+function hideFrontmatter(markdown: string) {
+	return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\s*(?:\r?\n|$)/u, '');
 }

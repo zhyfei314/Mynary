@@ -4,6 +4,8 @@ Look up a word while you are reading, understand how it is used, and save it as 
 
 Mynary uses Wiktionary for dictionary data and is designed to stay out of your way. Select a word, look it up, and keep going.
 
+Current release: **1.2.0**. Mynary is maintained by [zhyfei314](https://github.com/zhyfei314).
+
 ## Get started
 
 ### Install from Community Plugins
@@ -86,7 +88,7 @@ The lookup popup also includes **Translate this text**, while the sidebar includ
 
 Open **Settings → Mynary Dictionary → Offline dictionary packs** and select **Choose language**. Mynary loads the public catalog from GitHub, with a Hugging Face fallback, lets you choose a language and pack, downloads only the pack files, verifies SHA-256 checksums, and stores the pack in the vault under `.mynary/dictionaries/<language>/`.
 
-Core packs contain definitions and pronunciation. Bilingual packs contain translations for a specific direction such as English → Vietnamese. Only one pack can be active for a source language; installing another pack for that source replaces the previous one. If an installed pack has no matching entry, Mynary falls back to Wiktionary when online.
+Core packs contain definitions and pronunciation. You can install multiple bilingual packs for the same source language, including different translation directions such as English → Vietnamese and English → Japanese. Installing the same pack again updates that pack. If installed packs have no matching entry, Mynary falls back to Wiktionary when online.
 
 ## Data and licenses
 
@@ -100,7 +102,7 @@ The plugin source itself remains MIT-licensed. Do not add audio, source HTML, or
 
 ## Save what you learned
 
-After a lookup, choose **Copy**, **Insert**, or **Create note**, then select a template.
+The lookup action bar groups **Copy**, **Insert**, and **Create note** under **Save**. The icon actions refresh, translate, add a flashcard, or select an installed offline pack for that language. The offline-pack action is disabled when no matching pack is installed.
 
 You can manage this workflow under **Settings → Mynary Dictionary**:
 
@@ -108,6 +110,10 @@ You can manage this workflow under **Settings → Mynary Dictionary**:
 - **Filename template** — for example `{{word}}` or `{{language}}-{{word}}`.
 - **Default template** — the template selected first.
 - **Existing note behavior** — ask before replacing, replace automatically, or update only Mynary's managed section.
+
+## Study vocabulary
+
+Select **Add to vocabulary** on a lookup and choose a deck and flashcard template. Mynary creates a normal editable Markdown note under the vocabulary folder and deck folder; you can move it, add images or audio, and edit its front/back content. Open **Vocabulary study** from the ribbon or Command Palette to browse decks, search and manage cards, and study due cards. Decks show New/Learning/Review counts; Again/Hard/Good/Easy show their next-review intervals. Set the vocabulary folder, suggested deck, default flashcard template, and daily new-card limit in settings. Export files are written into the vault; Anki export is tab-separated with import directives, and CSV/JSON include deck and review status.
 
 Mynary creates missing folders automatically and replaces unsafe filename characters.
 
@@ -123,12 +129,29 @@ Anything outside the markers is left alone. If the markers are not present, Myna
 
 ## Make the notes yours with templates
 
-Open **Settings → Mynary Dictionary → Manage templates** to create, edit, duplicate, delete, or restore templates. Variable names are case-insensitive, so `{{Title}}` is the same as `{{word}}`.
+Open **Settings → Mynary Dictionary → Manage templates** to create, edit, duplicate, delete, or restore templates. Note and flashcard templates are managed separately, and the live Markdown preview shows the rendered output. Flashcard templates have separate Front and Back preview panels. Variable names are case-insensitive, so `{{Title}}` is the same as `{{word}}`.
+
+Flashcard templates use paired markers to choose what appears on each side. The default template includes:
+
+```markdown
+<!-- mynary:front:start -->
+{{word}}
+<!-- mynary:front:end -->
+
+<!-- mynary:back:start -->
+{{meaningsMarkdown}}
+<!-- mynary:back:end -->
+```
+
+The template editor has buttons to insert each marker. The parser also accepts `question`/`prompt` as Front aliases, `answer`/`reverse` as Back aliases, and `begin`/`open` or `close`/`stop` in place of `start`/`end`.
 
 | Variable | What it contains |
 | --- | --- |
 | `{{word}}` / `{{Title}}` | The original word or phrase |
 | `{{language}}` | Wiktionary language code |
+| `{{sourceLanguage}}` | Source dictionary language code |
+| `{{targetLanguage}}` | Configured translation target language code |
+| `{{audio}}` | URL of the first available pronunciation recording |
 | `{{definition}}` | The first definition, including Wiktionary links |
 | `{{definitions}}` | All definitions, one per line, including Wiktionary links |
 | `{{definitionsMarkdown}}` | Definitions as a Markdown list with Wiktionary links |
@@ -202,9 +225,9 @@ There is no telemetry, advertising, analytics, or account system. Mynary does no
 
 If Web Supertonic is enabled, model and voice assets are requested from Hugging Face. If Local server is enabled, selected text is sent only to the endpoint configured in Mynary's settings.
 
-## For contributors
+## Development
 
-Requirements: Node.js 18 or newer and npm.
+Requirements: Node.js 18 or newer and npm. Install dependencies with `npm install`, then run the test, lint, and production build commands below before preparing a release.
 
 ```bash
 npm install
@@ -213,7 +236,7 @@ npm run lint
 npm run build
 ```
 
-Use `npm run dev` for esbuild watch mode. The production build writes `main.js` to the plugin root.
+Use `npm run dev` for esbuild watch mode. The production build writes `main.js` to the plugin root. Include or update tests for changed lookup, cache, parser, or template behavior. Do not commit generated `main.js`, `node_modules/`, or offline dataset files; the pack catalog/checksum scripts are the only dataset-maintenance tools in this repository. Preserve local-first behavior and do not introduce telemetry or send vault content without an explicit user action. For user-facing text, use concise sentence case. Before preparing a release, run `npm test`, `npm run lint`, and `npm run build`.
 
 The main source folders are:
 

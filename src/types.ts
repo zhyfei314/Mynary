@@ -12,7 +12,7 @@ export interface AudioSource {
 }
 export interface Pronunciation { text: string; type?: string; audio?: AudioSource[]; }
 export interface DefinitionLink { text: string; target: string; url: string; }
-export interface Definition { text: string; examples: string[]; links?: DefinitionLink[]; }
+export interface Definition { text: string; examples: string[]; links?: DefinitionLink[]; subDefinitions?: string[]; }
 export interface Meaning { partOfSpeech?: string; labels?: string[]; etymology?: string; definitions: Definition[]; }
 export interface Translation {
 	word: string;
@@ -42,4 +42,4 @@ export interface DictionaryPackManifest {
 	indexSha256?: string;
 	entriesSha256?: string;
 }
-export interface TemplateDefinition { id: string; name: string; content: string; }
+export interface TemplateDefinition { id: string; name: string; content: string; type?: 'note' | 'flashcard'; }

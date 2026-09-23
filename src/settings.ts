@@ -12,6 +12,14 @@ export interface DictionarySettings {
 	defaultTemplateId: string;
 	templates: TemplateDefinition[];
 	existingNoteBehavior: 'ask' | 'overwrite' | 'update-section';
+	bilingualNotes?: boolean;
+	languageTemplateIds?: Record<string, string>;
+	vocabularyFolder?: string;
+	defaultVocabularyDeck?: string;
+	newCardsPerDay?: number;
+	vocabularyAnswerLanguage?: string;
+	defaultVocabularyTemplateId?: string;
+	vocabularyDecks?: string[];
 	ttsEnabled: boolean;
 	ttsAutoGenerate: boolean;
 	ttsRuntime: 'web' | 'server';
@@ -29,37 +37,62 @@ export interface DictionarySettings {
 	mtranTargetLanguages: Record<string, string>;
 }
 
-export const FLASHCARD_TEMPLATE = `# flashcards/{{language}}_Definition
+export const FLASHCARD_TEMPLATE = `---
+mynary-language: {{language}}
+---
 
-{{Title}}()::
+# {{word}}
 
-{{#if IPA}}### Pronunciation
-{{IPA}}
-{{/if}}
-### Usage
+<!-- mynary:front:start -->
+{{word}}
+<!-- mynary:front:end -->
 
-**1. Meaning**
+## Answer
 
+<!-- mynary:back:start -->
 {{meaningsMarkdown}}
 
-{{#if translationsMarkdown}}**2. Translation**
-
+{{#if translationsMarkdown}}### Translation
 {{translationsMarkdown}}
 
-{{/if}}{{#if examplesMarkdown}}**3. Examples**
-
+{{/if}}{{#if examplesMarkdown}}### Examples
 {{examplesMarkdown}}
 
-{{/if}}{{#if synonyms}}**4. Related words**
+{{/if}}{{#if IPA}}### Pronunciation
+{{IPA}}
+{{/if}}
+<!-- mynary:back:end -->
 
-{{synonyms}}
+## Notes
+`;
 
-{{/if}}**5. My example**
+const LEGACY_FLASHCARD_BASIC_TEMPLATE = `---
+mynary-vocabulary-id: {{word}}-{{language}}
+mynary-language: {{language}}
+---
 
-- 
+# {{word}}
 
-{{#if sourceUrl}}[Source]({{sourceUrl}})
-{{/if}}`;
+<!-- mynary:front:start -->
+{{word}}
+<!-- mynary:front:end -->
+
+## Answer
+
+<!-- mynary:back:start -->
+{{definitionsMarkdown}}
+{{#if translationsMarkdown}}
+### Translation
+{{translationsMarkdown}}
+{{/if}}
+{{#if examplesMarkdown}}
+### Examples
+{{examplesMarkdown}}
+{{/if}}
+<!-- mynary:back:end -->
+
+## Notes
+`;
 
 export const LANGUAGES: LanguageOption[] = WIKTIONARY_LANGUAGES.map(({ code, displayName }) => ({ code, name: displayName }));
 
@@ -76,6 +109,7 @@ export const DEFAULT_TEMPLATES: TemplateDefinition[] = [
 	{ id: 'basic', name: 'Basic vocabulary', content: '---\nword: {{word}}\nlanguage: {{language}}\nsource: {{source}}\nsource_url: {{sourceUrl}}\nlookup_date: {{lookupDate}}\n---\n\n# {{word}}\n\n{{meaningsMarkdown}}\n\n{{#if examplesMarkdown}}## Examples\n{{examplesMarkdown}}\n{{/if}}' },
 	{ id: 'detailed', name: 'Detailed vocabulary', content: '---\nword: {{word}}\nlanguage: {{language}}\n---\n\n# {{word}}\n\n{{#if IPA}}**IPA:** {{IPA}}\n{{/if}}**Part of speech:** {{partOfSpeech}}\n\n## Meanings\n{{meaningsMarkdown}}\n\n{{#if translationsMarkdown}}## Translations\n{{translationsMarkdown}}\n{{/if}}{{#if synonyms}}## Synonyms\n{{synonyms}}\n{{/if}}' },
 	{ id: 'learning', name: 'Language-learning vocabulary', content: '---\nword: {{word}}\nlanguage: {{language}}\n---\n\n# {{word}}\n\n## Meanings\n{{meaningsMarkdown}}\n\n{{#if IPA}}## Pronunciation\n{{IPA}}\n{{/if}}{{#if translationsMarkdown}}## Translations\n{{translationsMarkdown}}\n{{/if}}{{#if examplesMarkdown}}## Source examples\n{{examplesMarkdown}}\n{{/if}}\n## My example\n\n## Notes\n' },
+	{ id: 'flashcard-basic', name: 'Basic flashcard', type: 'flashcard', content: FLASHCARD_TEMPLATE },
 ];
 
 const LEGACY_TEMPLATE_CONTENT: Record<string, string> = {
@@ -154,6 +188,13 @@ language: {{language}}
 /** Updates only untouched templates from versions that predate the current defaults. */
 export function migrateTemplates(templates: TemplateDefinition[]): boolean {
 	let changed = false;
+	for (const template of templates) {
+		if (template.id === 'flashcard-basic' && template.content.trim() === LEGACY_FLASHCARD_BASIC_TEMPLATE.trim()) {
+			template.content = FLASHCARD_TEMPLATE;
+			template.type = 'flashcard';
+			changed = true;
+		}
+	}
 	const currentById = new Map(DEFAULT_TEMPLATES.map((template) => [template.id, template]));
 
 	for (const template of templates) {
@@ -170,7 +211,7 @@ export function migrateTemplates(templates: TemplateDefinition[]): boolean {
 	return changed;
 }
 
-export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'web', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, offlineDictionaryEnabled: true, mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'en', mtranTargetLanguages: {} };
+export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', bilingualNotes: false, vocabularyFolder: 'Vocabulary', defaultVocabularyDeck: 'General', newCardsPerDay: 20, vocabularyAnswerLanguage: '', defaultVocabularyTemplateId: 'flashcard-basic', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'web', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, offlineDictionaryEnabled: true, mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'en', mtranTargetLanguages: {} };
 
 export function normalizeSettings(raw: unknown): DictionarySettings {
 	const data = isRecord(raw) ? raw : {};
@@ -195,7 +236,17 @@ export function normalizeSettings(raw: unknown): DictionarySettings {
 		maxCacheEntries: Math.floor(positiveNumber(data.maxCacheEntries, DEFAULT_SETTINGS.maxCacheEntries)),
 		defaultTemplateId,
 		templates,
-		 existingNoteBehavior,
+		existingNoteBehavior,
+		bilingualNotes: data.bilingualNotes === true,
+		languageTemplateIds: isRecord(data.languageTemplateIds)
+			? Object.fromEntries(Object.entries(data.languageTemplateIds).filter(([language, templateId]) => /^[a-z]{2,3}$/u.test(language) && typeof templateId === 'string' && templates.some((template) => template.id === templateId)) as Array<[string, string]>)
+			: {},
+		vocabularyFolder: typeof data.vocabularyFolder === 'string' && data.vocabularyFolder.trim() ? data.vocabularyFolder.trim() : 'Vocabulary',
+		defaultVocabularyDeck: typeof data.defaultVocabularyDeck === 'string' && data.defaultVocabularyDeck.trim() ? data.defaultVocabularyDeck.trim() : 'General',
+		newCardsPerDay: Math.min(200, Math.max(1, Math.floor(positiveNumber(data.newCardsPerDay, 20)))),
+		vocabularyAnswerLanguage: typeof data.vocabularyAnswerLanguage === 'string' && MTRAN_LANGUAGE_OPTIONS.some((language) => language.code === data.vocabularyAnswerLanguage) ? data.vocabularyAnswerLanguage : '',
+		defaultVocabularyTemplateId: normalizeDefaultFlashcardTemplateId(data.defaultVocabularyTemplateId, templates),
+		vocabularyDecks: Array.isArray(data.vocabularyDecks) ? [...new Set(data.vocabularyDecks.filter((deck): deck is string => typeof deck === 'string').map((deck) => deck.trim()).filter(Boolean))] : ['General'],
 		ttsEnabled: isEnabledSetting(data.ttsEnabled),
 		ttsAutoGenerate: isEnabledSetting(data.ttsAutoGenerate),
 		ttsRuntime: data.ttsRuntime === 'server' ? 'server' : 'web',
@@ -238,12 +289,33 @@ function isLegacyDefaultLanguageList(languages: LanguageOption[]) {
 function normalizeTemplates(value: unknown): TemplateDefinition[] {
 	if (!Array.isArray(value)) return DEFAULT_TEMPLATES.map((template) => ({ ...template }));
 	const seen = new Set<string>();
-	const templates = value.filter(isRecord).map((item) => ({ id: typeof item.id === 'string' ? item.id.trim() : '', name: typeof item.name === 'string' ? item.name.trim() || 'Untitled template' : 'Untitled template', content: typeof item.content === 'string' ? item.content : '' })).filter((item) => item.id && item.content.trim()).filter((item) => {
+	const templates = value.filter(isRecord).map((item) => ({ id: typeof item.id === 'string' ? item.id.trim() : '', name: typeof item.name === 'string' ? item.name.trim() || 'Untitled template' : 'Untitled template', content: typeof item.content === 'string' ? item.content : '', ...(item.type === 'flashcard' || (typeof item.id === 'string' && item.id.startsWith('flashcard-')) || item.name === 'Flashcard' ? { type: 'flashcard' as const } : {}) })).filter((item) => item.id && item.content.trim()).filter((item) => {
 		if (seen.has(item.id)) return false;
 		seen.add(item.id);
 		return true;
 	});
-	return templates.length ? templates : DEFAULT_TEMPLATES.map((template) => ({ ...template }));
+	const normalized = templates.length ? templates : DEFAULT_TEMPLATES.map((template) => ({ ...template }));
+	if (!normalized.some((template) => template.id === 'flashcard-basic')) normalized.push({ ...DEFAULT_TEMPLATES.find((template) => template.id === 'flashcard-basic')! });
+	if (!normalized.some((template) => template.type !== 'flashcard')) normalized.push({ ...DEFAULT_TEMPLATES.find((template) => template.id === 'basic')! });
+	return normalized;
+}
+
+function normalizeDefaultFlashcardTemplateId(value: unknown, templates: TemplateDefinition[]) {
+	const selected = typeof value === 'string' ? templates.find((template) => template.id === value && template.type === 'flashcard') : undefined;
+	if (!selected || hasIncompleteFlashcardMarkers(selected.content)) return 'flashcard-basic';
+	return selected.id;
+}
+
+function hasIncompleteFlashcardMarkers(content: string) {
+	const markers = [...content.matchAll(/<!--\s*mynary\s*[:_-]\s*(front|question|prompt|back|answer|reverse)\s*[:_-]\s*(start|end|begin|close|open|stop)\s*-->/giu)];
+	if (!markers.length) return false;
+	const aliases = { front: ['front', 'question', 'prompt'], back: ['back', 'answer', 'reverse'] };
+	return (['front', 'back'] as const).some((side) => {
+		const names: readonly string[] = aliases[side];
+		const hasOpen = markers.some((marker) => names.includes((marker[1] ?? '').toLocaleLowerCase()) && ['start', 'begin', 'open'].includes((marker[2] ?? '').toLocaleLowerCase()));
+		const hasClose = markers.some((marker) => names.includes((marker[1] ?? '').toLocaleLowerCase()) && ['end', 'close', 'stop'].includes((marker[2] ?? '').toLocaleLowerCase()));
+		return !hasOpen || !hasClose;
+	});
 }
 
 function positiveNumber(value: unknown, fallback: number) {
