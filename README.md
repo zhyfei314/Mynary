@@ -43,15 +43,11 @@ Mynary accepts selections up to 80 characters or 8 words by default. Longer sele
 
 Mynary can use a small local dictionary pack before falling back to Wiktionary. Run **Mynary Dictionary: Install offline dictionary pack from URL**, then enter a pack `manifest.json` URL. Packs contain only indexed definitions, pronunciation, examples, and selected translations; audio is not included. A missing pack or missing entry falls back to the normal Wiktionary lookup.
 
-Pack files are installed under `.mynary/dictionaries/<language>/`. Downloads are written to temporary files and verified with SHA-256 when the manifest provides checksums. To build a pack from a Kaikki JSONL dump:
-
-```bash
-npm run build:pack -- path/to/vi-extract.jsonl ./dist/vi vi "Vietnamese Core Dictionary"
-```
+Pack files are installed under `.mynary/dictionaries/<language>/`. Downloads are written to temporary files and verified with SHA-256 when the manifest provides checksums. The pack datasets are maintained separately in the [Mynary Offline Dictionary Hugging Face Dataset](https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary); this plugin repository does not include the source datasets or pack-building pipeline.
 
 Pack manifests use the same schema for core and bilingual packs. Core packs use `kind: "core"` and `language`; bilingual packs use `kind: "bilingual"`, `language` as the source language, and `targetLanguage` as the translation language. `entriesFile` may end in `.gz`; its checksum is always the SHA-256 of the exact downloadable bytes.
 
-The small catalog is maintained in both [dictionary-catalog/catalog.json](dictionary-catalog/catalog.json) and the Hugging Face Dataset repository. It points to the large pack assets in Hugging Face and includes download sizes. Repository automation refreshes and checksum-verifies it weekly and whenever a plugin release tag is pushed. To mirror the catalog back to the Dataset, configure the repository Actions secret `HF_TOKEN` with a write-enabled token; without it, the GitHub catalog still refreshes. The current local pack release set can be uploaded with `hf upload zhyfei314/Mynary-Offline-Dictionary ./release --repo-type dataset` after `hf auth login`.
+The small catalog is maintained in both [dictionary-catalog/catalog.json](dictionary-catalog/catalog.json) and the Hugging Face Dataset repository. It points to the large pack assets in Hugging Face and includes download sizes. Repository automation refreshes and checksum-verifies it weekly and whenever a plugin release tag is pushed. To mirror the catalog back to the Dataset, configure the repository Actions secret `HF_TOKEN` with a write-enabled token; without it, the GitHub catalog still refreshes. The repository retains only the small scripts needed to verify published pack checksums and refresh the catalog.
 
 ## Optional local translation
 
