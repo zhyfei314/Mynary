@@ -4,7 +4,7 @@ Look up a word while you are reading, understand how it is used, and save it as 
 
 Mynary uses Wiktionary for dictionary data and is designed to stay out of your way. Select a word, look it up, and keep going.
 
-Current release: **1.2.0**. Mynary is maintained by [zhyfei314](https://github.com/zhyfei314).
+Current release: **1.2.1**. Mynary is maintained by [zhyfei314](https://github.com/zhyfei314).
 
 ## Get started
 
