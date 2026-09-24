@@ -177,6 +177,7 @@ export default class MynaryPlugin extends Plugin {
 			menu.addItem((item) => item.setTitle('Translate with MTranServer').setIcon('languages').onClick(() => void this.translateSelected(editor)));
 		}));
 		this.registerDomEvent(document, 'dblclick', (event) => {
+			if (!this.settings.doubleClickLookup) return;
 			const target = event.target;
 			if (!(target instanceof HTMLElement) || !target.closest('.markdown-source-view, .markdown-preview-view')) return;
 			window.setTimeout(() => {
@@ -1312,6 +1313,9 @@ class DictionarySettingTab extends PluginSettingTab {
 
 		const dictionary = createGroup('Dictionary', 'Choose the language used for dictionary lookup.', true);
 		new Setting(dictionary).setName('Default language').setDesc('Wiktionary language section to search.').addDropdown((dropdown) => { this.plugin.settings.languages.forEach((item) => { dropdown.addOption(item.code, item.name); }); dropdown.setValue(this.plugin.settings.defaultLanguage).onChange((value) => { this.plugin.settings.defaultLanguage = value; void this.plugin.saveSettings(); }); });
+
+		const interaction = createGroup('Interaction', 'Choose how text selection triggers a lookup.');
+		new Setting(interaction).setName('Look up on double-click').setDesc('Automatically open a dictionary lookup when you double-click a word in a note.').addToggle((toggle) => toggle.setValue(this.plugin.settings.doubleClickLookup === true).onChange((value) => { this.plugin.settings.doubleClickLookup = value; void this.plugin.saveSettings(); }));
 
 		const offline = createGroup('Offline dictionary', 'Install, verify, and manage local dictionary packs.');
 		new Setting(offline).setName('Use installed packs').setDesc('Installed packs are checked before Wiktionary. Core packs provide definitions; bilingual packs add translations.').addToggle((toggle) => toggle.setValue(this.plugin.settings.offlineDictionaryEnabled !== false).onChange((value) => { this.plugin.settings.offlineDictionaryEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
