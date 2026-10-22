@@ -57,5 +57,5 @@ jobs:
 
                   gh release create "$tag" \
                     --title="$tag" \
-                    --generate-notes \
+                    --notes "Mynary $tag includes offline speech, vocabulary and Anki improvements, security fixes, and Obsidian review warning fixes." \
                     main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
