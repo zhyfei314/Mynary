@@ -17,10 +17,18 @@ export class WiktionaryProvider {
 
 	get ttsAvailable() { return Boolean(this.tts); }
 	ttsAvailableFor(language: string) { const tts = this.tts; if (!tts) return false; return tts.supportsLanguage?.(language) ?? true; }
+	get ttsCreatesAudio() { return Boolean(this.tts && !this.tts.speak); }
+	getLocalTtsVoices() { return this.tts?.getLocalVoices?.() ?? []; }
+	refreshLocalTtsVoices() { return this.tts?.refreshVoices?.() ?? []; }
 
 	async synthesizeTts(text: string, language: string) {
 		if (!this.tts) throw new Error('Supertonic is disabled.');
 		return this.tts.synthesize(text, language);
+	}
+
+	async speakTts(text: string, language: string) {
+		if (!this.tts?.speak) throw new Error('Offline system speech is unavailable.');
+		return this.tts.speak(text, language);
 	}
 
 	async lookup(word: string, language: string): Promise<DictionaryEntry> {
@@ -101,7 +109,7 @@ export class WiktionaryProvider {
 		// Use rendered HTML as the single display source. Raw wikitext contains
 		// citation templates and language metadata that are easy to leak into UI.
 		let entry = parseWiktionaryHtml(html, word, language, title);
-		if (this.autoTts && this.tts && entry.phonetics.length && !entry.phonetics.some((pronunciation) => pronunciation.audio?.length)) {
+		if (this.autoTts && this.tts && !this.tts.speak && entry.phonetics.length && !entry.phonetics.some((pronunciation) => pronunciation.audio?.length)) {
 			try {
 				entry = this.withAudio(entry, [await this.tts.synthesize(word, language)]);
 			} catch {

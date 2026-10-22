@@ -1,7 +1,7 @@
 import { ItemView, MarkdownRenderer, WorkspaceLeaf } from 'obsidian';
 import type { DictionaryEntry } from '../types';
 import type { ReviewRating, VocabularyCard, VocabularyStatus } from '../services/vocabulary';
-import { dueVocabularyCards, formatVocabularyInterval, vocabularyQueueCounts, vocabularyRatingInterval } from '../services/vocabulary';
+import { compactVocabularyAnswer, dueVocabularyCards, formatVocabularyInterval, vocabularyQueueCounts, vocabularyRatingInterval } from '../services/vocabulary';
 
 export const VIEW_TYPE_VOCABULARY = 'mynary-vocabulary-view';
 
@@ -152,10 +152,13 @@ export class VocabularyView extends ItemView {
 		void MarkdownRenderer.render(this.app, this.noteFront?.id === card.id ? this.noteFront.text : `# ${card.entry.word}`, front, card.filePath ?? '', this);
 		panel.createDiv({ cls: 'mynary-entry-metadata', text: card.entry.language.toUpperCase() });
 		if (this.revealed) {
-			const translations = card.entry.translations.map((item) => item.word).join(', ');
-			const fallback = card.entry.meanings.flatMap((meaning) => meaning.definitions.map((definition) => definition.text)).join('\n') || translations || 'No definition or translation in this pack yet.';
+			const compactAnswer = compactVocabularyAnswer(card);
+			const rawAnswer = this.noteAnswer?.id === card.id ? this.noteAnswer.text : '';
+			const definitionCount = card.entry.meanings.reduce((count, meaning) => count + meaning.definitions.length, 0);
+			const useCompactAnswer = Boolean(card.senseIndex || definitionCount > 1 || /(?:^|\n)#{1,3}\s*(?:Examples|Pronunciation|Translations|Usage)\b/iu.test(rawAnswer));
+			const fallback = compactAnswer || 'No definition in this pack yet.';
 			const answer = panel.createDiv('mynary-flashcard-answer');
-			void MarkdownRenderer.render(this.app, this.noteAnswer?.id === card.id ? this.noteAnswer.text : fallback, answer, card.filePath ?? '', this);
+			void MarkdownRenderer.render(this.app, useCompactAnswer ? fallback : rawAnswer || fallback, answer, card.filePath ?? '', this);
 			panel.createEl('button', { text: 'Edit card note' }).addEventListener('click', () => void this.controller.openVocabularyNote(card));
 			const ratings = panel.createDiv('mynary-flashcard-ratings');
 			for (const [rating, label] of [['again', 'Again'], ['hard', 'Hard'], ['good', 'Good'], ['easy', 'Easy']] as const) {

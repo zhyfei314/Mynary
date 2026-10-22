@@ -1,4 +1,4 @@
-import { App, Modal, Notice } from 'obsidian';
+import { App, MarkdownView, Modal, Notice } from 'obsidian';
 import type MynaryPlugin from '../main';
 import { MTRAN_LANGUAGE_OPTIONS } from '../settings';
 
@@ -30,17 +30,17 @@ export class TranslationModal extends Modal {
 		const resultSection = this.contentEl.createDiv('mynary-translation-result-section');
 		resultSection.createEl('label', { text: 'Translation' });
 		const result = resultSection.createDiv({ cls: 'mynary-translation-result mynary-loading', text: 'Translating…' });
-		const copy = resultSection.createEl('button', { text: 'Copy translation', cls: 'mynary-translation-copy' });
-		copy.disabled = true;
+		const insert = resultSection.createEl('button', { text: 'Insert into note', cls: 'mynary-translation-copy' });
+		insert.disabled = true;
 		let translatedText = '';
 		const run = () => {
 			result.addClass('mynary-loading');
 			result.removeClass('mynary-error');
 			result.setText('Translating…');
-			copy.disabled = true;
+			insert.disabled = true;
 			void this.plugin.translate(this.text, target.value).then((translation) => {
 				translatedText = translation;
-				copy.disabled = false;
+				insert.disabled = false;
 				result.removeClass('mynary-loading');
 				result.setText(translation);
 			}).catch((error: unknown) => {
@@ -51,9 +51,12 @@ export class TranslationModal extends Modal {
 		};
 		source.addEventListener('change', () => { this.plugin.settings.mtranSourceLanguage = source.value === 'auto' ? 'auto' : 'current'; void this.plugin.saveSettings(); run(); });
 		target.addEventListener('change', () => { this.plugin.settings.mtranTargetLanguage = target.value; this.plugin.settings.mtranTargetLanguages[sourceCode] = target.value; void this.plugin.saveSettings(); run(); });
-		copy.addEventListener('click', () => {
+		insert.addEventListener('click', () => {
 			if (!translatedText) return;
-			void navigator.clipboard.writeText(translatedText).then(() => new Notice('Translation copied.')).catch(() => new Notice('Could not copy translation to the clipboard.'));
+			const editor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+			if (!editor) { new Notice('Open a Markdown note before inserting.'); return; }
+			editor.replaceSelection(translatedText);
+			new Notice('Translation inserted.');
 		});
 		run();
 	}

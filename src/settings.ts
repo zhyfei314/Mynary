@@ -23,7 +23,7 @@ export interface DictionarySettings {
 	vocabularyDecks?: string[];
 	ttsEnabled: boolean;
 	ttsAutoGenerate: boolean;
-	ttsRuntime: 'web' | 'server';
+	ttsRuntime: 'system' | 'server';
 	supertonicEndpoint: string;
 	supertonicVoice: string;
 	supertonicSteps: number;
@@ -111,6 +111,7 @@ export const DEFAULT_TEMPLATES: TemplateDefinition[] = [
 	{ id: 'detailed', name: 'Detailed vocabulary', content: '---\nword: {{word}}\nlanguage: {{language}}\n---\n\n# {{word}}\n\n{{#if IPA}}**IPA:** {{IPA}}\n{{/if}}**Part of speech:** {{partOfSpeech}}\n\n## Meanings\n{{meaningsMarkdown}}\n\n{{#if translationsMarkdown}}## Translations\n{{translationsMarkdown}}\n{{/if}}{{#if synonyms}}## Synonyms\n{{synonyms}}\n{{/if}}' },
 	{ id: 'learning', name: 'Language-learning vocabulary', content: '---\nword: {{word}}\nlanguage: {{language}}\n---\n\n# {{word}}\n\n## Meanings\n{{meaningsMarkdown}}\n\n{{#if IPA}}## Pronunciation\n{{IPA}}\n{{/if}}{{#if translationsMarkdown}}## Translations\n{{translationsMarkdown}}\n{{/if}}{{#if examplesMarkdown}}## Source examples\n{{examplesMarkdown}}\n{{/if}}\n## My example\n\n## Notes\n' },
 	{ id: 'flashcard-basic', name: 'Basic flashcard', type: 'flashcard', content: FLASHCARD_TEMPLATE },
+	{ id: 'flashcard-definitions', name: 'Simple definitions flashcard', type: 'flashcard', content: `---\nmynary-language: {{language}}\n---\n\n<!-- mynary:front:start -->\n{{word}}\n<!-- mynary:front:end -->\n\n<!-- mynary:back:start -->\n{{definition}}{{#if examplesMarkdown}}\n\n**Example**\n{{examplesMarkdown}}{{/if}}\n<!-- mynary:back:end -->\n` },
 ];
 
 const LEGACY_TEMPLATE_CONTENT: Record<string, string> = {
@@ -212,7 +213,7 @@ export function migrateTemplates(templates: TemplateDefinition[]): boolean {
 	return changed;
 }
 
-export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', doubleClickLookup: false, languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', bilingualNotes: false, vocabularyFolder: 'Vocabulary', defaultVocabularyDeck: 'General', newCardsPerDay: 20, vocabularyAnswerLanguage: '', defaultVocabularyTemplateId: 'flashcard-basic', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'web', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, offlineDictionaryEnabled: true, mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'en', mtranTargetLanguages: {} };
+export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', doubleClickLookup: false, languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', bilingualNotes: false, vocabularyFolder: 'Vocabulary', defaultVocabularyDeck: 'General', newCardsPerDay: 20, vocabularyAnswerLanguage: '', defaultVocabularyTemplateId: 'flashcard-definitions', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'system', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, offlineDictionaryEnabled: true, mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'en', mtranTargetLanguages: {} };
 
 export function normalizeSettings(raw: unknown): DictionarySettings {
 	const data = isRecord(raw) ? raw : {};
@@ -251,7 +252,7 @@ export function normalizeSettings(raw: unknown): DictionarySettings {
 		vocabularyDecks: Array.isArray(data.vocabularyDecks) ? [...new Set(data.vocabularyDecks.filter((deck): deck is string => typeof deck === 'string').map((deck) => deck.trim()).filter(Boolean))] : ['General'],
 		ttsEnabled: isEnabledSetting(data.ttsEnabled),
 		ttsAutoGenerate: isEnabledSetting(data.ttsAutoGenerate),
-		ttsRuntime: data.ttsRuntime === 'server' ? 'server' : 'web',
+		ttsRuntime: data.ttsRuntime === 'server' ? 'server' : 'system',
 		supertonicEndpoint: typeof data.supertonicEndpoint === 'string' && data.supertonicEndpoint.trim() ? data.supertonicEndpoint.trim() : DEFAULT_SETTINGS.supertonicEndpoint,
 		supertonicVoice: typeof data.supertonicVoice === 'string' && data.supertonicVoice.trim() ? data.supertonicVoice.trim() : DEFAULT_SETTINGS.supertonicVoice,
 		supertonicSteps: Math.min(16, Math.max(4, Math.floor(positiveNumber(data.supertonicSteps, DEFAULT_SETTINGS.supertonicSteps)))),
@@ -298,13 +299,15 @@ function normalizeTemplates(value: unknown): TemplateDefinition[] {
 	});
 	const normalized = templates.length ? templates : DEFAULT_TEMPLATES.map((template) => ({ ...template }));
 	if (!normalized.some((template) => template.id === 'flashcard-basic')) normalized.push({ ...DEFAULT_TEMPLATES.find((template) => template.id === 'flashcard-basic')! });
+	if (!normalized.some((template) => template.id === 'flashcard-definitions')) normalized.push({ ...DEFAULT_TEMPLATES.find((template) => template.id === 'flashcard-definitions')! });
 	if (!normalized.some((template) => template.type !== 'flashcard')) normalized.push({ ...DEFAULT_TEMPLATES.find((template) => template.id === 'basic')! });
 	return normalized;
 }
 
 function normalizeDefaultFlashcardTemplateId(value: unknown, templates: TemplateDefinition[]) {
+	if (value === undefined || value === 'flashcard-basic') return 'flashcard-definitions';
 	const selected = typeof value === 'string' ? templates.find((template) => template.id === value && template.type === 'flashcard') : undefined;
-	if (!selected || hasIncompleteFlashcardMarkers(selected.content)) return 'flashcard-basic';
+	if (!selected || hasIncompleteFlashcardMarkers(selected.content)) return 'flashcard-definitions';
 	return selected.id;
 }
 

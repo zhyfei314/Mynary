@@ -47,7 +47,12 @@ export function renderEntry(container: HTMLElement, entry: DictionaryEntry, plug
 	if (entry.antonyms.length) renderCollapsible(container, 'Antonyms', entry.antonyms);
 	if (entry.etymology) renderEtymology(container, entry.etymology);
 	plugin.renderLookupActions(container, entry);
-	const source = container.createEl('a', { text: `Source: ${entry.source.name}`, href: entry.source.url, cls: 'mynary-source' }); source.target = '_blank';
+	const sourceUrl = safeExternalUrl(entry.source.url);
+	if (sourceUrl) {
+		const source = container.createEl('a', { text: `Source: ${entry.source.name}`, href: sourceUrl, cls: 'mynary-source' });
+		source.target = '_blank';
+		source.rel = 'noopener noreferrer';
+	}
 }
 
 function renderEtymology(container: HTMLElement, etymology: string) {
@@ -91,14 +96,19 @@ function renderPronunciations(container: HTMLElement, pronunciations: Dictionary
 		if (audioRow) renderAudioPlayer(audioRow, primaryAudio, `Play pronunciation ${pronunciation.text}`);
 		const sourceUrl = primaryAudio.find((source) => source.sourceUrl)?.sourceUrl;
 		if (sourceUrl && audioRow) {
-			const sourceLink = audioRow.createEl('a', { text: 'Source', href: sourceUrl, cls: 'mynary-audio-source' });
-			sourceLink.target = '_blank';
+			const safeSourceUrl = safeExternalUrl(sourceUrl);
+			if (safeSourceUrl) {
+				const sourceLink = audioRow.createEl('a', { text: 'Source', href: safeSourceUrl, cls: 'mynary-audio-source' });
+				sourceLink.target = '_blank';
+				sourceLink.rel = 'noopener noreferrer';
+			}
 		}
 	});
 	const ttsSection = section.createDiv('mynary-tts-section');
-	ttsSection.createEl('h4', { text: 'Supertonic tts (word-based)', cls: 'mynary-tts-heading' });
-	if (!plugin.provider.ttsAvailable) ttsSection.createDiv({ text: 'Enable Supertonic in settings to generate audio.', cls: 'mynary-tts-note' });
-	else if (!plugin.provider.ttsAvailableFor(language)) ttsSection.createDiv({ text: `Supertonic does not support ${language.toUpperCase()}; IPA and Wiktionary audio remain available.`, cls: 'mynary-tts-note' });
+	const createsAudio = plugin.provider.ttsCreatesAudio;
+	ttsSection.createEl('h4', { text: createsAudio ? 'TTS audio' : 'Offline system speech', cls: 'mynary-tts-heading' });
+	if (!plugin.provider.ttsAvailable) ttsSection.createDiv({ text: 'Enable offline speech in settings to read words aloud.', cls: 'mynary-tts-note' });
+	else if (!plugin.provider.ttsAvailableFor(language)) ttsSection.createDiv({ text: `No local system voice is installed for ${language.toUpperCase()}; IPA and Wiktionary audio remain available.`, cls: 'mynary-tts-note' });
 	pronunciations.forEach((pronunciation, pronunciationIndex) => {
 		const audio = dedupeAudioSources(pronunciation.audio ?? []);
 		const ttsAudio = audio.filter((source) => source.provider === 'tts');
@@ -106,11 +116,11 @@ function renderPronunciations(container: HTMLElement, pronunciations: Dictionary
 		row.createSpan({ text: `IPA: ${pronunciation.text} · input: ${word}`, cls: 'mynary-tts-target' });
 		const controls = row.createDiv('mynary-pronunciation-audio');
 		if (ttsAudio.length) renderAudioPlayer(controls, ttsAudio, `Play Supertonic pronunciation ${pronunciation.text}`, 'Audio');
-		const generate = controls.createEl('button', { text: ttsAudio.length ? 'Regenerate TTS' : 'Generate TTS', cls: 'mynary-audio-generate' });
+		const generate = controls.createEl('button', { text: createsAudio ? (ttsAudio.length ? 'Regenerate TTS' : 'Generate TTS') : 'Speak pronunciation', cls: 'mynary-audio-generate' });
 		const ttsSupported = plugin.provider.ttsAvailableFor(language);
 		generate.disabled = !ttsSupported;
-		if (!plugin.provider.ttsAvailable) generate.title = 'Enable supertonic in mynary settings first.';
-		else if (!ttsSupported) generate.title = `Supertonic does not support ${language.toUpperCase()}.`;
+		if (!plugin.provider.ttsAvailable) generate.title = 'Enable offline speech in Mynary settings first.';
+		else if (!ttsSupported) generate.title = `No local voice is installed for ${language.toUpperCase()}.`;
 		generate.addEventListener('click', () => { generate.disabled = true; void plugin.generateTts(pronunciationIndex, word, language).finally(() => { generate.disabled = false; }); });
 	});
 }
@@ -119,7 +129,19 @@ function renderAudioPlayer(row: HTMLElement, sources: AudioSource[], label: stri
 	if (title) row.createSpan({ text: `${title}:`, cls: 'mynary-audio-label' });
 	const player = row.createEl('audio', { attr: { controls: 'true', preload: 'none' } });
 	player.setAttribute('aria-label', label);
-	sources.forEach((source) => player.createEl('source', { attr: { src: source.url, ...(source.mimeType ? { type: source.mimeType } : {}) } }));
+	sources.forEach((source) => {
+		const url = safeAudioUrl(source);
+		if (url) player.createEl('source', { attr: { src: url, ...(source.mimeType ? { type: source.mimeType } : {}) } });
+	});
+}
+
+function safeExternalUrl(value: string) {
+	try { const url = new URL(value); return url.protocol === 'https:' ? url.toString() : undefined; } catch { return undefined; }
+}
+
+function safeAudioUrl(source: AudioSource) {
+	if (source.provider === 'tts' && source.url.startsWith('blob:')) return source.url;
+	return safeExternalUrl(source.url);
 }
 
 export function dedupeAudioSources(sources: AudioSource[]): AudioSource[] {

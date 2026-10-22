@@ -8,9 +8,12 @@ import {
 	Notice,
 	Plugin,
 	PluginSettingTab,
+	Platform,
 	Setting,
 	setIcon,
 	requestUrl,
+	TFile,
+	TFolder,
 	WorkspaceLeaf,
 } from 'obsidian';
 import { DictionaryEntry, DictionaryPackManifest } from './types';
@@ -20,7 +23,7 @@ import type { WiktionaryHttpResponse, WiktionaryRequester } from './providers/wi
 import { CacheManager } from './services/cache';
 import { SupertonicProvider } from './providers/supertonic';
 import type { SupertonicRequester } from './providers/supertonic';
-import { SupertonicWebProvider } from './providers/supertonic-web';
+import { hasSpeechSynthesis, SystemSpeechProvider, systemSpeechSetupInstructions } from './providers/system-speech';
 import { OfflineDictionaryProvider } from './providers/offline-dictionary';
 import { MTranServerProvider } from './providers/mtranserver';
 import { AssetManager } from './services/asset-manager';
@@ -33,14 +36,12 @@ import type { TemplateAction } from './ui/template-modals';
 import type { DeclarativeSettingDefinition } from './settings-definitions';
 import { TranslationModal } from './ui/translation-modal';
 import { VocabularyView, VIEW_TYPE_VOCABULARY } from './ui/vocabulary-view';
-import { addVocabularyCard, exportVocabulary, normalizeVocabulary, reviewVocabularyCard, setVocabularyStatus } from './services/vocabulary';
+import { addVocabularyCardsByMeaning, exportVocabulary, mergeSyncedVocabularyCard, normalizeVocabulary, reviewVocabularyCard, setVocabularyStatus } from './services/vocabulary';
 import type { ReviewRating, VocabularyCard, VocabularyStatus } from './services/vocabulary';
 import { hasFlashcardSide, extractFlashcardSide } from './services/flashcard-markers';
 
 export const VIEW_TYPE_DICTIONARY = 'mynary-dictionary-view';
 const CACHE_FORMAT_VERSION = 'v7';
-const SUPERTONIC_WASM_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/ort-wasm-simd-threaded.jsep.wasm';
-const SUPERTONIC_WASM_SHA256 = '78feeeb3d08f6bcee94d938ed322f69073bb8076b5f9d34697a574ffba8deb48';
 const PACK_CATALOG_URLS = [
 	'https://raw.githubusercontent.com/zhyfei314/Mynary/master/dictionary-catalog/catalog.json',
 	'https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/catalog.json',
@@ -137,17 +138,30 @@ export default class MynaryPlugin extends Plugin {
 	currentQuery = '';
 	lastLookupWasCached = false;
 	private historySave: Promise<void> = Promise.resolve();
+	private vocabularyImportQueue: Promise<void> = Promise.resolve();
+	private vocabularySyncTimers = new Map<string, number>();
 
 	async onload() {
+		this.register(() => window.speechSynthesis?.cancel());
 		const raw = await this.loadData() as unknown;
 		this.settings = normalizeSettings(raw);
 		this.history = normalizeHistory(raw);
 		this.vocabulary = normalizeVocabulary(isRecord(raw) ? raw.vocabulary : undefined);
+		void this.queueVocabularyImport();
+		this.register(() => { for (const timer of this.vocabularySyncTimers.values()) window.clearTimeout(timer); this.vocabularySyncTimers.clear(); });
 		if (migrateTemplates(this.settings.templates)) await this.saveSettings();
 		this.cache = new CacheManager(this, this.settings);
 		this.rebuildProvider();
 		this.registerView(VIEW_TYPE_DICTIONARY, (leaf) => new DictionaryView(leaf, this));
 		this.registerView(VIEW_TYPE_VOCABULARY, (leaf) => new VocabularyView(leaf, this));
+		this.registerEvent(this.app.vault.on('create', (file) => {
+			if (!(file instanceof TFile) || file.extension !== 'md') return;
+			this.scheduleVocabularyImport(file);
+		}));
+		this.registerEvent(this.app.vault.on('modify', (file) => {
+			if (!(file instanceof TFile) || file.extension !== 'md') return;
+			this.scheduleVocabularyImport(file);
+		}));
 		this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
 			let changed = false;
 			this.vocabulary = this.vocabulary.map((card) => {
@@ -173,7 +187,7 @@ export default class MynaryPlugin extends Plugin {
 		this.registerEvent(this.app.workspace.on('editor-menu', (menu: Menu, editor: Editor) => {
 			if (!editor.getSelection().trim()) return;
 			menu.addItem((item) => item.setTitle('Lookup').setIcon('search').onClick(() => void this.lookupSelected(editor)));
-			menu.addItem((item) => item.setTitle('Read with supertonic').setIcon('volume-2').onClick(() => void this.readSelected(editor)));
+			menu.addItem((item) => item.setTitle('Read with Supertonic').setIcon('volume-2').onClick(() => void this.readSelected(editor)));
 			menu.addItem((item) => item.setTitle('Translate with MTranServer').setIcon('languages').onClick(() => void this.translateSelected(editor)));
 		}));
 		this.registerDomEvent(document, 'dblclick', (event) => {
@@ -203,19 +217,19 @@ export default class MynaryPlugin extends Plugin {
 		});
 		this.addCommand({
 			id: 'read-selected-word',
-			name: 'Read selected text with supertonic',
+			name: 'Read selected text with offline speech',
 			icon: 'volume-2',
 			hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'R' }],
 			editorCallback: (editor) => void this.readSelected(editor),
 		});
 		this.addCommand({ id: 'open-dictionary-sidebar', name: 'Open dictionary sidebar', callback: () => this.activateView() });
 		this.addCommand({ id: 'open-vocabulary-study', name: 'Open vocabulary study', callback: () => this.activateVocabularyView() });
+		this.addCommand({ id: 'rescan-vocabulary-notes', name: 'Rescan synced vocabulary notes', callback: () => void this.rescanVocabularyNotes() });
 		this.addCommand({ id: 'review-due-vocabulary', name: 'Review due vocabulary', callback: () => this.activateVocabularyView(true) });
 		this.addCommand({ id: 'create-vocabulary-note', name: 'Create vocabulary note from lookup', checkCallback: (checking) => this.commandWithEntry(checking, () => this.createNote()) });
 		this.addCommand({ id: 'insert-lookup-result', name: 'Insert lookup result', checkCallback: (checking) => this.commandWithEntry(checking, () => this.insertResult()) });
 		this.addCommand({ id: 'clear-dictionary-cache', name: 'Clear dictionary cache', callback: async () => { await this.cache.clear(); new Notice('Dictionary cache cleared.'); } });
 		this.addCommand({ id: 'install-dictionary-pack', name: 'Install offline dictionary pack from URL', callback: () => void this.installDictionaryPackFromUrl() });
-		this.addCommand({ id: 'install-supertonic-web-runtime', name: 'Install supertonic web runtime', callback: () => void this.installWebTtsRuntime() });
 		this.addSettingTab(new DictionarySettingTab(this.app, this));
 
 		// Cache loading is independent of the popup and the command lifecycle.
@@ -242,7 +256,7 @@ export default class MynaryPlugin extends Plugin {
 		const tts = this.settings.ttsEnabled
 			? this.settings.ttsRuntime === 'server'
 				? new SupertonicProvider(requestSupertonic, this.settings.supertonicEndpoint, this.settings.supertonicVoice, this.settings.supertonicSteps, this.settings.supertonicSpeed)
-				: new SupertonicWebProvider(this.settings.supertonicVoice, this.settings.supertonicSteps, this.settings.supertonicSpeed, this.app.vault.adapter.getResourcePath(`${this.manifest.dir}/ort-wasm-simd-threaded.jsep.wasm`))
+				: new SystemSpeechProvider()
 			: undefined;
 		const offline = this.settings.offlineDictionaryEnabled
 			? async (language: string) => (await this.getInstalledDictionaryPacks())
@@ -285,11 +299,12 @@ export default class MynaryPlugin extends Plugin {
 	private async installDictionaryPack(manifestUrl: string, onComplete?: () => void) {
 		let downloadNotice: Notice | undefined;
 		try {
+			const validatedManifestUrl = validateHttpUrl(manifestUrl.trim());
 			new Notice('Downloading dictionary pack manifest…');
-			const manifestResponse = await requestUrl(manifestUrl.trim());
+			const manifestResponse = await requestUrl(validatedManifestUrl);
 			const manifest = manifestResponse.json as Partial<DictionaryPackManifest>;
 		if (manifest.format !== 'mynary-pack-v1' || (manifest.kind !== 'core' && manifest.kind !== 'bilingual') || typeof manifest.language !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.language) || (manifest.kind === 'bilingual' && (typeof manifest.targetLanguage !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.targetLanguage))) || typeof manifest.indexFile !== 'string' || !/^[\w.-]+$/u.test(manifest.indexFile) || typeof manifest.entriesFile !== 'string' || !/^[\w.-]+$/u.test(manifest.entriesFile) || typeof manifest.indexSha256 !== 'string' || !/^[a-f\d]{64}$/iu.test(manifest.indexSha256) || typeof (manifest.entriesSha256 ?? manifest.sha256) !== 'string' || !/^[a-f\d]{64}$/iu.test((manifest.entriesSha256 ?? manifest.sha256)!)) throw new Error('The URL is not a valid Mynary pack manifest or is missing required SHA-256 checksums.');
-			const baseUrl = manifestUrl.trim().replace(/\/[^/]*$/u, '/');
+			const baseUrl = new URL('.', validatedManifestUrl).toString();
 			downloadNotice = new Notice(`Preparing ${manifest.name ?? 'dictionary pack'}…`, 0);
 			const fetchAsset = (file: string) => downloadPackAsset(new URL(file, baseUrl).toString(), downloadNotice!, file);
 			const index = await fetchAsset(manifest.indexFile);
@@ -398,11 +413,14 @@ export default class MynaryPlugin extends Plugin {
 	}
 
 	async generateTts(pronunciationIndex: number, word: string, language: string) {
-		if (!this.provider.ttsAvailable) { new Notice('Enable supertonic in settings first.'); return; }
-		if (!this.provider.ttsAvailableFor(language)) { new Notice(`Supertonic does not support ${language.toUpperCase()}; IPA remains available.`); return; }
-		if (this.settings.ttsRuntime === 'web' && !(await this.hasWebTtsRuntime())) return;
-		new Notice('Preparing supertonic… the first web runtime use may download the model.');
+		if (!this.provider.ttsAvailable) { new Notice('Enable offline speech in Mynary settings first.'); return; }
+		if (!this.provider.ttsAvailableFor(language)) { new Notice(`No offline system voice is installed for ${language.toUpperCase()}.`); return; }
 		try {
+			if (!this.provider.ttsCreatesAudio) {
+				await this.provider.speakTts(word, language);
+				return;
+			}
+			new Notice('Preparing Supertonic audio…');
 			const source = await this.provider.synthesizeTts(word, language);
 			if (!this.lastEntry || this.lastEntry.word !== word || this.lastEntry.language !== language) return;
 			const phonetics = this.lastEntry.phonetics.map((pronunciation, index) => index === pronunciationIndex
@@ -432,11 +450,20 @@ export default class MynaryPlugin extends Plugin {
 	}
 
 	private async readText(text: string) {
-		if (!this.provider.ttsAvailable) { new Notice('Enable supertonic in settings first.'); return; }
-		if (!this.provider.ttsAvailableFor(this.activeLanguage)) { new Notice(`Supertonic does not support ${this.activeLanguage.toUpperCase()}; IPA remains available.`); return; }
-		if (this.settings.ttsRuntime === 'web' && !(await this.hasWebTtsRuntime())) return;
+		if (!this.provider.ttsAvailable) { new Notice('Enable offline speech in Mynary settings first.'); return; }
+		if (!this.provider.ttsAvailableFor(this.activeLanguage)) { new Notice(`No offline system voice is installed for ${this.activeLanguage.toUpperCase()}.`); return; }
 		const normalizedText = text.replace(/\s+/g, ' ').trim();
 		if (!normalizedText) { new Notice('Select some text first.'); return; }
+		if (!this.provider.ttsCreatesAudio) {
+			try {
+				this.activeReader?.pause();
+				this.activeReader = undefined;
+				await this.provider.speakTts(normalizedText, this.activeLanguage);
+			} catch (error) {
+				new Notice(error instanceof Error ? error.message : 'Could not read the selected text.');
+			}
+			return;
+		}
 		const cacheKey = `${this.activeLanguage}:${normalizedText}`;
 		try {
 			let source = this.readAudioCache.get(cacheKey);
@@ -464,30 +491,10 @@ export default class MynaryPlugin extends Plugin {
 		}
 	}
 
-	private async hasWebTtsRuntime() {
-		const path = `${this.manifest.dir}/ort-wasm-simd-threaded.jsep.wasm`;
-		if (await this.app.vault.adapter.exists(path)) return true;
-		new Notice('Installing the supertonic web runtime…');
-		return this.installWebTtsRuntime();
-	}
-
-	async installWebTtsRuntime(): Promise<boolean> {
-		const path = `${this.manifest.dir}/ort-wasm-simd-threaded.jsep.wasm`;
-		try {
-			new Notice('Downloading supertonic web runtime…');
-			const manager = new AssetManager(this.app.vault.adapter);
-			await manager.install({ id: 'supertonic-web-wasm', url: SUPERTONIC_WASM_URL, destination: path, sha256: SUPERTONIC_WASM_SHA256 }, async (url) => (await requestUrl(url)).arrayBuffer);
-			new Notice('Supertonic web runtime installed.');
-			return true;
-		} catch (error) {
-			new Notice(error instanceof Error ? error.message : 'Could not install the Supertonic web runtime.');
-			return false;
-		}
-	}
-
 	private clearReadAudioCache() {
 		this.activeReader?.pause();
 		this.activeReader = undefined;
+		window.speechSynthesis?.cancel();
 		for (const source of this.readAudioCache.values()) URL.revokeObjectURL(source.url);
 		this.readAudioCache.clear();
 		this.readAudioInFlight.clear();
@@ -504,12 +511,16 @@ export default class MynaryPlugin extends Plugin {
 		const deck = choice.deck;
 		this.settings.vocabularyDecks ??= ['General'];
 		if (!this.settings.vocabularyDecks.includes(deck)) this.settings.vocabularyDecks.push(deck);
-		this.vocabulary = addVocabularyCard(this.vocabulary, entry, status, Date.now(), deck);
-		const card = this.vocabulary.find((item) => item.id === `${entry.language.toLocaleLowerCase()}:${entry.word.trim().toLocaleLowerCase()}`)!;
-		if (!card.filePath) card.filePath = await this.createVocabularyCardNote(card, choice.templateId);
+		const before = new Set(this.vocabulary.map((card) => card.id));
+		this.vocabulary = addVocabularyCardsByMeaning(this.vocabulary, entry, status, Date.now(), deck);
+		const created = this.vocabulary.filter((card) => !before.has(card.id));
+		for (const card of created) card.filePath = await this.createVocabularyCardNote(card, choice.templateId);
+		for (const card of this.vocabulary.filter((item) => before.has(item.id) && item.entry.word.toLocaleLowerCase() === entry.word.toLocaleLowerCase() && item.entry.language === entry.language)) {
+			if (!card.filePath) card.filePath = await this.createVocabularyCardNote(card, choice.templateId);
+		}
 		await this.saveSettings();
 		await this.persistVocabulary();
-		new Notice(`Added “${entry.word}” to ${deck}.`);
+		new Notice(`Added ${created.length || 1} ${created.length === 1 ? 'flashcard' : 'flashcards'} for “${entry.word}” to ${deck}.`);
 	}
 
 	async createVocabularyDeck() {
@@ -530,6 +541,8 @@ export default class MynaryPlugin extends Plugin {
 
 	async setVocabularyCardStatus(card: VocabularyCard, status: VocabularyStatus) {
 		this.vocabulary = this.vocabulary.map((item) => item.id === card.id ? setVocabularyStatus(item, status) : item);
+		const updated = this.vocabulary.find((item) => item.id === card.id);
+		if (updated) await this.syncVocabularyCardToNote(updated);
 		await this.persistVocabulary();
 		this.refreshVocabularyView();
 	}
@@ -549,6 +562,7 @@ export default class MynaryPlugin extends Plugin {
 			}
 		}
 		this.vocabulary = this.vocabulary.map((item) => item.id === card.id ? updated : item);
+		await this.syncVocabularyCardToNote(updated);
 		this.settings.vocabularyDecks ??= ['General'];
 		if (!this.settings.vocabularyDecks.includes(deck)) this.settings.vocabularyDecks.push(deck);
 		await this.saveSettings();
@@ -558,6 +572,8 @@ export default class MynaryPlugin extends Plugin {
 
 	async rateVocabularyCard(card: VocabularyCard, rating: ReviewRating) {
 		this.vocabulary = this.vocabulary.map((item) => item.id === card.id ? reviewVocabularyCard(item, rating) : item);
+		const updated = this.vocabulary.find((item) => item.id === card.id);
+		if (updated) await this.syncVocabularyCardToNote(updated);
 		await this.persistVocabulary();
 		this.refreshVocabularyView();
 	}
@@ -587,14 +603,14 @@ export default class MynaryPlugin extends Plugin {
 	private async createVocabularyCardNote(card: VocabularyCard, templateId?: string) {
 		const folder = `${this.settings.vocabularyFolder ?? 'Vocabulary'}/${card.deck}`;
 		await this.ensureVaultFolder(folder);
-		const base = card.entry.word.replace(/[\\/:*?"<>|]/gu, '-').trim() || 'Vocabulary';
+		const base = `${card.entry.word.replace(/[\\/:*?"<>|]/gu, '-').trim() || 'Vocabulary'}${card.senseCount && card.senseCount > 1 ? `-${card.senseIndex}` : ''}`;
 		let path = `${folder}/${base}.md`;
 		let suffix = 2;
 		while (await this.app.vault.adapter.exists(path)) path = `${folder}/${base}-${suffix++}.md`;
 		const template = this.settings.templates.find((item) => item.id === templateId && item.type === 'flashcard') ?? this.settings.templates.find((item) => item.type === 'flashcard');
 		const targetLanguage = this.settings.vocabularyAnswerLanguage ?? '';
 		let content = prepareFlashcardNote(card.entry, template?.content ?? '', targetLanguage).content;
-		if (!content.startsWith('---')) content = `---\nmynary-vocabulary-id: ${JSON.stringify(card.id)}\nmynary-language: ${JSON.stringify(card.entry.language)}\nmynary-deck: ${JSON.stringify(card.deck)}\n---\n\n${content}`;
+		content = addVocabularyFrontmatter(content, card);
 		await this.app.vault.create(path, content);
 		return path;
 	}
@@ -649,6 +665,94 @@ export default class MynaryPlugin extends Plugin {
 	private async persistVocabulary() {
 		const raw = await this.loadData() as unknown;
 		await this.saveData({ ...(isRecord(raw) ? raw : {}), vocabulary: this.vocabulary });
+	}
+
+	async rescanVocabularyNotes() {
+		await this.queueVocabularyImport();
+		this.refreshVocabularyView();
+		new Notice(`Scanned the ${this.settings.vocabularyFolder ?? 'Vocabulary'} folder. ${this.vocabulary.length} vocabulary cards are available.`);
+	}
+
+	private scheduleVocabularyImport(file: TFile) {
+		const root = `${(this.settings.vocabularyFolder ?? 'Vocabulary').replace(/\/+$/u, '')}/`;
+		if (!file.path.startsWith(root)) return;
+		const oldTimer = this.vocabularySyncTimers.get(file.path);
+		if (oldTimer !== undefined) window.clearTimeout(oldTimer);
+		const timer = window.setTimeout(() => {
+			this.vocabularySyncTimers.delete(file.path);
+			void this.queueVocabularyImport(file.path);
+		}, 350);
+		this.vocabularySyncTimers.set(file.path, timer);
+	}
+
+	private queueVocabularyImport(onlyPath?: string): Promise<void> {
+		this.vocabularyImportQueue = this.vocabularyImportQueue
+			.then(() => this.importSyncedVocabularyNotes(onlyPath))
+			.catch((error: unknown) => console.warn('Mynary could not scan synced vocabulary notes.', error));
+		return this.vocabularyImportQueue;
+	}
+
+	private async importSyncedVocabularyNotes(onlyPath?: string) {
+		const root = `${(this.settings.vocabularyFolder ?? 'Vocabulary').replace(/\/+$/u, '')}/`;
+		const vocabularyFolder = this.app.vault.getAbstractFileByPath(root.slice(0, -1));
+		if (!(vocabularyFolder instanceof TFolder)) return;
+		let changed = false;
+		const files = markdownFilesIn(vocabularyFolder).filter((file) => !onlyPath || file.path === onlyPath);
+		for (const file of files) {
+			if (!file.path.startsWith(root)) continue;
+			try {
+				const markdown = await this.app.vault.cachedRead(file);
+				const front = extractFlashcardSide(markdown, 'front');
+				const back = extractFlashcardSide(markdown, 'back');
+				if (!front || !back) continue;
+				const cache = this.app.metadataCache.getFileCache(file);
+				const properties = cache?.frontmatter;
+				const language = readFrontmatterString(markdown, 'mynary-language') ?? (typeof properties?.['mynary-language'] === 'string' ? properties['mynary-language'] : undefined);
+				if (!language) continue;
+				const word = front.replace(/^#*\s*/u, '').trim();
+				if (!word) continue;
+				const entry: DictionaryEntry = {
+					word, language, phonetics: [],
+					meanings: [{ definitions: [{ text: back, examples: [] }] }],
+					translations: [], synonyms: [], antonyms: [],
+					source: { id: 'synced-vocabulary-note', name: 'Synced vocabulary note', url: '' },
+					fetchedAt: file.stat.mtime,
+				};
+				const folderDeck = file.path.slice(root.length, file.path.lastIndexOf('/')) || 'General';
+				const deck = folderDeck;
+				const hasSyncedState = readFrontmatterNumber(markdown, 'mynary-due-at') !== undefined;
+				const imported = normalizeVocabulary([{
+				entry, deck, filePath: file.path, senseIndex: readFrontmatterNumber(markdown, 'mynary-sense-index'),
+					addedAt: readFrontmatterNumber(markdown, 'mynary-added-at') ?? file.stat.ctime,
+					dueAt: readFrontmatterNumber(markdown, 'mynary-due-at') ?? file.stat.ctime,
+					lastReviewedAt: readFrontmatterNumber(markdown, 'mynary-last-reviewed-at'),
+					firstReviewedAt: readFrontmatterNumber(markdown, 'mynary-first-reviewed-at'),
+					intervalDays: readFrontmatterNumber(markdown, 'mynary-interval-days') ?? 0,
+					ease: readFrontmatterNumber(markdown, 'mynary-ease') ?? 2.5,
+				repetitions: readFrontmatterNumber(markdown, 'mynary-repetitions') ?? 0,
+				status: readFrontmatterString(markdown, 'mynary-status') as VocabularyStatus | undefined,
+				}])[0];
+				if (!imported) continue;
+				const merged = mergeSyncedVocabularyCard(this.vocabulary, imported, hasSyncedState);
+				if (merged.changed) { this.vocabulary = merged.cards; changed = true; }
+			} catch (error) {
+				console.warn(`Mynary could not read synced vocabulary note ${file.path}.`, error);
+			}
+		}
+		if (changed) {
+			this.vocabulary = this.vocabulary.slice(0, 1000);
+			await this.persistVocabulary();
+			this.refreshVocabularyView();
+		}
+	}
+
+	private async syncVocabularyCardToNote(card: VocabularyCard) {
+		if (!card.filePath) return;
+		const file = this.app.vault.getAbstractFileByPath(card.filePath);
+		if (!(file instanceof TFile)) return;
+		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+			Object.assign(frontmatter, vocabularyCardFrontmatter(card));
+		});
 	}
 
 	private refreshVocabularyView() {
@@ -810,11 +914,6 @@ export default class MynaryPlugin extends Plugin {
 		if (!template) { new Notice('Template not found.'); return; }
 		try {
 			const content = renderTemplate(entry, template.content, { targetLanguage: this.settings.mtranTargetLanguages[entry.language] ?? this.settings.mtranTargetLanguage });
-			if (action === 'copy') {
-				await navigator.clipboard.writeText(content);
-				new Notice(`Copied using “${template.name}”.`);
-				return;
-			}
 			if (action === 'insert') {
 				const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
 				if (!editor) { new Notice('Open a Markdown note before inserting.'); return; }
@@ -844,9 +943,9 @@ export default class MynaryPlugin extends Plugin {
 	renderLookupActions(container: HTMLElement, entry: DictionaryEntry) {
 		const actions = container.createDiv('mynary-actions');
 		const save = actions.createEl('details', { cls: 'mynary-action-menu' });
-		const summary = save.createEl('summary', { attr: { title: 'Copy, insert, or create a note', 'aria-label': 'Save lookup result' } });
+		const summary = save.createEl('summary', { attr: { title: 'Insert or create a note', 'aria-label': 'Save lookup result' } });
 		setIcon(summary, 'save'); summary.createSpan({ text: ' Save' });
-		for (const [action, icon, label] of [['copy', 'copy', 'Copy'], ['insert', 'text-cursor-input', 'Insert'], ['note', 'file-plus-2', 'Create note']] as const) {
+		for (const [action, icon, label] of [['insert', 'text-cursor-input', 'Insert'], ['note', 'file-plus-2', 'Create note']] as const) {
 			const option = save.createEl('button', { cls: 'mynary-action-menu-item' });
 			setIcon(option, icon); option.createSpan({ text: label });
 			option.addEventListener('click', () => { save.open = false; this.openTemplatePickerForEntry(entry, action); });
@@ -958,6 +1057,80 @@ function normalizeHistory(raw: unknown): string[] {
 		if (word && !history.includes(word)) history.push(word);
 	}
 	return history.slice(0, 20);
+}
+
+function vocabularyCardFrontmatter(card: VocabularyCard) {
+	return {
+		'mynary-vocabulary-id': card.id,
+		'mynary-sense-index': card.senseIndex ?? null,
+		'mynary-language': card.entry.language,
+		'mynary-deck': card.deck,
+		'mynary-status': card.status,
+		'mynary-added-at': card.addedAt,
+		'mynary-due-at': card.dueAt,
+		'mynary-last-reviewed-at': card.lastReviewedAt ?? null,
+		'mynary-first-reviewed-at': card.firstReviewedAt ?? null,
+		'mynary-interval-days': card.intervalDays,
+		'mynary-ease': card.ease,
+		'mynary-repetitions': card.repetitions,
+	};
+}
+
+function addVocabularyFrontmatter(markdown: string, card: VocabularyCard) {
+	const fields = vocabularyCardFrontmatter(card);
+	const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u);
+	if (!frontmatter || frontmatter.index !== 0) return `---\n${Object.entries(fields).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n${markdown}`;
+	let existing = frontmatter[1] ?? '';
+	const additions: string[] = [];
+	for (const [key, value] of Object.entries(fields)) {
+		const line = `${key}: ${JSON.stringify(value)}`;
+		const fieldPattern = new RegExp(`^${key}:.*$`, 'mu');
+		if (fieldPattern.test(existing)) existing = existing.replace(fieldPattern, line);
+		else additions.push(line);
+	}
+	const updatedFrontmatter = [existing, ...additions].filter(Boolean).join('\n');
+	const afterFrontmatter = markdown.slice(frontmatter[0].length);
+	return `---\n${updatedFrontmatter}\n---\n${afterFrontmatter}`;
+}
+
+function readFrontmatterString(markdown: string, key: string) {
+	const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u)?.[1];
+	const line = frontmatter?.split(/\r?\n/u).find((item) => item.startsWith(`${key}:`));
+	if (!line) return undefined;
+	const value = line.slice(key.length + 1).trim();
+	try {
+		const parsed: unknown = JSON.parse(value);
+		return typeof parsed === 'string' ? parsed : undefined;
+	} catch {
+		return value || undefined;
+	}
+}
+
+function readFrontmatterNumber(markdown: string, key: string) {
+	const value = readFrontmatterString(markdown, key);
+	if (value === undefined) {
+		const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u)?.[1];
+		const raw = frontmatter?.split(/\r?\n/u).find((item) => item.startsWith(`${key}:`))?.slice(key.length + 1).trim();
+		if (raw === undefined || raw === 'null' || raw === '') return undefined;
+		const parsed = Number(raw);
+		return Number.isFinite(parsed) ? parsed : undefined;
+	}
+	const parsed = Number(value);
+	return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function validateHttpUrl(value: string) {
+	let url: URL;
+	try { url = new URL(value); }
+	catch { throw new Error('Enter a valid HTTP or HTTPS dictionary manifest URL.'); }
+	if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('Only HTTP and HTTPS dictionary manifest URLs are supported.');
+	return url.toString();
+}
+
+function markdownFilesIn(folder: TFolder): TFile[] {
+	return folder.children.flatMap((child) => child instanceof TFolder
+		? markdownFilesIn(child)
+		: child instanceof TFile && child.extension === 'md' ? [child] : []);
 }
 
 async function requestDictionaryManifestUrl(app: App): Promise<string | undefined> {
@@ -1087,7 +1260,7 @@ class DictionaryPackManagerModal extends Modal {
 
 	private async render() {
 		this.contentEl.empty();
-		this.contentEl.createEl('p', { text: 'Installed packs are used before wiktionary when offline dictionaries are enabled.' });
+		this.contentEl.createEl('p', { text: 'Installed packs are used before Wiktionary when offline dictionaries are enabled.' });
 		const installActions = this.contentEl.createDiv('mynary-modal-actions');
 		installActions.createEl('button', { text: 'Choose language', cls: 'mod-cta' }).addEventListener('click', () => { void this.plugin.installDictionaryPackFromCatalog(() => { void this.render(); }); });
 		installActions.createEl('button', { text: 'Install from URL' }).addEventListener('click', () => { void this.plugin.installDictionaryPackFromUrl(() => { void this.render(); }); });
@@ -1240,24 +1413,23 @@ class DictionarySettingTab extends PluginSettingTab {
 				control: { type: 'slider', key: 'maxCacheEntries', min: 1, max: 500, step: 1, defaultValue: 100, validate: (value) => typeof value === 'number' && value >= 1 ? undefined : 'Must be at least 1 entry.' },
 			},
 			{
-				name: 'Enable Supertonic local TTS',
-				desc: 'Enable the optional local TTS controls and selected-text reading.',
+				name: 'Enable offline speech',
+				desc: 'Enable speech using locally installed system voices or a local TTS server.',
 				aliases: ['text to speech', 'tts', 'offline speech'],
 				control: { type: 'dropdown', key: 'ttsEnabled', options: { 'false': 'Disabled', 'true': 'Enabled' }, defaultValue: this.plugin.settings.ttsEnabled ? 'true' : 'false' },
 			},
 			{
-				name: 'Auto-generate tts when audio is missing',
-				desc: 'Generate a supertonic pronunciation during lookup when wiktionary has no audio.',
+				name: 'Auto-generate TTS when audio is missing',
+				desc: 'Generate an audio file during lookup when Wiktionary has no audio; available with the local server.',
 				aliases: ['automatic pronunciation', 'tts fallback'],
 				control: { type: 'dropdown', key: 'ttsAutoGenerate', options: { 'false': 'Disabled', 'true': 'Enabled' }, defaultValue: this.plugin.settings.ttsAutoGenerate ? 'true' : 'false' },
 			},
 			{
-				name: 'Supertonic runtime',
-				desc: 'Web runs in the plugin without a terminal; server uses the advanced local bridge.',
-				aliases: ['tts runtime', 'web tts', 'local tts server'],
-				control: { type: 'dropdown', key: 'ttsRuntime', options: { web: 'Web (recommended)', server: 'Local server' }, defaultValue: this.plugin.settings.ttsRuntime },
+				name: 'Speech runtime',
+				desc: 'System voices need no setup; the local server can generate reusable audio.',
+				aliases: ['tts runtime', 'offline voices', 'local tts server'],
+				control: { type: 'dropdown', key: 'ttsRuntime', options: { system: 'Offline system voices', server: 'Local Supertonic server' }, defaultValue: this.plugin.settings.ttsRuntime },
 			},
-			{ name: 'Install supertonic web runtime', desc: 'Download the required WASM runtime automatically.', aliases: ['install wasm', 'tts runtime file'], action: () => void this.plugin.installWebTtsRuntime() },
 			{
 				name: 'Supertonic endpoint',
 				desc: 'Used only by the Local server runtime. Normally http://127.0.0.1:7788/v1/tts.',
@@ -1324,13 +1496,13 @@ class DictionarySettingTab extends PluginSettingTab {
 		offlineActions.createEl('button', { text: 'Install from URL' }).addEventListener('click', () => void this.plugin.installDictionaryPackFromUrl(() => this.display()));
 		const packPanel = offline.createDiv('mynary-pack-manager');
 		new Setting(packPanel).setName('Installed dictionaries').setHeading();
-		packPanel.createEl('p', { text: 'How to install: select Choose language to load the catalog, pick a language, and select Install. Use Install from URL only for a custom manifest. Packs are verified with SHA-256. If a word is missing, Mynary falls back to Wiktionary when online.' });
+		packPanel.createEl('p', { text: 'How to install: select choose language to load the catalog, pick a language, and select install. Use install from URL only for a custom manifest. Packs are verified with SHA-256. If a word is missing, Mynary falls back to Wiktionary when online.' });
 		packPanel.createDiv({ cls: 'mynary-state mynary-loading', text: 'Checking installed packs…' });
 		void this.renderInstalledPacks(packPanel);
 
 		const translate = createGroup('Translate', 'Configure the local MTranServer connection and translation defaults.');
 		new Setting(translate).setName('MTranServer translation').setDesc('Translate selected text using a local MTranServer instance.').addToggle((toggle) => toggle.setValue(this.plugin.settings.mtranServerEnabled).onChange((value) => { this.plugin.settings.mtranServerEnabled = value; void this.plugin.saveSettings(); this.display(); }));
-		new Setting(translate).setName('MTranServer endpoint').setDesc('Usually http://127.0.0.1:8989').addText((text) => text.setValue(this.plugin.settings.mtranServerEndpoint).onChange((value) => { this.plugin.settings.mtranServerEndpoint = value.trim().replace(/\/+$/u, '') || 'http://127.0.0.1:8989'; void this.plugin.saveSettings(); }));
+		new Setting(translate).setName('MTranServer endpoint').setDesc('Default endpoint for a local server.').addText((text) => text.setValue(this.plugin.settings.mtranServerEndpoint).onChange((value) => { this.plugin.settings.mtranServerEndpoint = value.trim().replace(/\/+$/u, '') || 'http://127.0.0.1:8989'; void this.plugin.saveSettings(); }));
 		new Setting(translate).setName('Test connection').setDesc('Send a short English to Vietnamese test phrase to the configured local server.').addButton((button) => button.setButtonText('Test connection').onClick(() => void this.plugin.testMTranServerConnection()));
 		new Setting(translate).setName('MTranServer token').setDesc('Optional bearer token configured on the local server.').addText((text) => text.setPlaceholder('Optional token').setValue(this.plugin.settings.mtranServerToken).onChange((value) => { this.plugin.settings.mtranServerToken = value; void this.plugin.saveSettings(); }));
 		new Setting(translate).setName('Translation source language').setDesc('Use the current dictionary language, or send auto for servers that support automatic detection.').addDropdown((dropdown) => dropdown.addOption('current', 'Current dictionary language').addOption('auto', 'Auto detect').setValue(this.plugin.settings.mtranSourceLanguage).onChange((value) => { this.plugin.settings.mtranSourceLanguage = value === 'auto' ? 'auto' : 'current'; void this.plugin.saveSettings(); }));
@@ -1346,18 +1518,29 @@ class DictionarySettingTab extends PluginSettingTab {
 		});
 		new Setting(translate).setName('Translation request timeout').setDesc('Maximum wait time in seconds for the local server.').addText((text) => text.setValue(String(this.plugin.settings.mtranServerTimeoutMs / 1000)).onChange((value: string) => { const seconds = Math.min(120, Math.max(1, Number(value) || 15)); this.plugin.settings.mtranServerTimeoutMs = Math.round(seconds * 1000); void this.plugin.saveSettings(); }));
 
-		const tts = createGroup('TTS', 'Configure optional local speech generation and reading.', false);
-		new Setting(tts).setName('Supertonic local TTS').setDesc(`${this.plugin.settings.ttsEnabled ? 'Enabled' : 'Disabled'}. Optional audio supplement and selected-text reader.`).addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsEnabled).onChange((value) => { this.plugin.settings.ttsEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
-		new Setting(tts).setName('Auto-generate TTS when audio is missing').setDesc('Creates a Supertonic audio source during lookup when Wiktionary has IPA but no recording.').addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsAutoGenerate).onChange((value) => { this.plugin.settings.ttsAutoGenerate = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(tts).setName('Supertonic runtime').setDesc('Web is recommended and does not need a terminal.').addDropdown((dropdown) => dropdown.addOption('web', 'Web (recommended)').addOption('server', 'Local server').setValue(this.plugin.settings.ttsRuntime).onChange((value) => { this.plugin.settings.ttsRuntime = value === 'server' ? 'server' : 'web'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(tts).setName('Supertonic web runtime file').setDesc('Downloads the required WASM runtime automatically into the plugin folder.').addButton((button) => button.setButtonText('Install WASM').onClick(() => void this.plugin.installWebTtsRuntime()));
+		const tts = createGroup('TTS', 'Read using voices installed on this device, or connect a local Supertonic server.', false);
+		new Setting(tts).setName('Enable offline speech').setDesc('Uses local operating system voices. Install a language voice in system settings; Mynary makes no voice or model downloads.').addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsEnabled).onChange((value) => { this.plugin.settings.ttsEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
+		new Setting(tts).setName('Speech runtime').setDesc('System voices need no extra setup. A local server can generate reusable audio files.').addDropdown((dropdown) => dropdown.addOption('system', 'Offline system voices').addOption('server', 'Local Supertonic server').setValue(this.plugin.settings.ttsRuntime).onChange((value) => { this.plugin.settings.ttsRuntime = value === 'server' ? 'server' : 'system'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
+		new Setting(tts).setName('Auto-generate TTS audio').setDesc('Creates and attaches audio during lookup. Available with the local Supertonic server.').addToggle((toggle) => { toggle.setValue(this.plugin.settings.ttsAutoGenerate).setDisabled(this.plugin.settings.ttsRuntime !== 'server').onChange((value) => { this.plugin.settings.ttsAutoGenerate = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }); });
+		if (this.plugin.settings.ttsRuntime === 'system') {
+			new Setting(tts).setName('System voices on this device').setDesc(systemSpeechSetupInstructions(Platform)).addButton((button) => button.setButtonText('Refresh voices').onClick(() => {
+				if (!hasSpeechSynthesis()) { new Notice('This Obsidian app does not expose system speech synthesis. Update Obsidian or use the local server runtime.'); return; }
+				const voices = this.plugin.provider.refreshLocalTtsVoices();
+				const summary = voices.length ? voices.map((voice) => `${voice.name} (${voice.lang})`).join(', ') : 'No local voices are currently exposed to Obsidian.';
+				new Notice(summary, 8000);
+			}));
+		}
+		if (this.plugin.settings.ttsRuntime === 'server') {
 		new Setting(tts).setName('Supertonic endpoint').setDesc('Used only by the local server runtime.').addText((text) => text.setValue(this.plugin.settings.supertonicEndpoint).onChange((value) => { this.plugin.settings.supertonicEndpoint = value.trim() || 'http://127.0.0.1:7788/v1/tts'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
 		new Setting(tts).setName('Supertonic voice').addText((text) => text.setValue(this.plugin.settings.supertonicVoice).onChange((value) => { this.plugin.settings.supertonicVoice = value.trim() || 'M1'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
 		new Setting(tts).setName('Supertonic steps').addText((text) => text.setValue(String(this.plugin.settings.supertonicSteps)).onChange((value) => { this.plugin.settings.supertonicSteps = Math.min(16, Math.max(4, Math.floor(Number(value) || 8))); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
 		new Setting(tts).setName('Supertonic speed').addText((text) => text.setValue(String(this.plugin.settings.supertonicSpeed)).onChange((value) => { this.plugin.settings.supertonicSpeed = Math.min(2, Math.max(0.7, Number(value) || 1.05)); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		}
 
 		const vocabulary = createGroup('Vocabulary study', 'Add looked-up words to nested decks, review flashcards, and export them for Anki or spreadsheets.', false);
+		new Setting(vocabulary).setName('Import into Anki').setDesc('Select Create Anki import file, then in Anki desktop select File → Import and choose the .txt file from your vault. Keep the Basic note type selected and check the preview; Mynary includes tab and HTML settings and places each card in its deck.').addButton((button) => button.setButtonText('Create Anki import file').onClick(() => void this.plugin.exportVocabularyFile('anki')));
 		new Setting(vocabulary).setName('Vocabulary notes folder').setDesc('Bulk-created vocabulary notes are organized under this folder and its deck subfolders.').addText((text) => text.setValue(this.plugin.settings.vocabularyFolder ?? 'Vocabulary').onChange((value) => { this.plugin.settings.vocabularyFolder = value.trim() || 'Vocabulary'; void this.plugin.saveSettings(); }));
+		new Setting(vocabulary).setName('Sync vocabulary notes').setDesc('Scan existing and changed Markdown flashcards in the vocabulary folder. Notes and review progress sync through your vault sync service.').addButton((button) => button.setButtonText('Rescan now').onClick(() => void this.plugin.rescanVocabularyNotes()));
 		new Setting(vocabulary).setName('Optional translation language').setDesc('Flashcard answers default to the dictionary definition. Add a translation in this language when the lookup provides one; otherwise the definition remains the answer.').addDropdown((dropdown) => {
 			dropdown.addOption('', 'Definition only');
 			for (const language of MTRAN_LANGUAGE_OPTIONS) dropdown.addOption(language.code, `${language.name} (${language.code})`);

@@ -7,7 +7,7 @@ import { prepareFlashcardNote } from '../templates/flashcard-renderer';
 import type MynaryPlugin from '../main';
 import type { DictionaryEntry } from '../types';
 
-export type TemplateAction = 'copy' | 'insert' | 'note';
+export type TemplateAction = 'insert' | 'note';
 
 const TEMPLATE_VARIABLES = [
 	['{{word}}', 'Từ hoặc cụm từ'],
@@ -79,7 +79,7 @@ export class TemplatePickerModal extends Modal {
 	private render() {
 		const el = this.contentEl;
 		el.empty();
-		const actionName = this.action === 'copy' ? 'Copy' : this.action === 'insert' ? 'Insert' : 'Create note';
+		const actionName = this.action === 'insert' ? 'Insert' : 'Create note';
 		el.createEl('h2', { text: `${actionName}: choose template` });
 		el.createEl('p', { text: 'Choose how the lookup result should be formatted. The default template is preselected.' });
 
@@ -344,7 +344,7 @@ export class TemplateManagerModal extends Modal {
 		});
 		if (!this.plugin.settings.templates.some((template) => template.id === this.plugin.settings.defaultTemplateId)) this.plugin.settings.defaultTemplateId = DEFAULT_TEMPLATES[0]?.id ?? '';
 		await this.plugin.saveSettings();
-		this.selectedId = this.selectedType === 'flashcard' ? this.plugin.settings.defaultVocabularyTemplateId ?? 'flashcard-basic' : this.plugin.settings.defaultTemplateId;
+		this.selectedId = this.selectedType === 'flashcard' ? this.plugin.settings.defaultVocabularyTemplateId ?? 'flashcard-definitions' : this.plugin.settings.defaultTemplateId;
 		this.render();
 	}
 

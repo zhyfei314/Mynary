@@ -1,0 +1,11 @@
+==Vietnamese==
+===Etymology===
+Từ Hán-Việt.
+===Danh từ===
+# Một vật dùng để minh họa.
+#: Đây là một ví dụ.
+===Động từ===
+# Làm cho một ý tưởng trở nên rõ ràng hơn.
+==English==
+===Noun===
+# An English fallback definition.

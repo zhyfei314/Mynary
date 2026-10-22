@@ -14,7 +14,7 @@ Current release: **1.2.1**. Mynary is maintained by [zhyfei314](https://github.c
 2. If Obsidian asks, turn off Restricted mode.
 3. Search for **Mynary Dictionary**, then select **Install** and **Enable**.
 
-That is all you need for dictionary lookups. Node.js, Python, model downloads, and the optional TTS WASM file are not required.
+That is all you need for dictionary lookups. Node.js, Python, and speech model downloads are not required.
 
 ### Install manually
 
@@ -113,7 +113,11 @@ You can manage this workflow under **Settings → Mynary Dictionary**:
 
 ## Study vocabulary
 
-Select **Add to vocabulary** on a lookup and choose a deck and flashcard template. Mynary creates a normal editable Markdown note under the vocabulary folder and deck folder; you can move it, add images or audio, and edit its front/back content. Open **Vocabulary study** from the ribbon or Command Palette to browse decks, search and manage cards, and study due cards. Decks show New/Learning/Review counts; Again/Hard/Good/Easy show their next-review intervals. Set the vocabulary folder, suggested deck, default flashcard template, and daily new-card limit in settings. Export files are written into the vault; Anki export is tab-separated with import directives, and CSV/JSON include deck and review status.
+Select **Add to vocabulary** on a lookup and choose a deck and flashcard template. Mynary creates one child flashcard per dictionary definition, with that definition's own examples on its answer side. The **Simple definitions flashcard** template keeps each card short and omits translations. Mynary creates a normal editable Markdown note for each card under the vocabulary folder and deck folder; you can move it, add images or audio, and edit its front/back content. Mynary scans the folder on startup and when synced Markdown notes are created or changed; **Rescan now** is available in settings and **Rescan synced vocabulary notes** in the Command Palette. Review progress is stored in each note's `mynary-*` properties so vault sync carries it between devices. Open **Vocabulary study** from the ribbon or Command Palette to browse decks, search and manage cards, and study due cards. Decks show New/Learning/Review counts; Again/Hard/Good/Easy show their next-review intervals. Set the vocabulary folder, suggested deck, default flashcard template, and daily new-card limit in settings. Anki export is a UTF-8 tab-separated text file with the deck column declared for import; CSV/JSON include deck and review status.
+
+To import into Anki, open Mynary **Settings → Vocabulary study → Create Anki import file**. In Anki desktop, select **File → Import**, choose the `.txt` file created in the vault root, keep the **Basic** note type, and review the preview before importing. The file declares tab separation, HTML answers, and the deck column, so Anki can map the front and back fields and create/use the matching decks. These are new-note exports; Anki's own import options determine how notes matching existing first fields are handled.
+
+This sync reads Mynary Markdown flashcards from the vault. It does not read Anki's separate desktop collection or sync directly with AnkiWeb; use Anki's own sync for Anki cards, or import/export Mynary's text file through Anki's import dialog.
 
 Mynary creates missing folders automatically and replaces unsafe filename characters.
 
@@ -183,15 +187,23 @@ You can hide optional sections when they are empty:
 
 Dictionary lookup does not need Supertonic. It is an optional feature for generating pronunciation audio or reading selected text aloud.
 
-### Web runtime
+### Offline system voices
 
-1. Enable **Supertonic local TTS** in **Settings → Mynary Dictionary**.
-2. Keep **Supertonic runtime** set to **Web**.
-3. Download `ort-wasm-simd-threaded.jsep.wasm` from the matching `onnxruntime-web` package or release.
-4. Place it next to `main.js` in the Mynary plugin folder.
-5. Use **Generate TTS**, **Read selected text with supertonic**, or **Mod + Shift + R**.
+1. Install an offline speech voice for the language in your operating system's speech or accessibility settings.
+2. In **Settings → Mynary Dictionary → TTS**, enable **offline speech** and keep **Speech runtime** set to **Offline system voices**.
+3. Select **Speak pronunciation** or use **Mod + Shift + R** to read selected text.
 
-The first Web runtime use downloads the Supertonic ONNX models from Hugging Face, so it may take a little longer and use a substantial amount of storage. If the WASM file is missing, dictionary lookup continues to work and Mynary shows a setup message when speech is requested.
+Mynary downloads no voice, model, or runtime files. It uses only operating-system voices marked as local, so available languages depend on the voices installed on the device. System voices speak directly and do not create reusable audio files.
+
+Voice setup varies by platform:
+
+- **Windows:** Open **Settings → Time & language → Language & region**, open the language's options, and install **Text-to-speech**. See [Microsoft's language and speech setup](https://support.microsoft.com/en-us/windows/hardware/input-devices/manage-the-language-and-keyboard-input-layout-settings-in-windows).
+- **macOS:** Open **System Settings → Accessibility → Read & Speak → System voice**, then download a voice for the language. See [Apple's voice setup guide](https://support.apple.com/guide/mac-help/change-the-voice-your-mac-uses-to-speak-text-mchlp2290/mac).
+- **Linux:** Install a local speech engine such as eSpeak NG and Speech Dispatcher from your distribution's package manager, and ensure the desktop/webview exposes it. The exact packages vary by distribution; see the [eSpeak NG installation guide](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md).
+- **Android:** Open **Settings → Accessibility → Text-to-speech output**, choose an engine, and download its offline voice data.
+- **iOS/iPadOS:** Open **Settings → Accessibility → Spoken Content → Voices**, then download a voice for the language.
+
+After installing a voice, select **Refresh voices** in Mynary's TTS settings. Linux desktop environments differ in how they expose speech engines to apps; if Mynary still shows no local voices, use the local Supertonic server runtime instead.
 
 ### Local server runtime
 
@@ -202,7 +214,7 @@ pip install supertonic
 supertonic serve --host 127.0.0.1 --port 7788
 ```
 
-Select **Local server** under **Settings → Mynary Dictionary → Supertonic runtime**. The default endpoint is `http://127.0.0.1:7788/v1/tts`.
+Select **Local Supertonic server** under **Settings → Mynary Dictionary → TTS → Speech runtime**. The default endpoint is `http://127.0.0.1:7788/v1/tts`.
 
 The server must be running whenever speech is generated. Supertonic supports fewer languages than Wiktionary; for unsupported languages, Mynary keeps the Wiktionary pronunciation and disables Supertonic generation.
 
@@ -221,9 +233,9 @@ Mynary stores lookup results and recent searches in Obsidian's local plugin data
 - recent searches: 20 words;
 - request timeout: 15 seconds.
 
-There is no telemetry, advertising, analytics, or account system. Mynary does not scan or index your vault. The word or phrase you look up, along with the selected language, is sent to the public Wiktionary API. Large entries may also request their public `/translations` subpage.
+There is no telemetry, advertising, analytics, or account system. Mynary reads Markdown notes inside the configured vocabulary folder to keep its flashcard list in sync; it does not index the rest of the vault. The word or phrase you look up, along with the selected language, is sent to the public Wiktionary API. Large entries may also request their public `/translations` subpage.
 
-If Web Supertonic is enabled, model and voice assets are requested from Hugging Face. If Local server is enabled, selected text is sent only to the endpoint configured in Mynary's settings.
+Offline system voices use the voice selected by the operating system and do not send text to a network service. If Local server is enabled, text for speech generation is sent only to the endpoint configured in Mynary's settings.
 
 ## Development
 

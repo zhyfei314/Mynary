@@ -3,7 +3,13 @@ import type { AudioSource } from '../types';
 export interface SupertonicResponse { status: number; arrayBuffer: ArrayBuffer; mimeType?: string; }
 export type SupertonicRequester = (url: string, body: string) => Promise<SupertonicResponse>;
 export const SUPERTONIC_LANGUAGES = new Set(['en', 'ko', 'ja', 'ar', 'bg', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hi', 'hr', 'hu', 'id', 'it', 'lt', 'lv', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'tr', 'uk', 'vi']);
-export interface TtsProvider { synthesize(text: string, language: string): Promise<AudioSource>; supportsLanguage?(language: string): boolean; }
+export interface TtsProvider {
+	synthesize(text: string, language: string): Promise<AudioSource>;
+	speak?(text: string, language: string): Promise<void>;
+	supportsLanguage?(language: string): boolean;
+	getLocalVoices?(): SpeechSynthesisVoice[];
+	refreshVoices?(): SpeechSynthesisVoice[];
+}
 const REQUEST_TIMEOUT_MS = 15_000;
 
 export class SupertonicProvider implements TtsProvider {

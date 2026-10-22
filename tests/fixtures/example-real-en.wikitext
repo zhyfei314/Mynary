@@ -1,0 +1,24 @@
+==English==
+===Etymology===
+{{root|en|ine-pro}}
+From {{inh|en|enm|example}}, {{m|enm|exaumple}}, from {{der|en|fro|example}}.
+===Pronunciation===
+* {{IPA|en|/ɪɡˈzɑːm.pəl/|a=RP}}
+* {{IPA|en|/ɪɡˈzam.pəl/|a=Northern England,Scotland}}
+===Noun===
+{{en-noun}}
+# Something that is representative of all such things in a group.
+# Something that serves to illustrate or explain a [[rule]].
+#: {{ux|en|Nelson Mandela was an '''example''' for many to follow.}}
+====Synonyms====
+* {{l|en|byspel}} {{q|nonstandard}}
+* {{l|en|exemplar}}
+====Translations====
+{{trans-top|something representative of a group}}
+* Afrikaans: {{t+|af|voorbeeld}}
+* Vietnamese: {{t|vi|ví dụ}}
+===References===
+* A reference that should not become a definition.
+==French==
+===Nom===
+# Une définition française.

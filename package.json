@@ -25,12 +25,12 @@
 		"globals": "^17.6.0",
 		"jiti": "^2.6.1",
 		"jsdom": "^29.1.1",
-		"obsidian": "1.12.3",
+		"obsidian": "^1.12.3",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.59.1",
 		"vitest": "^4.1.10"
 	},
-	"dependencies": {
-		"onnxruntime-web": "^1.27.0"
+	"overrides": {
+		"moment": "2.31.0"
 	}
 }

@@ -395,7 +395,10 @@ function normalizeAudio(audio: NonNullable<Pronunciation['audio']>[number]) {
 	return url ? { ...audio, url } : undefined;
 }
 function normalizeMediaUrl(value: string) {
-	try { return new URL(value, 'https://en.wiktionary.org').toString(); } catch { return undefined; }
+	try {
+		const url = new URL(value, 'https://en.wiktionary.org');
+		return url.protocol === 'https:' ? url.toString() : undefined;
+	} catch { return undefined; }
 }
 function findLanguageCode(element: Element): string | undefined {
 	const link = element.querySelector('a[lang], a[href*=".wiktionary.org"]');

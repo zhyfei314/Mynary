@@ -38,7 +38,10 @@ export class OfflineDictionaryProvider {
 		const manifest = await this.load();
 		if (!manifest || !this.index) return undefined;
 		const normalized = normalizeWord(word);
-		const item = binarySearch(this.index, normalized);
+		// Some published packs contain independently sorted index segments. Fall
+		// back to a linear probe on a binary-search miss so those valid entries
+		// remain reachable without rebuilding a large in-memory index.
+		const item = binarySearch(this.index, normalized) ?? this.index.find((candidate) => candidate.word === normalized);
 		if (!item) return undefined;
 		this.entriesBuffer ??= await readEntries(this.adapter, joinPath(this.root, manifest.entriesFile), manifest.compressed === true);
 		const { offset, length } = item;
@@ -51,7 +54,7 @@ export class OfflineDictionaryProvider {
 export interface OfflineEntryPayload {
 	word?: string;
 	phonetics?: Array<{ text: string; type?: string }>;
-	meanings?: Array<{ partOfSpeech?: string; labels?: string[]; definitions: Array<{ text: string; examples?: string[]; subDefinitions?: string[] }> }>;
+	meanings?: Array<{ partOfSpeech?: string; labels?: string[]; definitions: Array<{ text?: string; sense?: string; examples?: string[]; subDefinitions?: string[] }> }>;
 	translations?: Array<{ word: string; language?: string; languageCode?: string; languageName?: string; sense?: string; labels?: string[] }>;
 	synonyms?: string[];
 	antonyms?: string[];
@@ -63,9 +66,9 @@ function toDictionaryEntry(payload: OfflineEntryPayload, requestedWord: string, 
 	const meanings: Meaning[] = (payload.meanings ?? []).map((meaning) => ({
 		partOfSpeech: meaning.partOfSpeech,
 		labels: meaning.labels ?? [],
-		definitions: (meaning.definitions ?? []).filter((definition) => definition && typeof definition.text === 'string').map((definition): Definition => {
+		definitions: (meaning.definitions ?? []).filter((definition) => definition && typeof (definition.text ?? definition.sense) === 'string').map((definition): Definition => {
 			const subDefinitions = Array.isArray(definition.subDefinitions) ? definition.subDefinitions.filter((item): item is string => typeof item === 'string') : [];
-			return { text: definition.text, examples: definition.examples ?? [], ...(subDefinitions.length ? { subDefinitions } : {}) };
+			return { text: definition.text ?? definition.sense!, examples: definition.examples ?? [], ...(subDefinitions.length ? { subDefinitions } : {}) };
 		}),
 	}));
 	const translations: Translation[] = (payload.translations ?? []).filter((item) => item && typeof item.word === 'string').map((item) => ({ ...item }));
@@ -88,7 +91,8 @@ function binarySearch(items: PackIndexItem[], target: string) {
 	let high = items.length - 1;
 	while (low <= high) {
 		const middle = (low + high) >> 1;
-		const comparison = items[middle]!.word.localeCompare(target);
+		const word = items[middle]!.word;
+		const comparison = word === target ? 0 : word < target ? -1 : 1;
 		if (comparison === 0) return items[middle];
 		if (comparison < 0) low = middle + 1;
 		else high = middle - 1;

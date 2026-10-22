@@ -32,9 +32,19 @@ export default defineConfig(
 	...obsidianmd.configs.recommended,
 	{
 		files: ['src/main.ts'],
-		 rules: {
+		rules: {
 			'obsidianmd/commands/no-default-hotkeys': 'off',
 		 },
+	},
+	{
+		rules: {
+			'obsidianmd/ui/sentence-case': ['warn', {
+				enforceCamelCaseLower: true,
+				brands: ['Anki', 'Mynary', 'MTranServer', 'Obsidian', 'Supertonic', 'Wiktionary', 'Hugging Face', 'Markdown'],
+				acronyms: ['HTTP', 'SHA-256', 'TTS', 'TTL', 'URL'],
+				ignoreWords: ['English', 'Vietnamese'],
+			}],
+		},
 	},
 	{
 		files: ['tests/**/*.ts'],
