@@ -4,7 +4,7 @@ Look up a word while you are reading, understand how it is used, and save it as 
 
 Mynary uses Wiktionary for dictionary data and is designed to stay out of your way. Select a word, look it up, and keep going.
 
-Current release: **1.3.1**. Mynary is maintained by [zhyfei314](https://github.com/zhyfei314).
+Current release: [**1.3.1**](https://github.com/zhyfei314/Mynary/releases/tag/1.3.1). Mynary is maintained by [zhyfei314](https://github.com/zhyfei314).
 
 ## Get started
 
@@ -113,7 +113,16 @@ You can manage this workflow under **Settings → Mynary Dictionary**:
 
 ## Study vocabulary
 
-Select **Add to vocabulary** on a lookup and choose a deck and flashcard template. Mynary creates one child flashcard per dictionary definition, with that definition's own examples on its answer side. The **Simple definitions flashcard** template keeps each card short and omits translations. Mynary creates a normal editable Markdown note for each card under the vocabulary folder and deck folder; you can move it, add images or audio, and edit its front/back content. Mynary scans the folder on startup and when synced Markdown notes are created or changed; **Rescan now** is available in settings and **Rescan synced vocabulary notes** in the Command Palette. Review progress is stored in each note's `mynary-*` properties so vault sync carries it between devices. Open **Vocabulary study** from the ribbon or Command Palette to browse decks, search and manage cards, and study due cards. Decks show New/Learning/Review counts; Again/Hard/Good/Easy show their next-review intervals. Set the vocabulary folder, suggested deck, default flashcard template, and daily new-card limit in settings. Anki export is a UTF-8 tab-separated text file with the deck column declared for import; CSV/JSON include deck and review status.
+Select **Add to vocabulary** on a lookup and choose a deck and flashcard template. Mynary creates one child flashcard per dictionary definition, with that definition's examples on its answer side. The built-in **Simple flashcard** puts the word and pronunciation on the front, and the meaning and examples on the back. New card titles include the dictionary language (for example, `hello [EN]`) so the same word looked up in different languages has separate notes. Cards are editable Markdown notes under the vocabulary and deck folders; you can move them or change their content. Mynary scans the folder on startup and when synced Markdown notes change; **Rescan now** is available in settings and **Rescan synced vocabulary notes** in the Command Palette. Review progress is stored in each note's `mynary-*` properties, so vault sync carries it between devices. Open **Vocabulary study** from the ribbon or Command Palette to browse decks, search and manage cards, and study due cards. Decks show New/Learning/Review counts. The Again/Hard/Good/Easy buttons show the next interval; new cards use short learning steps before graduating to day-based reviews. Set the vocabulary folder, suggested deck, default flashcard template, and daily new-card limit in settings. Anki export is a UTF-8 tab-separated text file with the deck column declared for import; CSV/JSON include deck and review status.
+
+### Upgrade older flashcards
+
+Older Mynary flashcards can be reviewed from **Settings → Mynary Dictionary → Vocabulary study → Review old cards**, from the **Upgrade old cards** button in the Vocabulary study sidebar, or with **Mynary Dictionary: Upgrade active legacy flashcard** while viewing a card.
+
+- **Add language label to note title** renames selected notes to include their dictionary language, such as `hello [EN].md`, while leaving the card content unchanged. Mynary looks for language information in note properties, the old title, the filename, or its folder; it uses the current dictionary language as a fallback.
+- **Refresh and split by definition** looks up selected words in Wiktionary using the language detected for each old card, then converts them to the selected flashcard template. It creates a separate card for each definition and preserves the old Notes section when present. Select up to 10 notes per refresh run to limit requests.
+
+The migration dialog lists the detected cards and lets you choose which ones to update. Cards already in the current format can receive a language label, but do not need to be refreshed.
 
 To import into Anki, open Mynary **Settings → Vocabulary study → Create Anki import file**. In Anki desktop, select **File → Import**, choose the `.txt` file created in the vault root, keep the **Basic** note type, and review the preview before importing. The file declares tab separation, HTML answers, and the deck column, so Anki can map the front and back fields and create/use the matching decks. These are new-note exports; Anki's own import options determine how notes matching existing first fields are handled.
 
@@ -193,14 +202,14 @@ Dictionary lookup does not need Supertonic. It is an optional feature for genera
 2. In **Settings → Mynary Dictionary → TTS**, enable **offline speech** and keep **Speech runtime** set to **Offline system voices**.
 3. Select **Speak pronunciation** or use **Mod + Shift + R** to read selected text.
 
-Mynary downloads no voice, model, or runtime files. It uses only operating-system voices marked as local, so available languages depend on the voices installed on the device. System voices speak directly and do not create reusable audio files.
+Mynary uses the Web Speech API exposed by Obsidian and selects only voices marked as local. It downloads no voice, model, or runtime files, and system voices speak directly without creating reusable audio files. Voice availability depends on what the app exposes: on some Android devices, installing voice data does not make a voice available inside Obsidian. Select **Refresh voices** in TTS settings to check again. If no suitable local voice appears, use the local Supertonic runtime instead.
 
 Voice setup varies by platform:
 
 - **Windows:** Open **Settings → Time & language → Language & region**, open the language's options, and install **Text-to-speech**. See [Microsoft's language and speech setup](https://support.microsoft.com/en-us/windows/hardware/input-devices/manage-the-language-and-keyboard-input-layout-settings-in-windows).
 - **macOS:** Open **System Settings → Accessibility → Read & Speak → System voice**, then download a voice for the language. See [Apple's voice setup guide](https://support.apple.com/guide/mac-help/change-the-voice-your-mac-uses-to-speak-text-mchlp2290/mac).
 - **Linux:** Install a local speech engine such as eSpeak NG and Speech Dispatcher from your distribution's package manager, and ensure the desktop/webview exposes it. The exact packages vary by distribution; see the [eSpeak NG installation guide](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md).
-- **Android:** Open **Settings → Accessibility → Text-to-speech output**, choose an engine, and download its offline voice data.
+- **Android:** Open **Settings → Accessibility → Text-to-speech output**, choose an engine, and download its offline voice data. Obsidian's Android WebView may still not expose that voice through the Web Speech API.
 - **iOS/iPadOS:** Open **Settings → Accessibility → Spoken Content → Voices**, then download a voice for the language.
 
 After installing a voice, select **Refresh voices** in Mynary's TTS settings. Linux desktop environments differ in how they expose speech engines to apps; if Mynary still shows no local voices, use the local Supertonic server runtime instead.
@@ -248,7 +257,7 @@ npm run lint
 npm run build
 ```
 
-Use `npm run dev` for esbuild watch mode. The production build writes `main.js` to the plugin root. Include or update tests for changed lookup, cache, parser, or template behavior. Do not commit generated `main.js`, `node_modules/`, or offline dataset files; the pack catalog/checksum scripts are the only dataset-maintenance tools in this repository. Preserve local-first behavior and do not introduce telemetry or send vault content without an explicit user action. For user-facing text, use concise sentence case. Before preparing a release, run `npm test`, `npm run lint`, and `npm run build`.
+Use `npm run dev` for esbuild watch mode. The production build writes `main.js` to the plugin root. Include or update tests for changed lookup, cache, parser, or template behavior. Keep `node_modules/` and offline dictionary datasets out of commits; the pack catalog/checksum scripts are the only dataset-maintenance tools in this repository. Preserve local-first behavior and do not introduce telemetry or send vault content without an explicit user action. For user-facing text, use concise sentence case. Before preparing a release, run `npm test`, `npm run lint`, and `npm run build`. Pushing a version tag such as `1.3.1` starts the release workflow, which verifies the version and uploads `main.js`, `manifest.json`, and `styles.css` as release assets.
 
 The main source folders are:
 
