@@ -31,8 +31,8 @@ export class WiktionaryProvider {
 		return this.tts.speak(text, language);
 	}
 
-	async lookup(word: string, language: string): Promise<DictionaryEntry> {
-		const offline = await this.lookupOffline(word, language);
+	async lookup(word: string, language: string, onlineOnly = false): Promise<DictionaryEntry> {
+		const offline = onlineOnly ? undefined : await this.lookupOffline(word, language);
 		if (offline) return offline;
 		const baseUrl = `https://${language}.wiktionary.org/w/api.php`;
 		const requestedTitle = word.trim();

@@ -36,9 +36,12 @@ import type { TemplateAction } from './ui/template-modals';
 import type { DeclarativeSettingDefinition } from './settings-definitions';
 import { TranslationModal } from './ui/translation-modal';
 import { VocabularyView, VIEW_TYPE_VOCABULARY } from './ui/vocabulary-view';
+import { LegacyFlashcardMigrationModal } from './ui/legacy-flashcard-migration';
+import type { LegacyFlashcardCandidate, LegacyFlashcardUpgradeMode } from './ui/legacy-flashcard-migration';
 import { addVocabularyCardsByMeaning, exportVocabulary, mergeSyncedVocabularyCard, normalizeVocabulary, reviewVocabularyCard, setVocabularyStatus } from './services/vocabulary';
 import type { ReviewRating, VocabularyCard, VocabularyStatus } from './services/vocabulary';
 import { hasFlashcardSide, extractFlashcardSide } from './services/flashcard-markers';
+import { getLegacyFlashcardLanguage, getLegacyFlashcardWord, hasLanguageLabelInFilename, isLegacyFlashcardNote, isMynaryFlashcardNote, languageLabeledNotePath, MAX_LEGACY_FLASHCARD_REFRESHES } from './services/legacy-flashcards';
 
 export const VIEW_TYPE_DICTIONARY = 'mynary-dictionary-view';
 const CACHE_FORMAT_VERSION = 'v7';
@@ -149,7 +152,23 @@ export default class MynaryPlugin extends Plugin {
 		this.vocabulary = normalizeVocabulary(isRecord(raw) ? raw.vocabulary : undefined);
 		void this.queueVocabularyImport();
 		this.register(() => { for (const timer of this.vocabularySyncTimers.values()) window.clearTimeout(timer); this.vocabularySyncTimers.clear(); });
-		if (migrateTemplates(this.settings.templates)) await this.saveSettings();
+		let templatesChanged = migrateTemplates(this.settings.templates)
+			|| (isRecord(raw) && Array.isArray(raw.templates) && raw.templates.length !== this.settings.templates.length);
+		if (!this.settings.templates.some((template) => template.id === this.settings.defaultTemplateId && template.type !== 'flashcard')) {
+			this.settings.defaultTemplateId = 'basic';
+			templatesChanged = true;
+		}
+		if (!this.settings.templates.some((template) => template.id === this.settings.defaultVocabularyTemplateId && template.type === 'flashcard')) {
+			this.settings.defaultVocabularyTemplateId = 'flashcard-basic';
+			templatesChanged = true;
+		}
+		for (const [language, templateId] of Object.entries(this.settings.languageTemplateIds ?? {})) {
+			if (!this.settings.templates.some((template) => template.id === templateId && template.type !== 'flashcard')) {
+				delete this.settings.languageTemplateIds?.[language];
+				templatesChanged = true;
+			}
+		}
+		if (templatesChanged) await this.saveSettings();
 		this.cache = new CacheManager(this, this.settings);
 		this.rebuildProvider();
 		this.registerView(VIEW_TYPE_DICTIONARY, (leaf) => new DictionaryView(leaf, this));
@@ -221,6 +240,16 @@ export default class MynaryPlugin extends Plugin {
 			icon: 'volume-2',
 			hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'R' }],
 			editorCallback: (editor) => void this.readSelected(editor),
+		});
+		this.addCommand({
+			id: 'upgrade-active-legacy-flashcard',
+			name: 'Upgrade active legacy flashcard',
+			checkCallback: (checking) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file) return false;
+				if (!checking) void this.openLegacyFlashcardMigration(file.path);
+				return true;
+			},
 		});
 		this.addCommand({ id: 'open-dictionary-sidebar', name: 'Open dictionary sidebar', callback: () => this.activateView() });
 		this.addCommand({ id: 'open-vocabulary-study', name: 'Open vocabulary study', callback: () => this.activateVocabularyView() });
@@ -303,7 +332,7 @@ export default class MynaryPlugin extends Plugin {
 			new Notice('Downloading dictionary pack manifest…');
 			const manifestResponse = await requestUrl(validatedManifestUrl);
 			const manifest = manifestResponse.json as Partial<DictionaryPackManifest>;
-		if (manifest.format !== 'mynary-pack-v1' || (manifest.kind !== 'core' && manifest.kind !== 'bilingual') || typeof manifest.language !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.language) || (manifest.kind === 'bilingual' && (typeof manifest.targetLanguage !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.targetLanguage))) || typeof manifest.indexFile !== 'string' || !/^[\w.-]+$/u.test(manifest.indexFile) || typeof manifest.entriesFile !== 'string' || !/^[\w.-]+$/u.test(manifest.entriesFile) || typeof manifest.indexSha256 !== 'string' || !/^[a-f\d]{64}$/iu.test(manifest.indexSha256) || typeof (manifest.entriesSha256 ?? manifest.sha256) !== 'string' || !/^[a-f\d]{64}$/iu.test((manifest.entriesSha256 ?? manifest.sha256)!)) throw new Error('The URL is not a valid Mynary pack manifest or is missing required SHA-256 checksums.');
+		if (manifest.format !== 'mynary-pack-v1' || (manifest.kind !== 'core' && manifest.kind !== 'bilingual') || typeof manifest.language !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.language) || (manifest.kind === 'bilingual' && (typeof manifest.targetLanguage !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.targetLanguage))) || typeof manifest.indexFile !== 'string' || !isPackAssetFilename(manifest.indexFile) || typeof manifest.entriesFile !== 'string' || !isPackAssetFilename(manifest.entriesFile) || typeof manifest.indexSha256 !== 'string' || !/^[a-f\d]{64}$/iu.test(manifest.indexSha256) || typeof (manifest.entriesSha256 ?? manifest.sha256) !== 'string' || !/^[a-f\d]{64}$/iu.test((manifest.entriesSha256 ?? manifest.sha256)!)) throw new Error('The URL is not a valid Mynary pack manifest or is missing required SHA-256 checksums.');
 			const baseUrl = new URL('.', validatedManifestUrl).toString();
 			downloadNotice = new Notice(`Preparing ${manifest.name ?? 'dictionary pack'}…`, 0);
 			const fetchAsset = (file: string) => downloadPackAsset(new URL(file, baseUrl).toString(), downloadNotice!, file);
@@ -603,7 +632,7 @@ export default class MynaryPlugin extends Plugin {
 	private async createVocabularyCardNote(card: VocabularyCard, templateId?: string) {
 		const folder = `${this.settings.vocabularyFolder ?? 'Vocabulary'}/${card.deck}`;
 		await this.ensureVaultFolder(folder);
-		const base = `${card.entry.word.replace(/[\\/:*?"<>|]/gu, '-').trim() || 'Vocabulary'}${card.senseCount && card.senseCount > 1 ? `-${card.senseIndex}` : ''}`;
+		const base = `${card.entry.word.replace(/[\\/:*?"<>|]/gu, '-').trim() || 'Vocabulary'} [${card.entry.language.toUpperCase()}]${card.senseCount && card.senseCount > 1 ? `-${card.senseIndex}` : ''}`;
 		let path = `${folder}/${base}.md`;
 		let suffix = 2;
 		while (await this.app.vault.adapter.exists(path)) path = `${folder}/${base}-${suffix++}.md`;
@@ -615,12 +644,118 @@ export default class MynaryPlugin extends Plugin {
 		return path;
 	}
 
+	async openLegacyFlashcardMigration(filePath?: string) {
+		const root = (this.settings.vocabularyFolder ?? 'Vocabulary').replace(/\/+$/u, '');
+		const folder = this.app.vault.getAbstractFileByPath(root);
+		if (!filePath && !(folder instanceof TFolder)) { new Notice(`No flashcard notes found in ${root}.`); return; }
+		const candidates: LegacyFlashcardCandidate[] = [];
+		const activeFile = filePath ? this.app.vault.getAbstractFileByPath(filePath) : undefined;
+		const files = filePath ? activeFile instanceof TFile ? [activeFile] : [] : markdownFilesIn(folder as TFolder);
+		for (const file of files) {
+			const markdown = await this.app.vault.cachedRead(file);
+			const refreshable = isLegacyFlashcardNote(markdown);
+			const needsLanguageLabel = !hasLanguageLabelInFilename(file.path);
+			if (!refreshable && (!needsLanguageLabel || !isMynaryFlashcardNote(markdown))) continue;
+			const word = getLegacyFlashcardWord(markdown);
+			if (!word) continue;
+			const language = getLegacyFlashcardLanguage(markdown, file.path, this.settings.languages.map((item) => item.code), this.activeLanguage);
+			candidates.push({ file, word, language, markdown, refreshable, needsLanguageLabel });
+		}
+		if (!candidates.length) { new Notice(filePath ? 'The active note is not a recognized legacy Mynary flashcard.' : 'No older Mynary flashcards were detected in the vocabulary folder.'); return; }
+		const templates = this.settings.templates.filter((item) => item.type === 'flashcard');
+		new LegacyFlashcardMigrationModal(this.app, candidates, templates, this.settings.defaultVocabularyTemplateId ?? '', (selected, templateId, mode) => this.migrateLegacyFlashcards(selected, templateId, mode)).open();
+	}
+
+	private async migrateLegacyFlashcards(candidates: LegacyFlashcardCandidate[], templateId: string, mode: LegacyFlashcardUpgradeMode) {
+		if (mode === 'refresh' && candidates.length > MAX_LEGACY_FLASHCARD_REFRESHES) {
+			new Notice(`Refresh up to ${MAX_LEGACY_FLASHCARD_REFRESHES} notes at a time to limit Wiktionary requests.`);
+			return;
+		}
+		const template = mode === 'refresh' ? this.settings.templates.find((item) => item.id === templateId && item.type === 'flashcard') : undefined;
+		if (mode === 'refresh' && !template) { new Notice('Select a valid flashcard template.'); return; }
+		let upgraded = 0;
+		let addedCards = 0;
+		const failed: string[] = [];
+		for (const candidate of candidates) {
+			try {
+				const oldContent = candidate.markdown ?? await this.app.vault.cachedRead(candidate.file);
+				if (mode === 'tag') {
+					if (!candidate.needsLanguageLabel) continue;
+					const oldPath = candidate.file.path;
+					const newPath = await this.uniqueVaultPath(languageLabeledNotePath(oldPath, candidate.word, candidate.language), oldPath);
+					if (newPath !== oldPath) {
+						await this.app.vault.rename(candidate.file, newPath);
+						this.vocabulary = this.vocabulary.map((card) => card.filePath === oldPath ? { ...card, filePath: newPath } : card);
+					}
+					upgraded++;
+					continue;
+				}
+				if (!candidate.refreshable) throw new Error('This card is already in the current format and can only receive a language label.');
+				const entry = mergeLegacyFlashcardData(await this.provider.lookup(candidate.word, candidate.language, true), oldContent);
+				const deckRoot = `${(this.settings.vocabularyFolder ?? 'Vocabulary').replace(/\/+$/u, '')}/`;
+				const relative = candidate.file.path.startsWith(deckRoot) ? candidate.file.path.slice(deckRoot.length) : '';
+				const deck = relative.includes('/') ? relative.slice(0, relative.lastIndexOf('/')) || 'General' : 'General';
+				const generatedCards = addVocabularyCardsByMeaning([], entry, 'learning', Date.now(), deck)
+					.sort((a, b) => (a.senseIndex ?? 1) - (b.senseIndex ?? 1));
+				const conflicts = generatedCards.filter((item) => {
+					const existing = this.vocabulary.find((stored) => stored.id === item.id);
+					return existing?.filePath && existing.filePath !== candidate.file.path;
+				});
+				if (conflicts.length) throw new Error('A modern Mynary card for this word already exists in another note. Resolve that duplicate first.');
+				const oldCard = this.vocabulary.find((item) => item.filePath === candidate.file.path);
+				const migratedCards: VocabularyCard[] = [];
+				for (let index = 0; index < generatedCards.length; index++) {
+					const generated = generatedCards[index]!;
+					const existing = this.vocabulary.find((item) => item.id === generated.id);
+					const card: VocabularyCard = existing
+						? { ...generated, ...existing, entry: generated.entry, senseIndex: generated.senseIndex, senseCount: generated.senseCount }
+						: { ...generated };
+					if (index === 0) {
+						card.filePath = candidate.file.path;
+						let content = prepareFlashcardNote(card.entry, template!.content, this.settings.vocabularyAnswerLanguage ?? '').content;
+						const personalNotes = extractLegacyNotes(oldContent);
+						if (personalNotes) content = `${content.trimEnd()}\n\n${personalNotes}\n`;
+						await this.app.vault.modify(candidate.file, addVocabularyFrontmatter(content, card));
+						const oldPath = candidate.file.path;
+						const labeledPath = await this.uniqueVaultPath(languageLabeledNotePath(oldPath, candidate.word, candidate.language, card.senseIndex, card.senseCount), oldPath);
+						if (labeledPath !== oldPath) {
+							await this.app.vault.rename(candidate.file, labeledPath);
+							card.filePath = labeledPath;
+						}
+					} else if (!card.filePath) {
+						card.filePath = await this.createVocabularyCardNote(card, templateId);
+						addedCards++;
+					}
+					migratedCards.push(card);
+				}
+				this.vocabulary = [...this.vocabulary.filter((item) => !migratedCards.some((card) => card.id === item.id) && item.id !== oldCard?.id), ...migratedCards].slice(0, 1000);
+				upgraded++;
+			} catch (error) {
+				failed.push(`${candidate.word} (${candidate.language}): ${error instanceof Error ? error.message : 'lookup failed'}`);
+			}
+		}
+		if (upgraded && mode === 'refresh') { await this.persistVocabulary(); await this.rescanVocabularyNotes(); }
+		if (upgraded && mode === 'tag') await this.persistVocabulary();
+		new Notice(mode === 'tag'
+			? `Added language labels to ${upgraded} card${upgraded === 1 ? '' : 's'}${failed.length ? `. ${failed.join('; ')}` : '.'}`
+			: `Refreshed ${upgraded} old card${upgraded === 1 ? '' : 's'} and created ${addedCards} additional card${addedCards === 1 ? '' : 's'}${failed.length ? `. ${failed.join('; ')}` : '.'}`, 8000);
+	}
+
 	private async ensureVaultFolder(path: string) {
 		let current = '';
 		for (const part of path.split('/').filter(Boolean)) {
 			current = current ? `${current}/${part}` : part;
 			if (!(await this.app.vault.adapter.exists(current))) await this.app.vault.createFolder(current);
 		}
+	}
+
+	private async uniqueVaultPath(path: string, currentPath?: string) {
+		if (path === currentPath || !(await this.app.vault.adapter.exists(path))) return path;
+		const extension = path.slice(path.lastIndexOf('.'));
+		const stem = path.slice(0, -extension.length);
+		let suffix = 2;
+		while (await this.app.vault.adapter.exists(`${stem}-${suffix}${extension}`)) suffix++;
+		return `${stem}-${suffix}${extension}`;
 	}
 
 	async exportVocabularyFile(format: 'json' | 'csv' | 'anki') {
@@ -707,7 +842,7 @@ export default class MynaryPlugin extends Plugin {
 				if (!front || !back) continue;
 				const cache = this.app.metadataCache.getFileCache(file);
 				const properties = cache?.frontmatter;
-				const language = readFrontmatterString(markdown, 'mynary-language') ?? (typeof properties?.['mynary-language'] === 'string' ? properties['mynary-language'] : undefined);
+				const language = readFrontmatterString(markdown, 'mynary-language') ?? (typeof properties?.['mynary-language'] === 'string' ? properties['mynary-language'] : undefined) ?? file.basename.match(/\[([a-z]{2,3})\](?:-\d+)?$/iu)?.[1];
 				if (!language) continue;
 				const word = front.replace(/^#*\s*/u, '').trim();
 				if (!word) continue;
@@ -729,7 +864,8 @@ export default class MynaryPlugin extends Plugin {
 					firstReviewedAt: readFrontmatterNumber(markdown, 'mynary-first-reviewed-at'),
 					intervalDays: readFrontmatterNumber(markdown, 'mynary-interval-days') ?? 0,
 					ease: readFrontmatterNumber(markdown, 'mynary-ease') ?? 2.5,
-				repetitions: readFrontmatterNumber(markdown, 'mynary-repetitions') ?? 0,
+					repetitions: readFrontmatterNumber(markdown, 'mynary-repetitions') ?? 0,
+					learningStep: readFrontmatterNumber(markdown, 'mynary-learning-step'),
 				status: readFrontmatterString(markdown, 'mynary-status') as VocabularyStatus | undefined,
 				}])[0];
 				if (!imported) continue;
@@ -1073,6 +1209,7 @@ function vocabularyCardFrontmatter(card: VocabularyCard) {
 		'mynary-interval-days': card.intervalDays,
 		'mynary-ease': card.ease,
 		'mynary-repetitions': card.repetitions,
+		'mynary-learning-step': card.learningStep ?? null,
 	};
 }
 
@@ -1125,6 +1262,59 @@ function validateHttpUrl(value: string) {
 	catch { throw new Error('Enter a valid HTTP or HTTPS dictionary manifest URL.'); }
 	if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('Only HTTP and HTTPS dictionary manifest URLs are supported.');
 	return url.toString();
+}
+
+function mergeLegacyFlashcardData(entry: DictionaryEntry, markdown: string): DictionaryEntry {
+	const originalMeaning = legacyField(markdown, 1, 'Context');
+	const oldExamples = [...legacyList(legacyField(markdown, 2, 'Collocations/Phrase')), ...legacyList(legacyField(markdown, 4, 'Example'))];
+	const oldSynonyms = legacyList(legacyField(markdown, 3, 'Word Family')).flatMap((item) => item.split(/[,;]+/u).map((part) => part.trim()).filter(Boolean));
+	const ipa = markdown.match(/(?:###\s*Pronunciation\s*\n|\*\*IPA:\*\*\s*)([^\n]+)/iu)?.[1]?.trim();
+	const meanings = entry.meanings.map((meaning) => ({ ...meaning, definitions: meaning.definitions.map((definition) => ({ ...definition, examples: [...definition.examples] })) }));
+	if (originalMeaning) {
+		const existingDefinition = meanings.flatMap((meaning) => meaning.definitions).find((definition) => definition.text.trim().toLocaleLowerCase() === originalMeaning.trim().toLocaleLowerCase());
+		if (existingDefinition) existingDefinition.examples = uniqueText([...existingDefinition.examples, ...oldExamples]);
+		else meanings.push({ definitions: [{ text: originalMeaning, examples: uniqueText(oldExamples) }] });
+	} else if (oldExamples.length && meanings[0]?.definitions[0]) {
+		meanings[0].definitions[0]!.examples = uniqueText([...meanings[0].definitions[0]!.examples, ...oldExamples]);
+	}
+	if (!meanings.length && originalMeaning) meanings.push({ definitions: [{ text: originalMeaning, examples: uniqueText(oldExamples) }] });
+	const phonetics = ipa && !entry.phonetics.some((item) => item.text === ipa) ? [...entry.phonetics, { text: ipa }] : entry.phonetics;
+	return { ...entry, meanings, phonetics, synonyms: uniqueText([...entry.synonyms, ...oldSynonyms]) };
+}
+
+function legacyField(markdown: string, index: number, label: string) {
+	const marker = new RegExp(`\\*\\*${index}\\.\\s*${label.replaceAll('/', '\\/')}\\*\\*`, 'iu');
+	const match = marker.exec(markdown);
+	if (!match || match.index === undefined) return '';
+	const start = match.index + match[0].length;
+	const tail = markdown.slice(start);
+	const nextField = tail.search(/\n\s*\*\*\d+\./u);
+	const notes = tail.search(/\n\s*##\s+Notes\b/iu);
+	const end = [nextField, notes].filter((value) => value >= 0).sort((a, b) => a - b)[0] ?? tail.length;
+	return tail.slice(0, end).replace(/^\s*\n/u, '').trim();
+}
+
+function legacyList(value: string) {
+	return value.split(/\r?\n/u).map((line) => line.replace(/^\s*(?:[-*+]\s+|\d+[.)]\s+|>\s*)/u, '').trim()).filter(Boolean);
+}
+
+function uniqueText(values: string[]) {
+	const seen = new Set<string>();
+	return values.filter((value) => {
+		const key = value.trim().toLocaleLowerCase();
+		if (!key || seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+}
+
+function extractLegacyNotes(markdown: string) {
+	const match = /^##\s+Notes\s*\r?\n([\s\S]*)$/imu.exec(markdown);
+	return match?.[1]?.trim() ?? '';
+}
+
+function isPackAssetFilename(value: string) {
+	return value !== '.' && value !== '..' && /^[\w.-]+$/u.test(value);
 }
 
 function markdownFilesIn(folder: TFolder): TFile[] {
@@ -1306,11 +1496,11 @@ export class DictionaryView extends ItemView {
 		input.addEventListener('keydown', (event) => { if (event.key === 'Enter') submitLookup(); });
 		submit.addEventListener('click', submitLookup);
 		const selectionLookup = search.createEl('button', { text: 'Lookup selected text', cls: 'mynary-selection-lookup' });
+		selectionLookup.empty();
+		setIcon(selectionLookup, 'text-search');
+		selectionLookup.setAttribute('aria-label', 'Look up selected text');
+		selectionLookup.setAttribute('title', 'Look up selected text');
 		selectionLookup.addEventListener('click', () => void this.plugin.lookupCurrentSelection());
-		const selectionTranslate = search.createEl('button', { text: 'Translate selected text', cls: 'mynary-selection-lookup' });
-		selectionTranslate.addEventListener('click', () => void this.plugin.translateCurrentSelection());
-		const selectionRead = search.createEl('button', { text: 'Read selected text', cls: 'mynary-selection-read' });
-		selectionRead.addEventListener('click', () => void this.plugin.readCurrentSelection());
 		const language = search.createEl('select');
 		this.plugin.settings.languages.forEach((item) => language.createEl('option', { value: item.code, text: item.code.toUpperCase(), attr: { 'aria-label': item.name, title: item.name } }));
 		language.setAttribute('aria-label', 'Dictionary language');
@@ -1519,7 +1709,7 @@ class DictionarySettingTab extends PluginSettingTab {
 		new Setting(translate).setName('Translation request timeout').setDesc('Maximum wait time in seconds for the local server.').addText((text) => text.setValue(String(this.plugin.settings.mtranServerTimeoutMs / 1000)).onChange((value: string) => { const seconds = Math.min(120, Math.max(1, Number(value) || 15)); this.plugin.settings.mtranServerTimeoutMs = Math.round(seconds * 1000); void this.plugin.saveSettings(); }));
 
 		const tts = createGroup('TTS', 'Read using voices installed on this device, or connect a local Supertonic server.', false);
-		new Setting(tts).setName('Enable offline speech').setDesc('Uses local operating system voices. Install a language voice in system settings; Mynary makes no voice or model downloads.').addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsEnabled).onChange((value) => { this.plugin.settings.ttsEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
+		new Setting(tts).setName('Enable offline speech').setDesc('Uses offline voices exposed through this app’s Web Speech API. Mynary does not download voices; some Android WebViews do not expose Android system voices.').addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsEnabled).onChange((value) => { this.plugin.settings.ttsEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
 		new Setting(tts).setName('Speech runtime').setDesc('System voices need no extra setup. A local server can generate reusable audio files.').addDropdown((dropdown) => dropdown.addOption('system', 'Offline system voices').addOption('server', 'Local Supertonic server').setValue(this.plugin.settings.ttsRuntime).onChange((value) => { this.plugin.settings.ttsRuntime = value === 'server' ? 'server' : 'system'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
 		new Setting(tts).setName('Auto-generate TTS audio').setDesc('Creates and attaches audio during lookup. Available with the local Supertonic server.').addToggle((toggle) => { toggle.setValue(this.plugin.settings.ttsAutoGenerate).setDisabled(this.plugin.settings.ttsRuntime !== 'server').onChange((value) => { this.plugin.settings.ttsAutoGenerate = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }); });
 		if (this.plugin.settings.ttsRuntime === 'system') {
@@ -1541,6 +1731,7 @@ class DictionarySettingTab extends PluginSettingTab {
 		new Setting(vocabulary).setName('Import into Anki').setDesc('Select Create Anki import file, then in Anki desktop select File → Import and choose the .txt file from your vault. Keep the Basic note type selected and check the preview; Mynary includes tab and HTML settings and places each card in its deck.').addButton((button) => button.setButtonText('Create Anki import file').onClick(() => void this.plugin.exportVocabularyFile('anki')));
 		new Setting(vocabulary).setName('Vocabulary notes folder').setDesc('Bulk-created vocabulary notes are organized under this folder and its deck subfolders.').addText((text) => text.setValue(this.plugin.settings.vocabularyFolder ?? 'Vocabulary').onChange((value) => { this.plugin.settings.vocabularyFolder = value.trim() || 'Vocabulary'; void this.plugin.saveSettings(); }));
 		new Setting(vocabulary).setName('Sync vocabulary notes').setDesc('Scan existing and changed Markdown flashcards in the vocabulary folder. Notes and review progress sync through your vault sync service.').addButton((button) => button.setButtonText('Rescan now').onClick(() => void this.plugin.rescanVocabularyNotes()));
+		new Setting(vocabulary).setName('Upgrade old flashcards').setDesc('Find legacy cards, choose which ones to refresh from Wiktionary, and select the new flashcard template.').addButton((button) => button.setButtonText('Review old cards').onClick(() => void this.plugin.openLegacyFlashcardMigration()));
 		new Setting(vocabulary).setName('Optional translation language').setDesc('Flashcard answers default to the dictionary definition. Add a translation in this language when the lookup provides one; otherwise the definition remains the answer.').addDropdown((dropdown) => {
 			dropdown.addOption('', 'Definition only');
 			for (const language of MTRAN_LANGUAGE_OPTIONS) dropdown.addOption(language.code, `${language.name} (${language.code})`);

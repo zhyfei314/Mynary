@@ -1,8 +1,9 @@
-.mynary-search { display: flex; gap: 6px; margin-bottom: 12px; align-items: center; }
+.mynary-search { display: flex; gap: 5px; margin-bottom: 12px; align-items: center; min-width: 0; }
 .mynary-search input { flex: 1; min-width: 0; }
-.mynary-search-button { align-items: center; display: inline-flex; flex: 0 0 auto; justify-content: center; min-width: 32px; padding: 4px 8px; }
+.mynary-search-button, .mynary-selection-lookup { align-items: center; display: inline-flex; flex: 0 0 34px; height: 34px; justify-content: center; min-width: 34px; padding: 4px; }
 .mynary-search-button svg { height: 16px; width: 16px; }
 .mynary-search select { flex: 0 0 58px; }
+.mynary-selection-lookup svg { height: 16px; width: 16px; }
 .mynary-entry-title h2 { margin-bottom: 4px; }
 .mynary-entry-metadata { color: var(--text-muted); font-size: var(--font-ui-smaller); margin-bottom: 8px; }
 .mynary-phonetics { color: var(--text-muted); margin-bottom: 12px; }
@@ -136,7 +137,11 @@
 	.mynary-vocabulary-row { flex-wrap: wrap; }
 	.mynary-vocabulary-row select { flex: 1 1 100px; }
 }
-.is-mobile .mynary-selection-lookup { display: block; margin: 0 0 10px; width: 100%; }
+.is-mobile .mynary-selection-lookup { display: inline-flex; margin: 0; width: auto; }
+.mynary-legacy-card-list { display: grid; gap: 7px; max-height: 48vh; overflow-y: auto; }
+.mynary-legacy-card-row { align-items: flex-start; display: flex; gap: 9px; min-width: 0; }
+.mynary-legacy-card-row input { flex: 0 0 auto; margin-top: 4px; }
+.mynary-legacy-card-row span { min-width: 0; overflow-wrap: anywhere; }
 .mynary-pack-manager {
 	margin: 1em 0;
 }

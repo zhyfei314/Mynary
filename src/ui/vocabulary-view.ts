@@ -17,6 +17,7 @@ export interface VocabularyController {
 	removeVocabularyCard(card: VocabularyCard): Promise<void>;
 	exportVocabularyFile(format: 'json' | 'csv' | 'anki'): Promise<void>;
 	createVocabularyNotes(cards: VocabularyCard[]): Promise<void>;
+	openLegacyFlashcardMigration(): Promise<void>;
 	openVocabularyNote(card: VocabularyCard): Promise<void>;
 	readVocabularyNote(card: VocabularyCard, side?: 'front' | 'back'): Promise<string | undefined>;
 }
@@ -52,6 +53,7 @@ export class VocabularyView extends ItemView {
 		const controls = header.createDiv('mynary-vocabulary-controls');
 		if (this.selectedDeck) controls.createEl('button', { text: '← All decks' }).addEventListener('click', () => { this.selectedDeck = ''; this.render(); });
 		controls.createEl('button', { text: 'New deck' }).addEventListener('click', () => void this.controller.createVocabularyDeck());
+		controls.createEl('button', { text: 'Upgrade old cards' }).addEventListener('click', () => void this.controller.openLegacyFlashcardMigration());
 		const study = controls.createEl('button', { text: `Study due (${due.length})` });
 		study.addEventListener('click', () => { this.studyMode = true; this.dueOnly = true; this.studyIndex = 0; this.revealed = false; this.render(); });
 		const list = controls.createEl('button', { text: 'Vocabulary list' });

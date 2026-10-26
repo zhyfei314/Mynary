@@ -103,15 +103,15 @@ describe('template renderer', () => {
 		expect(renderTemplate({ ...entry, phonetics: [] }, '{{#if meaningsMarkdown}}A{{#if IPA}}B{{/if}}{{/if}}')).toBe('A');
 	});
 
-	it('keeps the language-learning template compact for sparse entries', () => {
-		const learning = DEFAULT_TEMPLATES.find((template) => template.id === 'learning');
-		if (!learning) throw new Error('Learning template is missing.');
-		const output = renderTemplate({ ...entry, phonetics: [], translations: [], meanings: [{ partOfSpeech: 'Noun', definitions: [{ text: 'A definition.', examples: [] }] }] }, learning.content);
+	it('keeps the standard and simple built-in flashcard templates after duplicate defaults are removed', () => {
+		const flashcards = DEFAULT_TEMPLATES.filter((template) => template.type === 'flashcard');
 
-		expect(output).toContain('## Meanings');
-		expect(output).not.toContain('## Pronunciation');
-		expect(output).not.toContain('## Translations');
-		expect(output).not.toContain('## Source examples');
+		expect(flashcards.map((template) => template.id)).toEqual(['flashcard-basic', 'flashcard-simple']);
+		expect(DEFAULT_TEMPLATES.some((template) => template.id === 'learning')).toBe(false);
+		expect(flashcards[1]?.content).toContain('{{word}}');
+		expect(flashcards[1]?.content).toContain('{{IPA}}');
+		expect(flashcards[1]?.content).toContain('{{meaningsMarkdown}}');
+		expect(flashcards[1]?.content).toContain('{{examplesMarkdown}}');
 	});
 
 	it('migrates untouched legacy templates but preserves custom edits', () => {

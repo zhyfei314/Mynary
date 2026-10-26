@@ -1,7 +1,7 @@
 import type { AudioSource } from '../types';
 import type { TtsProvider } from './supertonic';
 
-const VOICE_DISCOVERY_TIMEOUT_MS = 5000;
+const VOICE_DISCOVERY_TIMEOUT_MS = 8000;
 const MAX_UTTERANCE_LENGTH = 1800;
 
 /** Uses the host OS speech engine exposed by Web Speech API; remote voices are never selected. */
@@ -91,10 +91,12 @@ function waitForVoices(synthesis: SpeechSynthesis) {
 	return new Promise<void>((resolve) => {
 		let done = false;
 		let checkVoices: () => void;
+		let pollId: number | undefined;
 		const finish = () => {
 			if (done) return;
 			done = true;
 			window.clearTimeout(timeoutId);
+			if (pollId !== undefined) window.clearInterval(pollId);
 			synthesis.removeEventListener('voiceschanged', checkVoices);
 			resolve();
 		};
@@ -103,6 +105,8 @@ function waitForVoices(synthesis: SpeechSynthesis) {
 		};
 		const timeoutId = window.setTimeout(finish, VOICE_DISCOVERY_TIMEOUT_MS);
 		synthesis.addEventListener('voiceschanged', checkVoices);
+		// Some Android WebViews populate voices after startup without dispatching voiceschanged.
+		pollId = window.setInterval(checkVoices, 250);
 		checkVoices();
 	});
 }
@@ -137,7 +141,7 @@ function speakChunk(synthesis: SpeechSynthesis, text: string, voice: SpeechSynth
 }
 
 export function noVoiceMessage(language: string) {
-	return `No local system voice for ${language.toUpperCase()} is available to Obsidian. Install an offline voice for this language in your operating system's speech settings, then restart Obsidian or reopen Mynary settings.`;
+	return `Obsidian's WebView does not expose an offline ${language.toUpperCase()} voice. Confirm that the system text-to-speech engine has an offline voice, then refresh voices. Some Android WebViews do not expose Android's installed voices to Web Speech API; another reader app may use Android's native speech service directly.`;
 }
 
 export function systemSpeechSetupInstructions(platform: { isAndroidApp: boolean; isIosApp: boolean; isWin: boolean; isMacOS: boolean; isLinux: boolean }) {

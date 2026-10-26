@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TEMPLATES, LANGUAGES, normalizeSettings } from '../src/settings';
+import { DEFAULT_TEMPLATES, LANGUAGES, migrateTemplates, normalizeSettings } from '../src/settings';
 
 describe('settings normalization', () => {
 	it('falls back safely when persisted settings are malformed', () => {
@@ -53,7 +53,7 @@ describe('settings normalization', () => {
 		] });
 
 		expect(settings.templates.find((template) => template.id === 'flashcard-custom')?.type).toBe('flashcard');
-		expect(settings.defaultVocabularyTemplateId).toBe('flashcard-definitions');
+		expect(settings.defaultVocabularyTemplateId).toBe('flashcard-basic');
 	});
 
 	it('keeps the complete built-in card template and replaces an incomplete marker default', () => {
@@ -62,10 +62,27 @@ describe('settings normalization', () => {
 			templates: [{ id: 'flashcard-legacy', name: 'Flashcard', type: 'flashcard', content: '# {{word}}\n<!-- mynary:front:start -->' }],
 		});
 		const builtIn = settings.templates.find((template) => template.id === 'flashcard-basic');
-		expect(settings.defaultVocabularyTemplateId).toBe('flashcard-definitions');
+		expect(settings.defaultVocabularyTemplateId).toBe('flashcard-basic');
 		expect(builtIn?.content).toContain('<!-- mynary:front:start -->');
 		expect(builtIn?.content).toContain('<!-- mynary:front:end -->');
 		expect(builtIn?.content).toContain('<!-- mynary:back:start -->');
 		expect(builtIn?.content).toContain('<!-- mynary:back:end -->');
+	});
+
+	it('removes duplicate legacy Flashcard templates and falls back to the canonical template', () => {
+		const duplicate = '# flashcards/{{language}}_Definition\n{{Title}}()::\n{{definition}}';
+		const settings = normalizeSettings({
+			defaultVocabularyTemplateId: 'flashcard-old-2',
+			templates: [
+				{ id: 'basic', name: 'Basic', content: '# {{word}}' },
+				{ id: 'flashcard-old-1', name: 'Flashcard', type: 'flashcard', content: duplicate },
+				{ id: 'flashcard-old-2', name: 'Flashcard', type: 'flashcard', content: duplicate },
+				{ id: 'flashcard-old-3', name: 'Flashcard', type: 'flashcard', content: duplicate },
+			],
+		});
+		migrateTemplates(settings.templates);
+
+		expect(settings.templates.filter((template) => template.type === 'flashcard').map((template) => template.id)).toEqual(['flashcard-basic', 'flashcard-simple']);
+		expect(settings.defaultVocabularyTemplateId).toBe('flashcard-basic');
 	});
 });

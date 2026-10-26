@@ -15,6 +15,7 @@ export interface VocabularyCard {
 	intervalDays: number;
 	ease: number;
 	repetitions: number;
+	learningStep?: number;
 	filePath?: string;
 	senseIndex?: number;
 	senseCount?: number;
@@ -52,6 +53,7 @@ export function normalizeVocabulary(value: unknown): VocabularyCard[] {
 			intervalDays: Math.max(0, finiteNumber(card.intervalDays, 0)),
 			ease: Math.max(1.3, finiteNumber(card.ease, 2.5)),
 			repetitions: Math.max(0, Math.floor(finiteNumber(card.repetitions, 0))),
+			...(card.learningStep === 1 ? { learningStep: 1 } : card.repetitions === 0 ? { learningStep: 0 } : {}),
 		});
 	}
 	return cards;
@@ -84,6 +86,7 @@ export function mergeSyncedVocabularyCard(cards: VocabularyCard[], incoming: Voc
 		intervalDays: hasSyncedState ? incoming.intervalDays : current.intervalDays,
 		ease: hasSyncedState ? incoming.ease : current.ease,
 		repetitions: hasSyncedState ? incoming.repetitions : current.repetitions,
+		learningStep: hasSyncedState ? incoming.learningStep : current.learningStep,
 	};
 	if (JSON.stringify(current) === JSON.stringify(merged)) return { cards, changed: false };
 	const next = [...cards];
@@ -123,11 +126,16 @@ export function setVocabularyStatus(card: VocabularyCard, status: VocabularyStat
 
 export function reviewVocabularyCard(card: VocabularyCard, rating: ReviewRating, now = Date.now()): VocabularyCard {
 	const firstReviewedAt = card.firstReviewedAt ?? (card.lastReviewedAt === undefined ? now : undefined);
-	if (rating === 'again') return { ...card, status: 'learning', dueAt: now + 10 * 60_000, intervalDays: 0, repetitions: 0, lastReviewedAt: now, ...(firstReviewedAt === undefined ? {} : { firstReviewedAt }), ease: Math.max(1.3, card.ease - 0.2) };
+	const inLearningSteps = card.repetitions === 0 && card.intervalDays === 0;
+	if (rating === 'again') return { ...card, status: 'learning', dueAt: now + 60_000, intervalDays: 0, repetitions: 0, learningStep: 0, lastReviewedAt: now, ...(firstReviewedAt === undefined ? {} : { firstReviewedAt }), ease: Math.max(1.3, card.ease - 0.2) };
+	if (inLearningSteps && rating === 'hard') return { ...card, status: 'learning', dueAt: now + 6 * 60_000, intervalDays: 0, learningStep: card.learningStep ?? 0, lastReviewedAt: now, ...(firstReviewedAt === undefined ? {} : { firstReviewedAt }), ease: Math.max(1.3, card.ease - 0.15) };
+	if (inLearningSteps && rating === 'good' && (card.learningStep ?? 0) === 0) return { ...card, status: 'learning', dueAt: now + 10 * 60_000, intervalDays: 0, learningStep: 1, lastReviewedAt: now, ...(firstReviewedAt === undefined ? {} : { firstReviewedAt }) };
 	const easeDelta = rating === 'easy' ? 0.15 : rating === 'hard' ? -0.15 : 0;
 	const ease = Math.max(1.3, card.ease + easeDelta);
 	const intervalDays = card.repetitions === 0 ? (rating === 'easy' ? 4 : 1) : card.repetitions === 1 ? (rating === 'easy' ? 4 : 3) : Math.max(1, Math.round(card.intervalDays * ease * (rating === 'hard' ? 0.7 : rating === 'easy' ? 1.3 : 1)));
-	return { ...card, status: 'review', ease, intervalDays, repetitions: card.repetitions + 1, lastReviewedAt: now, ...(firstReviewedAt === undefined ? {} : { firstReviewedAt }), dueAt: now + intervalDays * 86_400_000 };
+	const reviewCard = { ...card };
+	delete reviewCard.learningStep;
+	return { ...reviewCard, status: 'review', ease, intervalDays, repetitions: card.repetitions + 1, lastReviewedAt: now, ...(firstReviewedAt === undefined ? {} : { firstReviewedAt }), dueAt: now + intervalDays * 86_400_000 };
 }
 
 export function dueVocabularyCards(cards: VocabularyCard[], now = Date.now(), newCardLimit = 20) {
@@ -181,7 +189,8 @@ export function exportVocabulary(cards: VocabularyCard[], format: 'json' | 'csv'
 	if (format === 'anki') {
 		const ankiRows = cards.flatMap((card) => {
 			const definitions = card.entry.meanings.flatMap((meaning) => meaning.definitions.map((definition) => definition.text)).filter(Boolean);
-			const word = card.senseCount && card.senseCount > 1 ? `${card.entry.word} (${card.senseIndex})` : card.entry.word;
+			const sense = card.senseCount && card.senseCount > 1 ? ` (${card.senseIndex})` : '';
+			const word = `${card.entry.word}${sense} [${card.entry.language.toUpperCase()}]`;
 			return [[word, [...definitions, ...card.entry.meanings.flatMap((meaning) => meaning.definitions.flatMap((definition) => definition.examples ?? []))].filter(Boolean).map(escapeField).join('<br><br>'), card.deck]];
 		});
 		return ['#separator:Tab', '#html:true', '#columns:Word\tAnswer\tDeck', '#deck column:3', ...ankiRows.map((row) => `${escapeField(row[0] ?? '')}\t${row[1] ?? ''}\t${escapeField(row[2] ?? '')}`)].join('\n');

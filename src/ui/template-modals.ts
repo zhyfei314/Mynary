@@ -344,7 +344,7 @@ export class TemplateManagerModal extends Modal {
 		});
 		if (!this.plugin.settings.templates.some((template) => template.id === this.plugin.settings.defaultTemplateId)) this.plugin.settings.defaultTemplateId = DEFAULT_TEMPLATES[0]?.id ?? '';
 		await this.plugin.saveSettings();
-		this.selectedId = this.selectedType === 'flashcard' ? this.plugin.settings.defaultVocabularyTemplateId ?? 'flashcard-definitions' : this.plugin.settings.defaultTemplateId;
+		this.selectedId = this.selectedType === 'flashcard' ? this.plugin.settings.defaultVocabularyTemplateId ?? 'flashcard-basic' : this.plugin.settings.defaultTemplateId;
 		this.render();
 	}
 
