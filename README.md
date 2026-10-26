@@ -1,254 +1,87 @@
 # Mynary Dictionary
 
-Look up a word while you are reading, understand how it is used, and save it as a vocabulary note — without leaving Obsidian.
+Look up words in Obsidian, save definitions as notes, and study them as flashcards. Mynary uses Wiktionary by default and can also use optional local dictionary packs, translation, and speech services.
 
-Mynary uses Wiktionary for dictionary data and is designed to stay out of your way. Select a word, look it up, and keep going.
+Current release: [**1.3.1**](https://github.com/zhyfei314/Mynary/releases/tag/1.3.1).
 
-Current release: [**1.3.1**](https://github.com/zhyfei314/Mynary/releases/tag/1.3.1). Mynary is maintained by [zhyfei314](https://github.com/zhyfei314).
+## Install
 
-## Get started
+In Obsidian, open **Settings → Community plugins**, search for **Mynary Dictionary**, then install and enable it.
 
-### Install from Community Plugins
+To install manually, download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/zhyfei314/Mynary/releases/latest), copy them into `<Vault>/.obsidian/plugins/mynary/`, then enable the plugin.
 
-1. Open **Settings → Community plugins**.
-2. If Obsidian asks, turn off Restricted mode.
-3. Search for **Mynary Dictionary**, then select **Install** and **Enable**.
+## Look up words
 
-That is all you need for dictionary lookups. Node.js, Python, and speech model downloads are not required.
+- Select a word in a note and choose **Lookup** from the editor menu, or run **Mynary Dictionary: Lookup selected word**. The default shortcut is **Mod + Shift + L** (`Ctrl` on Windows/Linux, `Cmd` on macOS).
+- Open the dictionary sidebar from the ribbon or with **Mynary Dictionary: Open dictionary sidebar** to search directly.
+- On mobile, add **Lookup selected word** to **Settings → Mobile → Configure mobile toolbar**. You can also search in the sidebar.
+- Set the lookup language in **Settings → Mynary Dictionary → Dictionary**. Optional double-click lookup is in **Interaction**.
 
-### Install manually
+Entries can include definitions grouped by part of speech, usage labels, examples, pronunciation and Wiktionary audio, translations, synonyms, antonyms, etymology, and links to related words. Available details depend on the Wiktionary entry.
 
-Download `main.js`, `manifest.json`, and `styles.css` from a GitHub release. Copy them into:
+## Create notes with templates
 
-```text
-<Vault>/.obsidian/plugins/mynary/
-```
+From a lookup, use **Save** to copy the result, insert it into the current note, or create a vocabulary note. Choose a template for each action. Mynary can ask before replacing an existing note, replace it, or update only the section between its Mynary markers. Optional bilingual notes append available translations.
 
-Then enable Mynary under **Settings → Community plugins**. Reload Obsidian after replacing plugin files.
+The built-in note templates are:
 
-## Look up a word
+| Template | Includes |
+| --- | --- |
+| **Basic vocabulary** | Word, language and source metadata, meanings, and examples |
+| **Detailed vocabulary** | Word, pronunciation, parts of speech, meanings, translations, and synonyms |
 
-The quickest way is to select a word or short phrase in a Markdown note and choose one of these options:
+Open **Settings → Mynary Dictionary → Notes, templates, and cache → Manage templates** to edit or organize note and flashcard templates. Set their defaults separately. The manager supports custom templates, duplication, deletion, restore of built-ins, and a live preview.
 
-- Select **Lookup** from the editor context menu.
-- Run **Mynary Dictionary: Lookup selected word** from the Command Palette.
-- Press **Mod + Shift + L** (`Ctrl` on Windows/Linux, `Cmd` on macOS).
-- Open the dictionary sidebar and search there.
+Templates support dictionary values such as `{{word}}`, `{{language}}`, `{{IPA}}`, `{{definition}}`, `{{definitionsMarkdown}}`, `{{meaningsMarkdown}}`, `{{examplesMarkdown}}`, `{{translationsMarkdown}}`, `{{synonyms}}`, `{{antonyms}}`, `{{etymology}}`, `{{source}}`, `{{sourceUrl}}`, and `{{lookupDate}}`. `{{audio}}`, `{{partOfSpeech}}`, `{{translation}}`, `{{translations}}`, `{{sourceLanguage}}`, and `{{targetLanguage}}` are also available. Variable names are case-insensitive; underscore aliases such as `{{source_url}}` work too. Use `{{#if IPA}}…{{/if}}` to hide optional sections when a value is empty.
 
-On mobile, add **Mynary Dictionary: Lookup selected word** to **Settings → Mobile → Configure mobile toolbar**. The selection menu and sidebar work there too.
+## Vocabulary and flashcards
 
-To keep the sidebar open, select the book icon in the ribbon or run **Mynary Dictionary: Open dictionary sidebar**. Type a word or phrase, choose a Wiktionary language, and press Enter.
+Choose **Add to vocabulary** on a lookup to create one card for each definition. Each card is an editable Markdown note, and its title includes the dictionary language—for example, `hello [EN]`—so entries for the same word in different languages stay distinct.
 
-Mynary accepts selections up to 80 characters or 8 words by default. Longer selections can still be looked up exactly or reduced to their first word.
+The built-in flashcard templates are:
 
-## Optional offline dictionary packs
+| Template | Front | Back |
+| --- | --- | --- |
+| **Basic flashcard** | Word | Meanings, optional translation, examples, and pronunciation |
+| **Simple flashcard** | Word and pronunciation | Meaning and examples |
 
-Mynary can use a small local dictionary pack before falling back to Wiktionary. Run **Mynary Dictionary: Install offline dictionary pack from URL**, then enter a pack `manifest.json` URL. Packs contain only indexed definitions, pronunciation, examples, and selected translations; audio is not included. A missing pack or missing entry falls back to the normal Wiktionary lookup.
-
-Pack files are installed under `.mynary/dictionaries/<language>/`. Downloads are written to temporary files and verified with SHA-256 when the manifest provides checksums. The pack datasets are maintained separately in the [Mynary Offline Dictionary Hugging Face Dataset](https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary); this plugin repository does not include the source datasets or pack-building pipeline.
-
-Pack manifests use the same schema for core and bilingual packs. Core packs use `kind: "core"` and `language`; bilingual packs use `kind: "bilingual"`, `language` as the source language, and `targetLanguage` as the translation language. `entriesFile` may end in `.gz`; its checksum is always the SHA-256 of the exact downloadable bytes.
-
-The small catalog is maintained in both [dictionary-catalog/catalog.json](dictionary-catalog/catalog.json) and the Hugging Face Dataset repository. It points to the large pack assets in Hugging Face and includes download sizes. Repository automation refreshes and checksum-verifies it weekly and whenever a plugin release tag is pushed. To mirror the catalog back to the Dataset, configure the repository Actions secret `HF_TOKEN` with a write-enabled token; without it, the GitHub catalog still refreshes. The repository retains only the small scripts needed to verify published pack checksums and refresh the catalog.
-
-## Optional local translation
-
-Mynary can send selected text to a locally running [MTranServer](https://github.com/xxnuo/MTranServer). Enable **MTranServer translation** in settings, configure the local endpoint (normally `http://127.0.0.1:8989`), and use **Translate selected text with MTranServer**. The plugin sends text only when this command is used; it does not send vault content automatically.
-
-## What you will see
-
-Depending on the entry, Mynary can show:
-
-- definitions grouped by part of speech;
-- usage labels such as **Transitive**, **Intransitive**, **Countable**, and **Uncountable**;
-- examples, pronunciation, Wiktionary audio, translations, synonyms, antonyms, and etymology.
-
-Mynary keeps each entry exactly as Wiktionary presents it. It does not silently replace an inflected or ambiguous word with a guessed root. When Wiktionary provides a link such as `destroy` or `run`, Mynary keeps that link available in the result. In generated Markdown, those links become Obsidian links:
-
-```text
-third-person singular simple present indicative of [[destroy]]
-plural of [[run]]
-```
-
-Select a linked word to look it up directly in Mynary. The popup and dictionary sidebar use the same result renderer, so definitions, labels, examples, and Wiktionary links stay consistent between both views.
-
-## Translate text locally
-
-Mynary provides a separate translation action powered by a local [MTranServer](https://github.com/xxnuo/MTranServer). It does not send vault content automatically.
-
-1. Install and start MTranServer locally. The default endpoint is `http://127.0.0.1:8989`.
-2. Open **Settings → Mynary Dictionary** and enable **MTranServer translation**.
-3. Check the endpoint, optional bearer token, source-language mode, timeout, and default target language.
-4. Select text in a note and choose **Translate selected text with MTranServer**, or use **Translate selected text** in the dictionary sidebar.
-5. In the translation panel, choose a supported target language and select **Translate**.
-
-The lookup popup also includes **Translate this text**, while the sidebar includes **Translate current query**. The default target language is English (`en`). The source can use the current dictionary language or `auto` for MTranServer builds that support automatic detection.
-
-## Offline dictionary packs
-
-Open **Settings → Mynary Dictionary → Offline dictionary packs** and select **Choose language**. Mynary loads the public catalog from GitHub, with a Hugging Face fallback, lets you choose a language and pack, downloads only the pack files, verifies SHA-256 checksums, and stores the pack in the vault under `.mynary/dictionaries/<language>/`.
-
-Core packs contain definitions and pronunciation. You can install multiple bilingual packs for the same source language, including different translation directions such as English → Vietnamese and English → Japanese. Installing the same pack again updates that pack. If installed packs have no matching entry, Mynary falls back to Wiktionary when online.
-
-## Data and licenses
-
-Dictionary data is generated from Wiktionary extracts provided by Kaikki.org and is distributed according to the applicable source terms. Pack manifests identify the source snapshot and license. The repository includes the full license texts used by the data catalog:
-
-- [CC BY-SA 3.0](LICENSE-CC-BY-SA-3.0.txt)
-- [CC BY-SA 4.0](LICENSE-CC-BY-SA-4.0.txt)
-- [GNU Free Documentation License 1.3](LICENSE-GFDL-1.3.txt)
-
-The plugin source itself remains MIT-licensed. Do not add audio, source HTML, or third-party data unless its redistribution terms are documented in the relevant pack manifest.
-
-## Save what you learned
-
-The lookup action bar groups **Copy**, **Insert**, and **Create note** under **Save**. The icon actions refresh, translate, add a flashcard, or select an installed offline pack for that language. The offline-pack action is disabled when no matching pack is installed.
-
-You can manage this workflow under **Settings → Mynary Dictionary**:
-
-- **Note folder** — where new vocabulary notes go. Leave it empty to use the vault root.
-- **Filename template** — for example `{{word}}` or `{{language}}-{{word}}`.
-- **Default template** — the template selected first.
-- **Existing note behavior** — ask before replacing, replace automatically, or update only Mynary's managed section.
-
-## Study vocabulary
-
-Select **Add to vocabulary** on a lookup and choose a deck and flashcard template. Mynary creates one child flashcard per dictionary definition, with that definition's examples on its answer side. The built-in **Simple flashcard** puts the word and pronunciation on the front, and the meaning and examples on the back. New card titles include the dictionary language (for example, `hello [EN]`) so the same word looked up in different languages has separate notes. Cards are editable Markdown notes under the vocabulary and deck folders; you can move them or change their content. Mynary scans the folder on startup and when synced Markdown notes change; **Rescan now** is available in settings and **Rescan synced vocabulary notes** in the Command Palette. Review progress is stored in each note's `mynary-*` properties, so vault sync carries it between devices. Open **Vocabulary study** from the ribbon or Command Palette to browse decks, search and manage cards, and study due cards. Decks show New/Learning/Review counts. The Again/Hard/Good/Easy buttons show the next interval; new cards use short learning steps before graduating to day-based reviews. Set the vocabulary folder, suggested deck, default flashcard template, and daily new-card limit in settings. Anki export is a UTF-8 tab-separated text file with the deck column declared for import; CSV/JSON include deck and review status.
+Open **Vocabulary study** from the ribbon or **Mynary Dictionary: Open vocabulary study**. You can browse and filter decks, create nested decks, edit card notes, move cards, set their status, and remove cards from the study list while keeping their notes. Study due cards with **Again**, **Hard**, **Good**, or **Easy**; each button shows the next review interval. Set the daily new-card limit in **Settings → Mynary Dictionary → Vocabulary study**. Notes and review progress are stored in the vault and can sync with your vault sync service.
 
 ### Upgrade older flashcards
 
-Older Mynary flashcards can be reviewed from **Settings → Mynary Dictionary → Vocabulary study → Review old cards**, from the **Upgrade old cards** button in the Vocabulary study sidebar, or with **Mynary Dictionary: Upgrade active legacy flashcard** while viewing a card.
+Open **Review old cards** in the Vocabulary study settings or sidebar, or run **Mynary Dictionary: Upgrade active legacy flashcard** while viewing an old card. Select which notes to process and choose an action:
 
-- **Add language label to note title** renames selected notes to include their dictionary language, such as `hello [EN].md`, while leaving the card content unchanged. Mynary looks for language information in note properties, the old title, the filename, or its folder; it uses the current dictionary language as a fallback.
-- **Refresh and split by definition** looks up selected words in Wiktionary using the language detected for each old card, then converts them to the selected flashcard template. It creates a separate card for each definition and preserves the old Notes section when present. Select up to 10 notes per refresh run to limit requests.
+- **Add language label to note title** renames the note, for example to `hello [EN].md`, without changing its content. Mynary checks note properties, the old title, filename, and folder for the language; it uses the current dictionary language when it cannot find one.
+- **Refresh and split by definition** looks up each selected word in Wiktionary using its detected language, applies the selected flashcard template, and creates a separate card for each definition. It preserves a legacy Notes section when present. Refresh up to 10 notes per run to limit requests.
 
-The migration dialog lists the detected cards and lets you choose which ones to update. Cards already in the current format can receive a language label, but do not need to be refreshed.
+### Export to Anki
 
-To import into Anki, open Mynary **Settings → Vocabulary study → Create Anki import file**. In Anki desktop, select **File → Import**, choose the `.txt` file created in the vault root, keep the **Basic** note type, and review the preview before importing. The file declares tab separation, HTML answers, and the deck column, so Anki can map the front and back fields and create/use the matching decks. These are new-note exports; Anki's own import options determine how notes matching existing first fields are handled.
+In **Settings → Mynary Dictionary → Vocabulary study**, select **Create Anki import file**. In Anki, choose **File → Import**, select the exported `.txt` file, keep the **Basic** note type, and review the preview. The file declares tab-separated fields, HTML answers, and the deck column. Mynary also exports CSV and JSON. These are file exports; Mynary does not connect to AnkiWeb or read Anki's desktop collection.
 
-This sync reads Mynary Markdown flashcards from the vault. It does not read Anki's separate desktop collection or sync directly with AnkiWeb; use Anki's own sync for Anki cards, or import/export Mynary's text file through Anki's import dialog.
+## Offline dictionary packs
 
-Mynary creates missing folders automatically and replaces unsafe filename characters.
+Install packs in **Settings → Mynary Dictionary → Offline dictionary** with **Choose language** or **Install from URL**. Core packs provide definitions and pronunciation; bilingual packs add translations. Mynary verifies downloaded files against their SHA-256 checksums and stores them in the vault. Installed packs are checked before Wiktionary; missing entries fall back to Wiktionary when online.
 
-When you choose **Update section**, only the content between these markers is managed:
+Packs are published separately in the [Mynary Offline Dictionary dataset](https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary). Dictionary data comes from Wiktionary extracts supplied by [Kaikki.org](https://kaikki.org/). Data is distributed under the terms identified by each pack, including [CC BY-SA 3.0](LICENSE-CC-BY-SA-3.0.txt), [CC BY-SA 4.0](LICENSE-CC-BY-SA-4.0.txt), or [GFDL 1.3](LICENSE-GFDL-1.3.txt). The plugin source is MIT-licensed.
 
-```markdown
-<!-- mynary:lookup:start -->
-Generated dictionary content
-<!-- mynary:lookup:end -->
-```
+## Optional translation and speech
 
-Anything outside the markers is left alone. If the markers are not present, Mynary appends a new managed section.
+**Translation** uses a locally running [MTranServer](https://github.com/xxnuo/MTranServer). Enable it in **Settings → Mynary Dictionary → Translate**, set the local endpoint, and use **Translate selected text with MTranServer** or a translate action in the lookup UI. Text is sent only when you request a translation. You can set source and target languages, an optional bearer token, and a timeout.
 
-## Make the notes yours with templates
+**Speech** is off by default. Enable it in **Settings → Mynary Dictionary → TTS** and choose a runtime:
 
-Open **Settings → Mynary Dictionary → Manage templates** to create, edit, duplicate, delete, or restore templates. Note and flashcard templates are managed separately, and the live Markdown preview shows the rendered output. Flashcard templates have separate Front and Back preview panels. Variable names are case-insensitive, so `{{Title}}` is the same as `{{word}}`.
+- **Offline system voices** uses local voices exposed through Obsidian's Web Speech API. Mynary does not download voice data. Voice availability varies by device; some Android WebViews do not expose installed system voices. Use **Refresh voices** to check, or choose the server runtime if no voice is available.
+- **Local Supertonic server** sends speech text to the endpoint you configure, can generate audio files, and supports optional auto-generation during lookup. Install and start the server separately; the default endpoint is `http://127.0.0.1:7788/v1/tts`.
 
-Flashcard templates use paired markers to choose what appears on each side. The default template includes:
+Use **Mynary Dictionary: Read selected text with offline speech** or **Mod + Shift + R** to read selected text. Lookups can also play Wiktionary audio when provided.
 
-```markdown
-<!-- mynary:front:start -->
-{{word}}
-<!-- mynary:front:end -->
+## Privacy
 
-<!-- mynary:back:start -->
-{{meaningsMarkdown}}
-<!-- mynary:back:end -->
-```
-
-The template editor has buttons to insert each marker. The parser also accepts `question`/`prompt` as Front aliases, `answer`/`reverse` as Back aliases, and `begin`/`open` or `close`/`stop` in place of `start`/`end`.
-
-| Variable | What it contains |
-| --- | --- |
-| `{{word}}` / `{{Title}}` | The original word or phrase |
-| `{{language}}` | Wiktionary language code |
-| `{{sourceLanguage}}` | Source dictionary language code |
-| `{{targetLanguage}}` | Configured translation target language code |
-| `{{audio}}` | URL of the first available pronunciation recording |
-| `{{definition}}` | The first definition, including Wiktionary links |
-| `{{definitions}}` | All definitions, one per line, including Wiktionary links |
-| `{{definitionsMarkdown}}` | Definitions as a Markdown list with Wiktionary links |
-| `{{meaningsMarkdown}}` | Definitions grouped by part of speech and labels, with Wiktionary links |
-| `{{IPA}}` | Pronunciation information |
-| `{{partOfSpeech}}` | Part-of-speech values |
-| `{{example}}` | The first example |
-| `{{examples}}` | All examples, one per line |
-| `{{examplesMarkdown}}` | Examples as a Markdown list |
-| `{{translation}}` | Translations on one line |
-| `{{translations}}` | Translations, one per line |
-| `{{translationsMarkdown}}` | Translations grouped by sense |
-| `{{synonyms}}` | Synonyms separated by commas |
-| `{{antonyms}}` | Antonyms separated by commas |
-| `{{etymology}}` | Etymology text |
-| `{{source}}` | Source name |
-| `{{sourceUrl}}` | Link to the source entry |
-| `{{lookupDate}}` | Lookup date in `YYYY-MM-DD` format |
-
-You can hide optional sections when they are empty:
-
-```markdown
-{{#if IPA}}
-**IPA:** {{IPA}}
-{{/if}}
-```
-
-## Optional text-to-speech
-
-Dictionary lookup does not need Supertonic. It is an optional feature for generating pronunciation audio or reading selected text aloud.
-
-### Offline system voices
-
-1. Install an offline speech voice for the language in your operating system's speech or accessibility settings.
-2. In **Settings → Mynary Dictionary → TTS**, enable **offline speech** and keep **Speech runtime** set to **Offline system voices**.
-3. Select **Speak pronunciation** or use **Mod + Shift + R** to read selected text.
-
-Mynary uses the Web Speech API exposed by Obsidian and selects only voices marked as local. It downloads no voice, model, or runtime files, and system voices speak directly without creating reusable audio files. Voice availability depends on what the app exposes: on some Android devices, installing voice data does not make a voice available inside Obsidian. Select **Refresh voices** in TTS settings to check again. If no suitable local voice appears, use the local Supertonic runtime instead.
-
-Voice setup varies by platform:
-
-- **Windows:** Open **Settings → Time & language → Language & region**, open the language's options, and install **Text-to-speech**. See [Microsoft's language and speech setup](https://support.microsoft.com/en-us/windows/hardware/input-devices/manage-the-language-and-keyboard-input-layout-settings-in-windows).
-- **macOS:** Open **System Settings → Accessibility → Read & Speak → System voice**, then download a voice for the language. See [Apple's voice setup guide](https://support.apple.com/guide/mac-help/change-the-voice-your-mac-uses-to-speak-text-mchlp2290/mac).
-- **Linux:** Install a local speech engine such as eSpeak NG and Speech Dispatcher from your distribution's package manager, and ensure the desktop/webview exposes it. The exact packages vary by distribution; see the [eSpeak NG installation guide](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md).
-- **Android:** Open **Settings → Accessibility → Text-to-speech output**, choose an engine, and download its offline voice data. Obsidian's Android WebView may still not expose that voice through the Web Speech API.
-- **iOS/iPadOS:** Open **Settings → Accessibility → Spoken Content → Voices**, then download a voice for the language.
-
-After installing a voice, select **Refresh voices** in Mynary's TTS settings. Linux desktop environments differ in how they expose speech engines to apps; if Mynary still shows no local voices, use the local Supertonic server runtime instead.
-
-### Local server runtime
-
-Install Supertonic in a Python environment:
-
-```bash
-pip install supertonic
-supertonic serve --host 127.0.0.1 --port 7788
-```
-
-Select **Local Supertonic server** under **Settings → Mynary Dictionary → TTS → Speech runtime**. The default endpoint is `http://127.0.0.1:7788/v1/tts`.
-
-The server must be running whenever speech is generated. Supertonic supports fewer languages than Wiktionary; for unsupported languages, Mynary keeps the Wiktionary pronunciation and disables Supertonic generation.
-
-## Languages
-
-The language selector includes Arabic, Bulgarian, Chinese, Croatian, Czech, Danish, Dutch, English, Estonian, Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Latvian, Lithuanian, Norwegian, Polish, Portuguese, Romanian, Russian, Slovak, Slovenian, Spanish, Swedish, Thai, Turkish, Ukrainian, and Vietnamese.
-
-Wiktionary coverage varies by language and by entry. When in doubt, follow the source link in the result and verify the original entry.
-
-## Cache and privacy
-
-Mynary stores lookup results and recent searches in Obsidian's local plugin data. The defaults are:
-
-- cache lifetime: 7 days;
-- maximum cached entries: 100;
-- recent searches: 20 words;
-- request timeout: 15 seconds.
-
-There is no telemetry, advertising, analytics, or account system. Mynary reads Markdown notes inside the configured vocabulary folder to keep its flashcard list in sync; it does not index the rest of the vault. The word or phrase you look up, along with the selected language, is sent to the public Wiktionary API. Large entries may also request their public `/translations` subpage.
-
-Offline system voices use the voice selected by the operating system and do not send text to a network service. If Local server is enabled, text for speech generation is sent only to the endpoint configured in Mynary's settings.
+There is no telemetry, advertising, or account system. Online lookups send the searched word and selected language to Wiktionary; an installed pack can answer without a network lookup. Mynary scans Markdown files in the configured vocabulary folder to sync flashcards. It does not send vault content automatically. Translation text is sent to your configured MTranServer only on request; speech text goes to the configured Supertonic endpoint only when you use that runtime.
 
 ## Development
 
-Requirements: Node.js 18 or newer and npm. Install dependencies with `npm install`, then run the test, lint, and production build commands below before preparing a release.
+Requirements: Node.js 18+ and npm.
 
 ```bash
 npm install
@@ -257,20 +90,8 @@ npm run lint
 npm run build
 ```
 
-Use `npm run dev` for esbuild watch mode. The production build writes `main.js` to the plugin root. Include or update tests for changed lookup, cache, parser, or template behavior. Keep `node_modules/` and offline dictionary datasets out of commits; the pack catalog/checksum scripts are the only dataset-maintenance tools in this repository. Preserve local-first behavior and do not introduce telemetry or send vault content without an explicit user action. For user-facing text, use concise sentence case. Before preparing a release, run `npm test`, `npm run lint`, and `npm run build`. Pushing a version tag such as `1.3.1` starts the release workflow, which verifies the version and uploads `main.js`, `manifest.json`, and `styles.css` as release assets.
-
-The main source folders are:
-
-```text
-src/
-  main.ts          Plugin lifecycle, commands, and views
-  providers/       Wiktionary parsing and TTS runtimes
-  services/        Local cache management
-  templates/       Template rendering and note generation
-  ui/              Modals and dialogs
-  utils/           Selection and result formatting
-```
+`npm run dev` starts esbuild watch mode. Pushing a version tag such as `1.3.1` starts the release workflow, which runs tests, lint, and the production build, checks that the tag matches the manifest and package versions, then attaches `main.js`, `manifest.json`, and `styles.css` to the GitHub release.
 
 ## License
 
-Mynary is distributed under the MIT License. See [LICENSE](LICENSE).
+Mynary is distributed under the [MIT License](LICENSE).
