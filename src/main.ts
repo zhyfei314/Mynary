@@ -650,7 +650,7 @@ export default class MynaryPlugin extends Plugin {
 		if (!filePath && !(folder instanceof TFolder)) { new Notice(`No flashcard notes found in ${root}.`); return; }
 		const candidates: LegacyFlashcardCandidate[] = [];
 		const activeFile = filePath ? this.app.vault.getAbstractFileByPath(filePath) : undefined;
-		const files = filePath ? activeFile instanceof TFile ? [activeFile] : [] : markdownFilesIn(folder as TFolder);
+		const files = filePath ? activeFile instanceof TFile ? [activeFile] : [] : folder instanceof TFolder ? markdownFilesIn(folder) : [];
 		for (const file of files) {
 			const markdown = await this.app.vault.cachedRead(file);
 			const refreshable = isLegacyFlashcardNote(markdown);
@@ -1275,7 +1275,8 @@ function mergeLegacyFlashcardData(entry: DictionaryEntry, markdown: string): Dic
 		if (existingDefinition) existingDefinition.examples = uniqueText([...existingDefinition.examples, ...oldExamples]);
 		else meanings.push({ definitions: [{ text: originalMeaning, examples: uniqueText(oldExamples) }] });
 	} else if (oldExamples.length && meanings[0]?.definitions[0]) {
-		meanings[0].definitions[0]!.examples = uniqueText([...meanings[0].definitions[0]!.examples, ...oldExamples]);
+		const firstDefinition = meanings[0].definitions[0];
+		firstDefinition.examples = uniqueText([...firstDefinition.examples, ...oldExamples]);
 	}
 	if (!meanings.length && originalMeaning) meanings.push({ definitions: [{ text: originalMeaning, examples: uniqueText(oldExamples) }] });
 	const phonetics = ipa && !entry.phonetics.some((item) => item.text === ipa) ? [...entry.phonetics, { text: ipa }] : entry.phonetics;
