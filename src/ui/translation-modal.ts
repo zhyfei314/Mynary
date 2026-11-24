@@ -1,12 +1,12 @@
 import { App, MarkdownView, Modal, Notice } from 'obsidian';
 import type MynaryPlugin from '../main';
-import { MTRAN_LANGUAGE_OPTIONS } from '../settings';
+import { LANGUAGES, MTRAN_LANGUAGE_OPTIONS } from '../settings';
 
 export class TranslationModal extends Modal {
 	constructor(app: App, private readonly plugin: MynaryPlugin, private readonly text: string) { super(app); }
 
 	onOpen() {
-		this.titleEl.setText('Translate with MTranServer');
+		this.titleEl.setText('Translate selected text');
 		this.modalEl.addClass('mynary-translation-modal');
 		const sourceField = this.contentEl.createDiv('mynary-translation-field');
 		sourceField.createEl('label', { text: 'Source language' });
@@ -21,7 +21,7 @@ export class TranslationModal extends Modal {
 		const targetField = this.contentEl.createDiv('mynary-translation-field');
 		targetField.createEl('label', { text: 'Target language' });
 		const target = targetField.createEl('select');
-		const options = MTRAN_LANGUAGE_OPTIONS;
+		const options = this.plugin.settings.translationProvider === 'mtranserver' ? MTRAN_LANGUAGE_OPTIONS : LANGUAGES;
 		for (const language of options) target.createEl('option', { value: language.code, text: `${language.name} (${language.code})` });
 		const sourceCode = this.plugin.activeLanguage;
 		const savedTarget = this.plugin.settings.mtranTargetLanguages[sourceCode] ?? this.plugin.settings.mtranTargetLanguage;
@@ -33,17 +33,21 @@ export class TranslationModal extends Modal {
 		const insert = resultSection.createEl('button', { text: 'Insert into note', cls: 'mynary-translation-copy' });
 		insert.disabled = true;
 		let translatedText = '';
+		let requestSequence = 0;
 		const run = () => {
+			const requestId = ++requestSequence;
 			result.addClass('mynary-loading');
 			result.removeClass('mynary-error');
 			result.setText('Translating…');
 			insert.disabled = true;
-			void this.plugin.translate(this.text, target.value).then((translation) => {
+			void this.plugin.translate(this.text, target.value, source.value === 'auto' ? 'auto' : 'current').then((translation) => {
+				if (requestId !== requestSequence) return;
 				translatedText = translation;
 				insert.disabled = false;
 				result.removeClass('mynary-loading');
 				result.setText(translation);
 			}).catch((error: unknown) => {
+				if (requestId !== requestSequence) return;
 				result.removeClass('mynary-loading');
 				result.addClass('mynary-error');
 				result.setText(error instanceof Error ? error.message : 'Translation failed.');

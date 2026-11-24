@@ -13,7 +13,7 @@ describe('offline dictionary packs', () => {
 	it('loads an indexed entry without parsing the whole dictionary', async () => {
 		const entry = JSON.stringify({ word: 'hello', phonetics: [{ text: 'həˈləʊ' }], meanings: [{ partOfSpeech: 'noun', definitions: [{ text: 'A greeting.' }] }] });
 		const provider = new OfflineDictionaryProvider(adapter({
-			'dict/manifest.json': JSON.stringify({ format: 'mynary-pack-v1', id: 'en-core', language: 'en', name: 'English Core', version: '1', entryCount: 1, indexFile: 'index.json', entriesFile: 'entries.jsonl' }),
+			'dict/manifest.json': JSON.stringify({ format: 'mynary-pack-v1', id: 'en-core', kind: 'core', language: 'en', name: 'English Core', version: '1', entryCount: 1, indexFile: 'index.json', entriesFile: 'entries.jsonl' }),
 			'dict/index.json': JSON.stringify([{ word: 'hello', offset: 0, length: new TextEncoder().encode(entry).length }]),
 			'dict/entries.jsonl': entry,
 		}), 'dict');
@@ -26,7 +26,7 @@ describe('offline dictionary packs', () => {
 
 	it('returns no result for an unknown word', async () => {
 		const provider = new OfflineDictionaryProvider(adapter({
-			'dict/manifest.json': JSON.stringify({ format: 'mynary-pack-v1', id: 'en-core', language: 'en', name: 'English Core', version: '1', entryCount: 0, indexFile: 'index.json', entriesFile: 'entries.jsonl' }),
+			'dict/manifest.json': JSON.stringify({ format: 'mynary-pack-v1', id: 'en-core', kind: 'core', language: 'en', name: 'English Core', version: '1', entryCount: 0, indexFile: 'index.json', entriesFile: 'entries.jsonl' }),
 			'dict/index.json': '[]',
 		}), 'dict');
 
@@ -42,5 +42,19 @@ describe('offline dictionary packs', () => {
 		}), 'dict');
 
 		await expect(provider.lookup('hello')).resolves.toMatchObject({ translations: [{ word: 'xin chào', languageCode: 'vi' }] });
+	});
+
+	it('exposes bilingual gloss definitions as target-language translations', async () => {
+		const entry = JSON.stringify({ word: 'hello', meanings: [{ definitions: [{ sense: 'xin chào' }, { text: 'chào bạn' }] }] });
+		const provider = new OfflineDictionaryProvider(adapter({
+			'dict/manifest.json': JSON.stringify({ format: 'mynary-pack-v1', id: 'en-vi-bilingual', kind: 'bilingual', language: 'en', targetLanguage: 'vi', name: 'English-Vietnamese', version: '2026-09-09', entryCount: 1, indexFile: 'index.json', entriesFile: 'entries.jsonl' }),
+			'dict/index.json': JSON.stringify([{ word: 'hello', offset: 0, length: new TextEncoder().encode(entry).length }]),
+			'dict/entries.jsonl': entry,
+		}), 'dict');
+
+		await expect(provider.lookup('hello')).resolves.toMatchObject({ translations: [
+			{ word: 'xin chào', languageCode: 'vi' },
+			{ word: 'chào bạn', languageCode: 'vi' },
+		] });
 	});
 });

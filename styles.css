@@ -83,6 +83,10 @@
 .mynary-modal-field label { color: var(--text-muted); font-size: var(--font-ui-small); font-weight: var(--font-semibold); }
 .mynary-modal-field input, .mynary-modal-field select,
 .mynary-pack-modal .modal-content > input, .mynary-pack-modal .modal-content > select { box-sizing: border-box; display: block; margin: 0; max-width: 100%; min-width: 0; width: 100%; }
+.mynary-pack-filters { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 12px 0; }
+.mynary-pack-filters input, .mynary-pack-filters select { box-sizing: border-box; max-width: 100%; min-width: 0; width: 100%; }
+.mynary-pack-filters input { grid-column: 1 / -1; }
+.mynary-pack-catalog-status { color: var(--text-muted); font-size: var(--font-ui-small); margin-top: 8px; }
 .mynary-vocabulary-modal .mynary-modal-actions, .mynary-pack-modal .mynary-modal-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin-top: 18px; }
 .mynary-vocabulary-modal .mynary-modal-actions button, .mynary-pack-modal .mynary-modal-actions button { min-height: 36px; min-width: 88px; }
 .mynary-template-select { min-width: 220px; max-width: 100%; }

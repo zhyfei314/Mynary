@@ -22,13 +22,20 @@ export class OfflineDictionaryProvider {
 		const manifestPath = joinPath(this.root, 'manifest.json');
 		if (!(await this.adapter.exists(manifestPath))) return undefined;
 		const manifest = JSON.parse(await this.adapter.read(manifestPath)) as Partial<DictionaryPackManifest>;
-		if (manifest.format !== 'mynary-pack-v1' || typeof manifest.id !== 'string' || typeof manifest.language !== 'string') {
+		if (manifest.format !== 'mynary-pack-v1' || typeof manifest.id !== 'string' || typeof manifest.language !== 'string'
+			|| (manifest.kind !== 'core' && manifest.kind !== 'bilingual')
+			|| (manifest.kind === 'bilingual' && typeof manifest.targetLanguage !== 'string')) {
 			throw new Error('Invalid Mynary dictionary pack manifest.');
 		}
 		const indexFile = typeof manifest.indexFile === 'string' ? manifest.indexFile : 'index.json';
 		const entriesFile = typeof manifest.entriesFile === 'string' ? manifest.entriesFile : 'entries.jsonl';
+		if (!isSafeAssetName(indexFile) || !isSafeAssetName(entriesFile) || (manifest.compressed !== undefined && typeof manifest.compressed !== 'boolean')) {
+			throw new Error('Invalid Mynary dictionary pack assets.');
+		}
 		const index = JSON.parse(await this.adapter.read(joinPath(this.root, indexFile))) as unknown;
-		if (!Array.isArray(index) || !index.every(isIndexItem)) throw new Error('Invalid Mynary dictionary pack index.');
+		if (!Array.isArray(index) || !index.every(isIndexItem) || (Number.isInteger(manifest.entryCount) && index.length !== manifest.entryCount)) {
+			throw new Error('Invalid Mynary dictionary pack index.');
+		}
 		this.manifest = { ...manifest, indexFile, entriesFile } as DictionaryPackManifest;
 		this.index = index;
 		return this.manifest;
@@ -45,9 +52,14 @@ export class OfflineDictionaryProvider {
 		if (!item) return undefined;
 		this.entriesBuffer ??= await readEntries(this.adapter, joinPath(this.root, manifest.entriesFile), manifest.compressed === true);
 		const { offset, length } = item;
+		if (offset + length > this.entriesBuffer.length) throw new Error('Dictionary pack index points outside the entries file.');
 		const bytes = this.entriesBuffer.slice(offset, offset + length);
 		const payload = JSON.parse(new TextDecoder().decode(bytes)) as OfflineEntryPayload;
 		return toDictionaryEntry(payload, word, manifest);
+	}
+
+	releaseEntriesBuffer() {
+		this.entriesBuffer = undefined;
 	}
 }
 
@@ -72,6 +84,13 @@ function toDictionaryEntry(payload: OfflineEntryPayload, requestedWord: string, 
 		}),
 	}));
 	const translations: Translation[] = (payload.translations ?? []).filter((item) => item && typeof item.word === 'string').map((item) => ({ ...item }));
+	if (manifest.kind === 'bilingual' && manifest.targetLanguage) {
+		for (const definition of meanings.flatMap((meaning) => meaning.definitions)) {
+			if (!translations.some((translation) => translation.word === definition.text && translation.languageCode === manifest.targetLanguage)) {
+				translations.push({ word: definition.text, languageCode: manifest.targetLanguage, sense: definition.text });
+			}
+		}
+	}
 	return {
 		word: payload.word || requestedWord,
 		language: manifest.language,
@@ -101,7 +120,7 @@ function binarySearch(items: PackIndexItem[], target: string) {
 }
 
 function normalizeWord(word: string) {
-	return word.trim().normalize('NFKC').toLocaleLowerCase();
+	return word.trim().normalize('NFKC').toLocaleLowerCase('und');
 }
 
 function isIndexItem(value: unknown): value is PackIndexItem {
@@ -109,7 +128,11 @@ function isIndexItem(value: unknown): value is PackIndexItem {
 	const item = value as Partial<PackIndexItem>;
 	const offset = item.offset;
 	const length = item.length;
-	return typeof item.word === 'string' && typeof offset === 'number' && Number.isInteger(offset) && offset >= 0 && typeof length === 'number' && Number.isInteger(length) && length > 0;
+	return typeof item.word === 'string' && typeof offset === 'number' && Number.isSafeInteger(offset) && offset >= 0 && typeof length === 'number' && Number.isSafeInteger(length) && length > 0;
+}
+
+function isSafeAssetName(value: string) {
+	return Boolean(value) && !value.includes('..') && !/[\\/]/u.test(value);
 }
 
 async function readEntries(adapter: DataAdapter, path: string, compressed: boolean) {

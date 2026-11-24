@@ -72,7 +72,15 @@ export class WiktionaryProvider {
 		const offlinePacks = offlineResult ? (Array.isArray(offlineResult) ? offlineResult : [offlineResult]) : [];
 		let combined: DictionaryEntry | undefined;
 		for (const pack of offlinePacks) {
-			const entry = await pack.lookup(word);
+			let entry: DictionaryEntry | undefined;
+			try {
+				entry = await pack.lookup(word);
+			} catch {
+				// A damaged pack must not prevent another pack or online Wiktionary from answering.
+				continue;
+			} finally {
+				pack.releaseEntriesBuffer();
+			}
 			if (!entry || entry.language !== language) continue;
 			if (!combined) combined = entry;
 			else {

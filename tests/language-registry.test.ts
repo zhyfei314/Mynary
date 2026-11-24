@@ -16,7 +16,7 @@ describe('Wiktionary language registry', () => {
 	});
 
 	it.each(WIKTIONARY_LANGUAGES)('has complete metadata for %s', (language) => {
-		expect(language.code).toMatch(/^[a-z]{2}$/);
+		expect(language.code).toMatch(/^[a-z]{2,3}$/);
 		expect(language.displayName).toBeTruthy();
 		expect(language.nativeName).toBeTruthy();
 		expect(language.wiktionarySubdomain).toBe(`${language.code}.wiktionary.org`);

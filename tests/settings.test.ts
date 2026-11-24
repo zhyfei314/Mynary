@@ -46,6 +46,23 @@ describe('settings normalization', () => {
 		expect(settings.ttsRuntime).toBe('server');
 	});
 
+	it('migrates enabled MTranServer settings without losing its endpoint or credentials', () => {
+		const settings = normalizeSettings({ mtranServerEnabled: true, mtranServerEndpoint: 'http://localhost:9000/', mtranServerToken: 'legacy-token', mtranServerTimeoutMs: 24000, mtranSourceLanguage: 'auto', mtranTargetLanguage: 'zh' });
+		expect(settings.translationEnabled).toBe(true);
+		expect(settings.translationProvider).toBe('mtranserver');
+		expect(settings.mtranServerEndpoint).toBe('http://localhost:9000');
+		expect(settings.mtranServerToken).toBe('legacy-token');
+		expect(settings.mtranServerTimeoutMs).toBe(24000);
+		expect(settings.mtranSourceLanguage).toBe('auto');
+		expect(settings.mtranTargetLanguage).toBe('zh');
+	});
+
+	it('prefers explicit new translation settings over legacy MTran values', () => {
+		const settings = normalizeSettings({ translationEnabled: false, translationProvider: 'libretranslate', mtranServerEnabled: true });
+		expect(settings.translationEnabled).toBe(false);
+		expect(settings.translationProvider).toBe('libretranslate');
+	});
+
 	it('migrates legacy Flashcard templates into the flashcard template group', () => {
 		const settings = normalizeSettings({ templates: [
 			{ id: 'basic', name: 'Basic', content: '# {{word}}' },

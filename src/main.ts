@@ -17,7 +17,7 @@ import {
 	WorkspaceLeaf,
 } from 'obsidian';
 import { DictionaryEntry, DictionaryPackManifest } from './types';
-import { DictionarySettings, isRecord, migrateTemplates, MTRAN_LANGUAGE_OPTIONS, normalizeSettings } from './settings';
+import { DictionarySettings, isRecord, migrateTemplates, LANGUAGES, MTRAN_LANGUAGE_OPTIONS, normalizeSettings } from './settings';
 import { WiktionaryProvider } from './providers/wiktionary';
 import type { WiktionaryHttpResponse, WiktionaryRequester } from './providers/wiktionary';
 import { CacheManager } from './services/cache';
@@ -26,6 +26,8 @@ import type { SupertonicRequester } from './providers/supertonic';
 import { hasSpeechSynthesis, SystemSpeechProvider, systemSpeechSetupInstructions } from './providers/system-speech';
 import { OfflineDictionaryProvider } from './providers/offline-dictionary';
 import { MTranServerProvider } from './providers/mtranserver';
+import { LibreTranslateProvider, OpenAiCompatibleTranslationProvider } from './providers/translation-providers';
+import type { TranslationRequester } from './providers/translation-providers';
 import { AssetManager } from './services/asset-manager';
 import { renderEntry } from './utils/format';
 import { createVocabularyNote, renderTemplate } from './templates/template';
@@ -46,8 +48,8 @@ import { getLegacyFlashcardLanguage, getLegacyFlashcardWord, hasLanguageLabelInF
 export const VIEW_TYPE_DICTIONARY = 'mynary-dictionary-view';
 const CACHE_FORMAT_VERSION = 'v7';
 const PACK_CATALOG_URLS = [
-	'https://raw.githubusercontent.com/zhyfei314/Mynary/master/dictionary-catalog/catalog.json',
 	'https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/catalog.json',
+	'https://raw.githubusercontent.com/zhyfei314/Mynary/master/dictionary-catalog/catalog.json',
 ];
 const requestWiktionary: WiktionaryRequester = async (url): Promise<WiktionaryHttpResponse> => {
 	const response = await requestUrl(url);
@@ -60,37 +62,63 @@ const requestSupertonic: SupertonicRequester = async (url, body) => {
 const requestMTranServer = async (url: string, body: string, token: string) => {
 	const headers: Record<string, string> = { 'content-type': 'application/json' };
 	if (token.trim()) headers.authorization = `Bearer ${token.trim()}`;
-	const response = await requestUrl({ url, method: 'POST', headers, body });
+	const response = await requestUrl({ url, method: 'POST', headers, body, throw: false });
+	return { status: response.status, json: response.json as unknown };
+};
+const requestTranslation: TranslationRequester = async (url, body, headers) => {
+	const response = await requestUrl({ url, method: 'POST', headers, body, throw: false });
 	return { status: response.status, json: response.json as unknown };
 };
 
+function translationProviderName(provider: DictionarySettings['translationProvider'], protocol: DictionarySettings['openAiCompatibleProtocol']) {
+	if (provider === 'mtranserver') return 'MTranServer';
+	if (provider === 'libretranslate') return 'LibreTranslate';
+	return protocol === 'plamo-3-completions' ? 'PLaMo 3' : 'OpenAI-compatible server';
+}
+
 async function downloadPackAsset(url: string, notice: Notice, fileName: string) {
 	const chunkSize = 16 * 1024 * 1024;
-	const chunks: Uint8Array[] = [];
-	let received = 0;
-	let total = 0;
-	while (true) {
-		let response;
+	const fetchRange = async (start: number) => {
 		try {
-			response = await requestUrl({ url, headers: { Range: `bytes=${received}-${received + chunkSize - 1}` }, throw: false });
+			return await requestUrl({ url, headers: { Range: `bytes=${start}-${start + chunkSize - 1}` }, throw: false });
 		} catch {
 			throw new Error(`Could not connect to the dictionary file host while downloading ${fileName}. Check your internet connection and pack URL.`);
 		}
-		if (response.status < 200 || response.status >= 300) throw new Error(`Could not download ${fileName} (HTTP ${response.status}).`);
-		const chunk = new Uint8Array(response.arrayBuffer);
-		const contentRange = Object.entries(response.headers).find(([key]) => key.toLowerCase() === 'content-range')?.[1];
-		const match = contentRange?.match(/^bytes\s+(\d+)-(\d+)\/(\d+)$/iu);
-		if (response.status === 206 && match) total = Number(match[3]);
-		chunks.push(chunk);
-		received += chunk.byteLength;
-		const progress = total ? ` ${Math.min(100, Math.round((received / total) * 100))}% (${formatBytes(received)} / ${formatBytes(total)})` : ` ${formatBytes(received)}`;
-		notice.setMessage(`Downloading ${fileName}${progress}`);
-		if (response.status !== 206 || !match || received >= total || chunk.byteLength === 0) break;
+	};
+	let response = await fetchRange(0);
+	if (response.status < 200 || response.status >= 300) throw new Error(`Could not download ${fileName} (HTTP ${response.status}).`);
+	if (response.status !== 206) {
+		const size = response.arrayBuffer.byteLength;
+		notice.setMessage(`Downloading ${fileName} · ${formatBytes(size)}`);
+		return response.arrayBuffer;
 	}
-	const bytes = new Uint8Array(received);
-	let offset = 0;
-	for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-	return bytes.buffer;
+	const getRange = (value: typeof response, expectedStart: number) => {
+		const contentRange = Object.entries(value.headers).find(([key]) => key.toLowerCase() === 'content-range')?.[1];
+		const match = contentRange?.match(/^bytes\s+(\d+)-(\d+)\/(\d+)$/iu);
+		if (!match || Number(match[1]) !== expectedStart) throw new Error(`The file host returned an invalid byte range for ${fileName}.`);
+		const start = Number(match[1]);
+		const end = Number(match[2]);
+		const total = Number(match[3]);
+		const bytes = new Uint8Array(value.arrayBuffer);
+		if (!Number.isSafeInteger(total) || total < 1 || end < start || bytes.byteLength !== end - start + 1) throw new Error(`The file host returned an invalid size for ${fileName}.`);
+		return { start, end, total, bytes };
+	};
+	let range = getRange(response, 0);
+	const result = new Uint8Array(range.total);
+	result.set(range.bytes, 0);
+	let received = range.bytes.byteLength;
+	notice.setMessage(`Downloading ${fileName} · ${Math.min(100, Math.round((received / range.total) * 100))}% (${formatBytes(received)} / ${formatBytes(range.total)})`);
+	while (received < range.total) {
+		response = await fetchRange(received);
+		if (response.status !== 206) throw new Error(`The file host stopped supporting ranged downloads for ${fileName}.`);
+		range = getRange(response, received);
+		if (range.total !== result.byteLength) throw new Error(`The file size changed while downloading ${fileName}.`);
+		result.set(range.bytes, received);
+		received += range.bytes.byteLength;
+		if (!range.bytes.byteLength) throw new Error(`The file host returned an empty range for ${fileName}.`);
+		notice.setMessage(`Downloading ${fileName} · ${Math.min(100, Math.round((received / range.total) * 100))}% (${formatBytes(received)} / ${formatBytes(range.total)})`);
+	}
+	return result.buffer;
 }
 
 function formatBytes(bytes: number) {
@@ -143,6 +171,8 @@ export default class MynaryPlugin extends Plugin {
 	private historySave: Promise<void> = Promise.resolve();
 	private vocabularyImportQueue: Promise<void> = Promise.resolve();
 	private vocabularySyncTimers = new Map<string, number>();
+	private offlineProviderLanguage?: string;
+	private offlinePackProviders = new Map<string, OfflineDictionaryProvider>();
 
 	async onload() {
 		this.register(() => window.speechSynthesis?.cancel());
@@ -207,7 +237,7 @@ export default class MynaryPlugin extends Plugin {
 			if (!editor.getSelection().trim()) return;
 			menu.addItem((item) => item.setTitle('Lookup').setIcon('search').onClick(() => void this.lookupSelected(editor)));
 			menu.addItem((item) => item.setTitle('Read with Supertonic').setIcon('volume-2').onClick(() => void this.readSelected(editor)));
-			menu.addItem((item) => item.setTitle('Translate with MTranServer').setIcon('languages').onClick(() => void this.translateSelected(editor)));
+			menu.addItem((item) => item.setTitle('Translate selected text').setIcon('languages').onClick(() => void this.translateSelected(editor)));
 		}));
 		this.registerDomEvent(document, 'dblclick', (event) => {
 			if (!this.settings.doubleClickLookup) return;
@@ -230,7 +260,7 @@ export default class MynaryPlugin extends Plugin {
 		});
 		this.addCommand({
 			id: 'translate-selected-text',
-			name: 'Translate selected text with MTranServer',
+			name: 'Translate selected text',
 			icon: 'languages',
 			editorCallback: (editor) => void this.translateSelected(editor),
 		});
@@ -282,20 +312,33 @@ export default class MynaryPlugin extends Plugin {
 
 	rebuildProvider() {
 		this.clearReadAudioCache();
+		this.offlineProviderLanguage = undefined;
+		this.offlinePackProviders.clear();
 		const tts = this.settings.ttsEnabled
 			? this.settings.ttsRuntime === 'server'
 				? new SupertonicProvider(requestSupertonic, this.settings.supertonicEndpoint, this.settings.supertonicVoice, this.settings.supertonicSteps, this.settings.supertonicSpeed)
 				: new SystemSpeechProvider()
 			: undefined;
 		const offline = this.settings.offlineDictionaryEnabled
-			? async (language: string) => (await this.getInstalledDictionaryPacks())
-				.filter((pack) => pack.language === language)
-				.map((pack) => new OfflineDictionaryProvider(this.app.vault.adapter, pack.storagePath))
+			? async (language: string) => {
+				if (this.offlineProviderLanguage !== language) {
+					this.offlinePackProviders.clear();
+					this.offlineProviderLanguage = language;
+				}
+				return (await this.getInstalledDictionaryPacks())
+					.filter((pack) => pack.filesReady && pack.language === language)
+					.map((pack) => {
+						let provider = this.offlinePackProviders.get(pack.storagePath);
+						if (!provider) {
+							provider = new OfflineDictionaryProvider(this.app.vault.adapter, pack.storagePath);
+							this.offlinePackProviders.set(pack.storagePath, provider);
+						}
+						return provider;
+					});
+			}
 			: undefined;
 		this.provider = new WiktionaryProvider(requestWiktionary, tts, this.settings.ttsAutoGenerate, offline);
 	}
-
-	dictionaryPackPath(packId: string) { return `.mynary/dictionaries/${packId}`; }
 
 	async installDictionaryPackFromUrl(onComplete?: () => void) {
 		const manifestUrl = await requestDictionaryManifestUrl(this.app);
@@ -305,24 +348,28 @@ export default class MynaryPlugin extends Plugin {
 
 	async installDictionaryPackFromCatalog(onComplete?: () => void) {
 		try {
-			let response: Awaited<ReturnType<typeof requestUrl>> | undefined;
-			let lastError: unknown;
-			for (const catalogUrl of PACK_CATALOG_URLS) {
-				try {
-					response = await requestUrl(catalogUrl);
-					break;
-				} catch (error) {
-					lastError = error;
-				}
-			}
-			if (!response) throw lastError instanceof Error ? lastError : new Error('Could not load the dictionary catalog.');
-			const catalog = response.json as { packs?: CatalogPackOption[] };
-			const packs = (catalog.packs ?? []).filter((pack) => typeof pack.manifestUrl === 'string' && typeof pack.language === 'string');
-			if (!packs.length) throw new Error('The dictionary catalog is empty.');
-			new DictionaryPackCatalogModal(this.app, packs, (url) => void this.installDictionaryPack(url, onComplete)).open();
+			const catalog = await this.getDictionaryPackCatalog();
+			const installed = await this.getInstalledDictionaryPacks();
+			new DictionaryPackCatalogModal(this.app, catalog, installed, (url) => this.installDictionaryPack(url, onComplete)).open();
 		} catch (error) {
 			new Notice(error instanceof Error ? error.message : 'Could not load the dictionary catalog.');
 		}
+	}
+
+	async getDictionaryPackCatalog() {
+		let lastError: unknown;
+		for (const catalogUrl of PACK_CATALOG_URLS) {
+			try {
+				const response = await requestUrl(catalogUrl);
+				const catalog = response.json as Partial<DictionaryPackCatalog>;
+				if (catalog.format !== 'mynary-pack-catalog-v1' || !Array.isArray(catalog.packs)) throw new Error('The dictionary catalog has an unsupported format.');
+				const packs = catalog.packs.filter(isCatalogPackOption);
+				return { format: catalog.format, generatedAt: typeof catalog.generatedAt === 'string' ? catalog.generatedAt : '', source: catalogUrl, packs };
+			} catch (error) {
+				lastError = error;
+			}
+		}
+		throw lastError instanceof Error ? lastError : new Error('Could not load the dictionary catalog.');
 	}
 
 	private async installDictionaryPack(manifestUrl: string, onComplete?: () => void) {
@@ -332,20 +379,32 @@ export default class MynaryPlugin extends Plugin {
 			new Notice('Downloading dictionary pack manifest…');
 			const manifestResponse = await requestUrl(validatedManifestUrl);
 			const manifest = manifestResponse.json as Partial<DictionaryPackManifest>;
-		if (manifest.format !== 'mynary-pack-v1' || (manifest.kind !== 'core' && manifest.kind !== 'bilingual') || typeof manifest.language !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.language) || (manifest.kind === 'bilingual' && (typeof manifest.targetLanguage !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.targetLanguage))) || typeof manifest.indexFile !== 'string' || !isPackAssetFilename(manifest.indexFile) || typeof manifest.entriesFile !== 'string' || !isPackAssetFilename(manifest.entriesFile) || typeof manifest.indexSha256 !== 'string' || !/^[a-f\d]{64}$/iu.test(manifest.indexSha256) || typeof (manifest.entriesSha256 ?? manifest.sha256) !== 'string' || !/^[a-f\d]{64}$/iu.test((manifest.entriesSha256 ?? manifest.sha256)!)) throw new Error('The URL is not a valid Mynary pack manifest or is missing required SHA-256 checksums.');
+			if (!isValidDictionaryPackManifest(manifest)) throw new Error('The URL is not a valid Mynary pack manifest or is missing required fields or SHA-256 checksums.');
 			const baseUrl = new URL('.', validatedManifestUrl).toString();
 			downloadNotice = new Notice(`Preparing ${manifest.name ?? 'dictionary pack'}…`, 0);
 			const fetchAsset = (file: string) => downloadPackAsset(new URL(file, baseUrl).toString(), downloadNotice!, file);
 			const index = await fetchAsset(manifest.indexFile);
 			const entries = await fetchAsset(manifest.entriesFile);
 			const manager = new AssetManager(this.app.vault.adapter);
-			const packId = typeof manifest.id === 'string' && /^[a-z0-9][a-z0-9._-]*$/u.test(manifest.id) ? manifest.id : `${manifest.language}-${manifest.targetLanguage ?? 'core'}`;
-			const root = this.dictionaryPackPath(packId);
-			const previousPaths = (await this.getInstalledDictionaryPacks()).filter((pack) => pack.id === packId && pack.storagePath !== root).map((pack) => pack.storagePath);
-			await manager.install({ id: `${packId}-index`, url: 'inline', destination: `${root}/${manifest.indexFile}`, sha256: manifest.indexSha256 }, async () => index);
-			await manager.install({ id: `${packId}-entries`, url: 'inline', destination: `${root}/${manifest.entriesFile}`, sha256: manifest.entriesSha256 ?? manifest.sha256 }, async () => entries);
-			await this.app.vault.adapter.write(`${root}/manifest.json`, JSON.stringify(manifest, null, 2));
-			for (const previousPath of previousPaths) await this.app.vault.adapter.rmdir(previousPath, true);
+			const packId = manifest.id;
+			const suffix = Math.random().toString(36).slice(2, 9);
+			const stagingRoot = `.mynary/dictionary-staging/${packId}-${Date.now()}-${suffix}`;
+			const installedRoot = `.mynary/dictionaries/${packId}-${manifest.version}-${suffix}`;
+			const previousPaths = (await this.getInstalledDictionaryPacks()).filter((pack) => pack.id === packId).map((pack) => pack.storagePath);
+			try {
+				await manager.install({ id: `${packId}-index`, url: 'inline', destination: `${stagingRoot}/${manifest.indexFile}`, sha256: manifest.indexSha256 }, async () => index);
+				await manager.install({ id: `${packId}-entries`, url: 'inline', destination: `${stagingRoot}/${manifest.entriesFile}`, sha256: manifest.entriesSha256 ?? manifest.sha256 }, async () => entries);
+				await this.app.vault.adapter.write(`${stagingRoot}/manifest.json`, JSON.stringify(manifest, null, 2));
+				const dictionaryRoot = '.mynary/dictionaries';
+				if (!(await this.app.vault.adapter.exists(dictionaryRoot))) await this.app.vault.adapter.mkdir(dictionaryRoot);
+				await this.app.vault.adapter.rename(stagingRoot, installedRoot);
+			} catch (error) {
+				if (await this.app.vault.adapter.exists(stagingRoot)) await this.app.vault.adapter.rmdir(stagingRoot, true);
+				throw error;
+			}
+			for (const previousPath of previousPaths) {
+				try { await this.app.vault.adapter.rmdir(previousPath, true); } catch { /* Keep a valid new pack if old-file cleanup fails. */ }
+			}
 			this.rebuildProvider();
 			await this.cache.clear();
 			downloadNotice.hide();
@@ -362,20 +421,26 @@ export default class MynaryPlugin extends Plugin {
 		const root = '.mynary/dictionaries';
 		if (!(await this.app.vault.adapter.exists(root))) return [];
 		const listing = await this.app.vault.adapter.list(root);
-		const packs: Array<DictionaryPackManifest & { storagePath: string }> = [];
+		const packs: Array<DictionaryPackManifest & { storagePath: string; filesReady: boolean }> = [];
 		for (const folder of listing.folders) {
 			try {
 				const manifest = JSON.parse(await this.app.vault.adapter.read(`${folder}/manifest.json`)) as DictionaryPackManifest;
-				if (manifest.format === 'mynary-pack-v1' && typeof manifest.language === 'string') packs.push({ ...manifest, storagePath: folder });
+				if (manifest.format !== 'mynary-pack-v1' || typeof manifest.id !== 'string' || typeof manifest.language !== 'string') continue;
+				const indexFile = typeof manifest.indexFile === 'string' ? manifest.indexFile : 'index.json';
+				const entriesFile = typeof manifest.entriesFile === 'string' ? manifest.entriesFile : 'entries.jsonl';
+				const safeAssets = isPackAssetFilename(indexFile) && isPackAssetFilename(entriesFile);
+				const filesReady = safeAssets && await this.app.vault.adapter.exists(`${folder}/${indexFile}`) && await this.app.vault.adapter.exists(`${folder}/${entriesFile}`);
+				packs.push({ ...manifest, indexFile, entriesFile, storagePath: folder, filesReady });
 			} catch {
 				// Ignore incomplete or manually removed packs.
 			}
 		}
-		return packs.sort((left, right) => `${left.language}-${left.targetLanguage ?? ''}-${left.id}`.localeCompare(`${right.language}-${right.targetLanguage ?? ''}-${right.id}`));
+		return packs.sort((left, right) => `${left.language}-${left.targetLanguage ?? ''}-${left.id}`.localeCompare(`${right.language}-${right.targetLanguage ?? ''}-${right.id}`)
+			|| right.version.localeCompare(left.version));
 	}
 
 	async hasInstalledOfflinePack(language = this.activeLanguage) {
-		return this.settings.offlineDictionaryEnabled !== false && (await this.getInstalledDictionaryPacks()).some((pack) => pack.language === language);
+		return this.settings.offlineDictionaryEnabled !== false && (await this.getInstalledDictionaryPacks()).some((pack) => pack.filesReady && pack.language === language);
 	}
 
 	async lookupFromOfflinePack(word: string, pack: DictionaryPackManifest & { storagePath: string }) {
@@ -404,7 +469,7 @@ export default class MynaryPlugin extends Plugin {
 
 	async removeDictionaryPack(packId: string, storagePath?: string) {
 		if (!/^[a-z0-9][a-z0-9._-]*$/u.test(packId)) return;
-		const path = storagePath ?? this.dictionaryPackPath(packId);
+		const path = storagePath ?? `.mynary/dictionaries/${packId}`;
 		if (await this.app.vault.adapter.exists(path)) await this.app.vault.adapter.rmdir(path, true);
 		this.rebuildProvider();
 		await this.cache.clear();
@@ -413,27 +478,22 @@ export default class MynaryPlugin extends Plugin {
 
 	async updateDictionaryPack(installed: DictionaryPackManifest) {
 		try {
-			let catalogResponse: Awaited<ReturnType<typeof requestUrl>> | undefined;
-			for (const catalogUrl of PACK_CATALOG_URLS) {
-				try { catalogResponse = await requestUrl(catalogUrl); break; } catch { /* Try the next public catalog mirror. */ }
-			}
-			if (!catalogResponse) throw new Error('Could not load the dictionary catalog to check for updates.');
-			const packs = (catalogResponse.json as { packs?: Array<CatalogPackOption> }).packs ?? [];
+			const { packs } = await this.getDictionaryPackCatalog();
 			const latest = packs.find((pack) => pack.id === installed.id);
-			if (!latest?.manifestUrl || latest.version === installed.version) { new Notice(`${installed.name} is up to date.`); return; }
+			if (!latest?.manifestUrl) { new Notice(`${installed.name} is no longer listed in the current catalog. You can keep using or remove the installed copy.`); return; }
+			if (!isPackUpdateAvailable(installed, latest)) { new Notice(`${installed.name} is up to date.`); return; }
 			await this.installDictionaryPack(latest.manifestUrl);
 		} catch (error) {
 			new Notice(error instanceof Error ? error.message : 'Could not check for dictionary updates.');
 		}
 	}
 
-	async testMTranServerConnection() {
+	async testTranslationConnection() {
 		try {
-			const provider = new MTranServerProvider(requestMTranServer, this.settings.mtranServerEndpoint, this.settings.mtranServerToken, this.settings.mtranServerTimeoutMs);
-			const result = await provider.translate('Hello', 'en', 'vi');
-			new Notice(`MTranServer connected. Test result: ${result}`, 8000);
+			const result = await this.translate('Hello', 'vi', 'auto');
+			new Notice(`${translationProviderName(this.settings.translationProvider, this.settings.openAiCompatibleProtocol)} connected. Test result: ${result}`, 8000);
 		} catch (error) {
-			new Notice(error instanceof Error ? error.message : 'Could not connect to MTranServer.', 8000);
+			new Notice(error instanceof Error ? error.message : 'Could not connect to the translation provider.', 8000);
 		}
 	}
 
@@ -932,7 +992,7 @@ export default class MynaryPlugin extends Plugin {
 	async translateSelected(editor: Editor) {
 		const text = editor.getSelection().trim();
 		if (!text) { new Notice('Select text first.'); return; }
-		if (!this.settings.mtranServerEnabled) { new Notice('Enable MTranServer in Mynary settings first.'); return; }
+		if (!this.settings.translationEnabled) { new Notice('Enable translation in Mynary settings first.'); return; }
 		new TranslationModal(this.app, this, text).open();
 	}
 
@@ -950,14 +1010,26 @@ export default class MynaryPlugin extends Plugin {
 	openTranslation(text: string) {
 		const normalized = text.trim();
 		if (!normalized) { new Notice('Select text first.'); return; }
-		if (!this.settings.mtranServerEnabled) { new Notice('Enable MTranServer in Mynary settings first.'); return; }
+		if (!this.settings.translationEnabled) { new Notice('Enable translation in Mynary settings first.'); return; }
 		new TranslationModal(this.app, this, normalized).open();
 	}
 
-	async translate(text: string, targetLanguage = this.settings.mtranTargetLanguage) {
-		const provider = new MTranServerProvider(requestMTranServer, this.settings.mtranServerEndpoint, this.settings.mtranServerToken, this.settings.mtranServerTimeoutMs);
-		const sourceLanguage = this.settings.mtranSourceLanguage === 'auto' ? 'auto' : this.activeLanguage;
-		return provider.translate(text, sourceLanguage, targetLanguage);
+	async translate(text: string, targetLanguage = this.settings.mtranTargetLanguage, sourceLanguageSetting: 'current' | 'auto' = this.settings.mtranSourceLanguage) {
+		const sourceLanguage = sourceLanguageSetting === 'auto' ? 'auto' : this.activeLanguage;
+		if (this.settings.translationProvider === 'libretranslate') {
+			return new LibreTranslateProvider(requestTranslation, this.settings.libreTranslateEndpoint, this.settings.libreTranslateApiKey, this.settings.mtranServerTimeoutMs).translate(text, sourceLanguage, targetLanguage);
+		}
+		if (this.settings.translationProvider === 'openai-compatible') {
+			return new OpenAiCompatibleTranslationProvider(
+				requestTranslation,
+				this.settings.openAiCompatibleEndpoint,
+				this.settings.openAiCompatibleModel,
+				this.settings.openAiCompatibleApiKey,
+				this.settings.openAiCompatibleProtocol,
+				this.settings.mtranServerTimeoutMs,
+			).translate(text, sourceLanguage, targetLanguage);
+		}
+		return new MTranServerProvider(requestMTranServer, this.settings.mtranServerEndpoint, this.settings.mtranServerToken, this.settings.mtranServerTimeoutMs).translate(text, sourceLanguage, targetLanguage);
 	}
 
 	async lookup(word: string, language = this.activeLanguage, forceRefresh = false, offlineOnly = false): Promise<DictionaryEntry | undefined> {
@@ -970,12 +1042,13 @@ export default class MynaryPlugin extends Plugin {
 		this.lookupError = '';
 		this.lastLookupWasCached = false;
 		this.notifyLookupListeners();
-		const key = `${CACHE_FORMAT_VERSION}:${offlineOnly ? 'offline:' : ''}${language}:${normalized.toLowerCase()}`;
+		const forceOffline = offlineOnly || (this.settings.offlineDictionaryEnabled !== false && this.settings.offlineDictionaryFallback === 'offline-only');
+		const key = `${CACHE_FORMAT_VERSION}:${forceOffline ? 'offline:' : ''}${language}:${normalized.toLowerCase()}`;
 		try {
 			const cached = await this.cache.get(key);
 			if (requestId !== this.lookupSequence) return undefined;
 			if (cached && !forceRefresh) { this.lastLookupWasCached = true; await this.setEntry(cached, normalized); return cached; }
-			const entry = offlineOnly
+			const entry = forceOffline
 				? await this.provider.lookupOffline(normalized, language).then((result) => {
 					if (!result) throw new Error(`No offline entry found for “${normalized}” in ${language.toUpperCase()}. Install a matching pack or use regular lookup.`);
 					return result;
@@ -1318,6 +1391,21 @@ function isPackAssetFilename(value: string) {
 	return value !== '.' && value !== '..' && /^[\w.-]+$/u.test(value);
 }
 
+function isValidDictionaryPackManifest(manifest: Partial<DictionaryPackManifest>): manifest is DictionaryPackManifest {
+	if (manifest.format !== 'mynary-pack-v1' || typeof manifest.id !== 'string' || !/^[a-z0-9][a-z0-9._-]*$/u.test(manifest.id)) return false;
+	if (manifest.kind !== 'core' && manifest.kind !== 'bilingual') return false;
+	if (typeof manifest.language !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.language)) return false;
+	if (manifest.kind === 'bilingual' && (typeof manifest.targetLanguage !== 'string' || !/^[a-z]{2,3}$/u.test(manifest.targetLanguage) || manifest.targetLanguage === manifest.language)) return false;
+	if (typeof manifest.name !== 'string' || !manifest.name.trim() || typeof manifest.version !== 'string' || !/^\d{4}-\d{2}-\d{2}$/u.test(manifest.version)) return false;
+	if (!Number.isSafeInteger(manifest.entryCount) || (manifest.entryCount ?? 0) < 1) return false;
+	if (typeof manifest.indexFile !== 'string' || !isPackAssetFilename(manifest.indexFile)) return false;
+	if (typeof manifest.entriesFile !== 'string' || !isPackAssetFilename(manifest.entriesFile)) return false;
+	if (typeof manifest.compressed !== 'boolean') return false;
+	if (typeof manifest.indexSha256 !== 'string' || !/^[a-f\d]{64}$/iu.test(manifest.indexSha256)) return false;
+	const entriesSha256 = manifest.entriesSha256 ?? manifest.sha256;
+	return typeof entriesSha256 === 'string' && /^[a-f\d]{64}$/iu.test(entriesSha256);
+}
+
 function markdownFilesIn(folder: TFolder): TFile[] {
 	return folder.children.flatMap((child) => child instanceof TFolder
 		? markdownFilesIn(child)
@@ -1413,26 +1501,92 @@ class DictionaryPackUrlModal extends Modal {
 	}
 }
 
-interface CatalogPackOption { id?: string; kind?: string; language?: string; targetLanguage?: string; name?: string; entryCount?: number; sizeBytes?: number; version?: string; manifestUrl?: string; }
+interface CatalogPackOption { id: string; kind: 'core' | 'bilingual'; language: string; targetLanguage?: string; name: string; entryCount: number; sizeBytes?: number; version: string; manifestUrl: string; indexSha256?: string; entriesSha256?: string; }
+interface DictionaryPackCatalog { format: 'mynary-pack-catalog-v1'; generatedAt: string; source: string; packs: CatalogPackOption[]; }
+
+function isCatalogPackOption(value: unknown): value is CatalogPackOption {
+	if (!isRecord(value)) return false;
+	const hasTarget = typeof value.targetLanguage === 'string' && /^[a-z]{2,3}$/u.test(value.targetLanguage) && value.targetLanguage !== value.language;
+	return typeof value.id === 'string' && /^[a-z0-9][a-z0-9._-]*$/u.test(value.id)
+		&& (value.kind === 'core' || value.kind === 'bilingual')
+		&& typeof value.language === 'string' && /^[a-z]{2,3}$/u.test(value.language)
+		&& (value.kind === 'core' ? value.targetLanguage === undefined : hasTarget)
+		&& typeof value.name === 'string' && Number.isSafeInteger(value.entryCount) && (value.entryCount as number) > 0
+		&& typeof value.version === 'string' && typeof value.manifestUrl === 'string' && /^https?:\/\//iu.test(value.manifestUrl)
+		&& (value.sizeBytes === undefined || (typeof value.sizeBytes === 'number' && Number.isFinite(value.sizeBytes) && value.sizeBytes >= 0))
+		&& (value.indexSha256 === undefined || (typeof value.indexSha256 === 'string' && /^[a-f\d]{64}$/iu.test(value.indexSha256)))
+		&& (value.entriesSha256 === undefined || (typeof value.entriesSha256 === 'string' && /^[a-f\d]{64}$/iu.test(value.entriesSha256)));
+}
+
+function isPackUpdateAvailable(installed: Partial<DictionaryPackManifest>, latest: CatalogPackOption) {
+	return latest.version !== installed.version
+		|| Boolean(latest.indexSha256 && latest.indexSha256 !== installed.indexSha256)
+		|| Boolean(latest.entriesSha256 && latest.entriesSha256 !== (installed.entriesSha256 ?? installed.sha256));
+}
 
 class DictionaryPackCatalogModal extends Modal {
-	constructor(app: App, private readonly packs: CatalogPackOption[], private readonly install: (url: string) => void) { super(app); }
+	constructor(app: App, private readonly catalog: DictionaryPackCatalog, private readonly installed: Array<DictionaryPackManifest & { storagePath: string }>, private readonly install: (url: string) => Promise<void>) { super(app); }
 
 	onOpen() {
 		this.modalEl.addClass('mynary-pack-modal');
-		this.titleEl.setText('Choose offline dictionary');
-		this.contentEl.createEl('p', { text: 'Choose one pack. Packs are downloaded from Hugging Face and verified with SHA-256.' });
+		this.titleEl.setText('Browse dictionary packs');
+		this.contentEl.createEl('p', { text: `Catalog updated ${this.catalog.generatedAt || 'date unknown'}. Packs are downloaded from Hugging Face and verified with SHA-256.` });
+		const filters = this.contentEl.createDiv('mynary-pack-filters');
+		const search = filters.createEl('input', { type: 'search', placeholder: 'Search languages or pack names' });
+		search.setAttribute('aria-label', 'Search dictionary packs');
+		const sourceFilter = filters.createEl('select');
+		sourceFilter.setAttribute('aria-label', 'Filter source language');
+		sourceFilter.createEl('option', { value: '', text: 'All source languages' });
+		for (const code of [...new Set(this.catalog.packs.map((pack) => pack.language))].sort()) sourceFilter.createEl('option', { value: code, text: code.toUpperCase() });
+		const targetFilter = filters.createEl('select');
+		targetFilter.setAttribute('aria-label', 'Filter target language');
+		targetFilter.createEl('option', { value: '', text: 'All targets' });
+		for (const code of [...new Set(this.catalog.packs.map((pack) => pack.targetLanguage ?? '(core)'))].sort()) targetFilter.createEl('option', { value: code, text: code === '(core)' ? 'Core packs' : code.toUpperCase() });
 		const select = this.contentEl.createEl('select');
-		for (const pack of this.packs) {
-			if (!pack.manifestUrl || !pack.language) continue;
-			const direction = pack.targetLanguage ? ` ${pack.language.toUpperCase()} → ${pack.targetLanguage.toUpperCase()}` : ` ${pack.language.toUpperCase()}`;
-			const sizeLabel = typeof pack.sizeBytes === 'number' && pack.sizeBytes > 0 ? ` · ${formatBytes(pack.sizeBytes)} download` : '';
-			const label = `${pack.name ?? pack.id ?? 'Dictionary'} ·${direction} · ${(pack.entryCount ?? 0).toLocaleString()} entries${sizeLabel}`;
-			select.createEl('option', { value: pack.manifestUrl, text: label });
-		}
+		select.setAttribute('aria-label', 'Available dictionary packs');
+		const status = this.contentEl.createDiv({ cls: 'mynary-pack-catalog-status' });
+		const renderOptions = () => {
+			select.empty();
+			const query = search.value.trim().toLocaleLowerCase();
+			const packs = this.catalog.packs.filter((pack) => {
+				const text = `${pack.id} ${pack.name} ${pack.language} ${pack.targetLanguage ?? 'core'}`.toLocaleLowerCase();
+				return (!query || text.includes(query)) && (!sourceFilter.value || pack.language === sourceFilter.value)
+					&& (!targetFilter.value || (targetFilter.value === '(core)' ? pack.kind === 'core' : pack.targetLanguage === targetFilter.value));
+			});
+			for (const pack of packs) {
+				const installed = this.installed.find((candidate) => candidate.id === pack.id);
+				const updateAvailable = installed && isPackUpdateAvailable(installed, pack);
+				const state = !installed ? 'Available' : updateAvailable ? 'Update available' : 'Installed';
+				const size = pack.sizeBytes ? ` · ${formatBytes(pack.sizeBytes)}` : '';
+				const direction = pack.targetLanguage ? `${pack.language.toUpperCase()} → ${pack.targetLanguage.toUpperCase()}` : `${pack.language.toUpperCase()} core`;
+				select.createEl('option', { value: pack.manifestUrl, text: `${direction} · ${pack.entryCount.toLocaleString()} entries · ${pack.version} · ${state}${size}` });
+			}
+			status.setText(packs.length ? `${packs.length} packs shown · select one to install or update.` : 'No packs match these filters.');
+		};
 		const actions = this.contentEl.createDiv('mynary-modal-actions');
 		actions.createEl('button', { text: 'Cancel' }).addEventListener('click', () => this.close());
-		actions.createEl('button', { text: 'Install', cls: 'mod-cta' }).addEventListener('click', () => { const url = select.value; if (!url) return; this.install(url); this.close(); });
+		const installButton = actions.createEl('button', { text: 'Install pack', cls: 'mod-cta' });
+		const updateButtonState = () => {
+			const pack = this.catalog.packs.find((candidate) => candidate.manifestUrl === select.value);
+			const installed = pack && this.installed.find((candidate) => candidate.id === pack.id);
+			const current = Boolean(pack && installed && !isPackUpdateAvailable(installed, pack));
+			installButton.setText(current ? 'Installed' : installed ? 'Update pack' : 'Install pack');
+			installButton.disabled = current || !pack;
+		};
+		select.addEventListener('change', updateButtonState);
+		const updateFilteredOptions = () => { renderOptions(); updateButtonState(); };
+		search.addEventListener('input', updateFilteredOptions);
+		sourceFilter.addEventListener('change', updateFilteredOptions);
+		targetFilter.addEventListener('change', updateFilteredOptions);
+		installButton.addEventListener('click', () => {
+			const url = select.value;
+			if (!url) return;
+			installButton.disabled = true;
+			installButton.setText('Installing…');
+			void this.install(url).finally(() => this.close());
+		});
+		renderOptions();
+		updateButtonState();
 	}
 
 	onClose() { this.contentEl.empty(); }
@@ -1458,6 +1612,8 @@ class DictionaryPackManagerModal extends Modal {
 		const list = this.contentEl.createDiv('mynary-pack-manager');
 		new Setting(list).setName('Installed dictionaries').setHeading();
 		const packs = await this.plugin.getInstalledDictionaryPacks();
+		let catalog: DictionaryPackCatalog | undefined;
+		try { catalog = await this.plugin.getDictionaryPackCatalog(); } catch { /* Keep the installed pack controls available while offline. */ }
 		if (!packs.length) {
 			list.createDiv({ cls: 'mynary-empty', text: 'No offline dictionary packs installed.' });
 			return;
@@ -1467,9 +1623,16 @@ class DictionaryPackManagerModal extends Modal {
 			const details = row.createDiv('mynary-pack-details');
 			details.createEl('strong', { text: pack.name || pack.id });
 			const active = this.plugin.settings.offlineDictionaryEnabled !== false && pack.language === this.plugin.settings.defaultLanguage;
-			details.createDiv({ text: `${pack.language.toUpperCase()}${pack.targetLanguage ? ` → ${pack.targetLanguage.toUpperCase()}` : ''} · ${pack.entryCount.toLocaleString()} entries · ${pack.version}${active ? ' · Used for current lookup language' : ''}` });
+			const latest = catalog?.packs.find((candidate) => candidate.id === pack.id);
+			const packState = !pack.filesReady ? 'Files missing; reinstall this pack'
+				: !catalog ? 'Catalog unavailable; update status unknown'
+					: !latest ? 'No longer published; installed copy remains usable'
+						: isPackUpdateAvailable(pack, latest) ? 'Update available' : 'Up to date';
+			details.createDiv({ text: `${pack.language.toUpperCase()}${pack.targetLanguage ? ` → ${pack.targetLanguage.toUpperCase()}` : ' · core'} · ${pack.entryCount.toLocaleString()} entries · ${pack.version}${active ? ' · Used for current lookup language' : ''} · ${packState}` });
 			const actions = row.createDiv('mynary-pack-actions');
-			actions.createEl('button', { text: 'Check for updates' }).addEventListener('click', () => void this.plugin.updateDictionaryPack(pack));
+			const updateButton = actions.createEl('button', { text: latest && isPackUpdateAvailable(pack, latest) ? 'Update' : 'Check for updates' });
+			updateButton.setAttribute('aria-label', `Check ${pack.name} for updates`);
+			updateButton.addEventListener('click', () => void this.plugin.updateDictionaryPack(pack));
 			actions.createEl('button', { text: 'Remove' }).addEventListener('click', () => void this.plugin.removeDictionaryPack(pack.id, pack.storagePath).then(() => this.render()));
 		}
 	}
@@ -1681,7 +1844,8 @@ class DictionarySettingTab extends PluginSettingTab {
 		new Setting(interaction).setName('Look up on double-click').setDesc('Automatically open a dictionary lookup when you double-click a word in a note.').addToggle((toggle) => toggle.setValue(this.plugin.settings.doubleClickLookup === true).onChange((value) => { this.plugin.settings.doubleClickLookup = value; void this.plugin.saveSettings(); }));
 
 		const offline = createGroup('Offline dictionary', 'Install, verify, and manage local dictionary packs.');
-		new Setting(offline).setName('Use installed packs').setDesc('Installed packs are checked before Wiktionary. Core packs provide definitions; bilingual packs add translations.').addToggle((toggle) => toggle.setValue(this.plugin.settings.offlineDictionaryEnabled !== false).onChange((value) => { this.plugin.settings.offlineDictionaryEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		new Setting(offline).setName('Use installed packs').setDesc('Installed packs are checked before Wiktionary. Core packs provide definitions; bilingual packs add translations.').addToggle((toggle) => toggle.setValue(this.plugin.settings.offlineDictionaryEnabled !== false).onChange((value) => { this.plugin.settings.offlineDictionaryEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
+		new Setting(offline).setName('When an offline pack has no entry').setDesc('Choose whether a missing word may be requested from Wiktionary.').addDropdown((dropdown) => dropdown.addOption('online', 'Search Wiktionary online').addOption('offline-only', 'Stay offline and show a miss').setValue(this.plugin.settings.offlineDictionaryFallback ?? 'online').setDisabled(this.plugin.settings.offlineDictionaryEnabled === false).onChange((value) => { this.plugin.settings.offlineDictionaryFallback = value === 'offline-only' ? 'offline-only' : 'online'; void this.plugin.saveSettings(); }));
 		const offlineActions = offline.createDiv('mynary-offline-actions');
 		offlineActions.createEl('button', { text: 'Choose language' }).addEventListener('click', () => void this.plugin.installDictionaryPackFromCatalog(() => this.display()));
 		offlineActions.createEl('button', { text: 'Install from URL' }).addEventListener('click', () => void this.plugin.installDictionaryPackFromUrl(() => this.display()));
@@ -1691,15 +1855,35 @@ class DictionarySettingTab extends PluginSettingTab {
 		packPanel.createDiv({ cls: 'mynary-state mynary-loading', text: 'Checking installed packs…' });
 		void this.renderInstalledPacks(packPanel);
 
-		const translate = createGroup('Translate', 'Configure the local MTranServer connection and translation defaults.');
-		new Setting(translate).setName('MTranServer translation').setDesc('Translate selected text using a local MTranServer instance.').addToggle((toggle) => toggle.setValue(this.plugin.settings.mtranServerEnabled).onChange((value) => { this.plugin.settings.mtranServerEnabled = value; void this.plugin.saveSettings(); this.display(); }));
-		new Setting(translate).setName('MTranServer endpoint').setDesc('Default endpoint for a local server.').addText((text) => text.setValue(this.plugin.settings.mtranServerEndpoint).onChange((value) => { this.plugin.settings.mtranServerEndpoint = value.trim().replace(/\/+$/u, '') || 'http://127.0.0.1:8989'; void this.plugin.saveSettings(); }));
-		new Setting(translate).setName('Test connection').setDesc('Send a short English to Vietnamese test phrase to the configured local server.').addButton((button) => button.setButtonText('Test connection').onClick(() => void this.plugin.testMTranServerConnection()));
-		new Setting(translate).setName('MTranServer token').setDesc('Optional bearer token configured on the local server.').addText((text) => text.setPlaceholder('Optional token').setValue(this.plugin.settings.mtranServerToken).onChange((value) => { this.plugin.settings.mtranServerToken = value; void this.plugin.saveSettings(); }));
-		new Setting(translate).setName('Translation source language').setDesc('Use the current dictionary language, or send auto for servers that support automatic detection.').addDropdown((dropdown) => dropdown.addOption('current', 'Current dictionary language').addOption('auto', 'Auto detect').setValue(this.plugin.settings.mtranSourceLanguage).onChange((value) => { this.plugin.settings.mtranSourceLanguage = value === 'auto' ? 'auto' : 'current'; void this.plugin.saveSettings(); }));
+		const translate = createGroup('Translate', 'Translate selected text with MTranServer, LibreTranslate, or an OpenAI-compatible server.');
+		new Setting(translate).setName('Enable translation').setDesc('Translation sends selected text to the provider you configure, only when you request it.').addToggle((toggle) => toggle.setValue(this.plugin.settings.translationEnabled).onChange((value) => { this.plugin.settings.translationEnabled = value; void this.plugin.saveSettings(); this.display(); }));
+		new Setting(translate).setName('Translation provider').setDesc('Choose which configured server receives translation requests.').addDropdown((dropdown) => dropdown
+			.addOption('mtranserver', 'MTranServer')
+			.addOption('libretranslate', 'LibreTranslate')
+			.addOption('openai-compatible', 'OpenAI-compatible server')
+			.setValue(this.plugin.settings.translationProvider)
+			.onChange((value) => { this.plugin.settings.translationProvider = value === 'libretranslate' || value === 'openai-compatible' ? value : 'mtranserver'; void this.plugin.saveSettings(); this.display(); }));
+		if (this.plugin.settings.translationProvider === 'mtranserver') {
+			new Setting(translate).setName('MTranServer endpoint').setDesc('Base URL for the local server.').addText((text) => text.setValue(this.plugin.settings.mtranServerEndpoint).onChange((value) => { this.plugin.settings.mtranServerEndpoint = value.trim().replace(/\/+$/u, '') || 'http://127.0.0.1:8989'; void this.plugin.saveSettings(); }));
+			new Setting(translate).setName('MTranServer token').setDesc('Optional bearer token configured on the server.').addText((text) => { text.inputEl.type = 'password'; text.inputEl.autocomplete = 'off'; text.setPlaceholder('Optional token').setValue(this.plugin.settings.mtranServerToken).onChange((value) => { this.plugin.settings.mtranServerToken = value; void this.plugin.saveSettings(); }); });
+		} else if (this.plugin.settings.translationProvider === 'libretranslate') {
+			new Setting(translate).setName('LibreTranslate endpoint').setDesc('Base URL for your LibreTranslate instance.').addText((text) => text.setValue(this.plugin.settings.libreTranslateEndpoint).onChange((value) => { this.plugin.settings.libreTranslateEndpoint = value.trim().replace(/\/+$/u, '') || 'http://127.0.0.1:5000'; void this.plugin.saveSettings(); }));
+			new Setting(translate).setName('LibreTranslate API key').setDesc('Optional key for instances that require authentication.').addText((text) => { text.inputEl.type = 'password'; text.inputEl.autocomplete = 'off'; text.setPlaceholder('Optional API key').setValue(this.plugin.settings.libreTranslateApiKey).onChange((value) => { this.plugin.settings.libreTranslateApiKey = value; void this.plugin.saveSettings(); }); });
+		} else {
+			new Setting(translate).setName('Server base URL').setDesc('OpenAI-compatible API base URL, usually ending in /v1.').addText((text) => text.setValue(this.plugin.settings.openAiCompatibleEndpoint).onChange((value) => { this.plugin.settings.openAiCompatibleEndpoint = value.trim().replace(/\/+$/u, '') || 'http://127.0.0.1:8000/v1'; void this.plugin.saveSettings(); }));
+			new Setting(translate).setName('Model name').setDesc('Model ID accepted by the server.').addText((text) => text.setPlaceholder('For example, plamo-3-translate').setValue(this.plugin.settings.openAiCompatibleModel).onChange((value) => { this.plugin.settings.openAiCompatibleModel = value.trim(); void this.plugin.saveSettings(); }));
+			new Setting(translate).setName('API key').setDesc('Optional bearer token for the configured server.').addText((text) => { text.inputEl.type = 'password'; text.inputEl.autocomplete = 'off'; text.setPlaceholder('Optional API key').setValue(this.plugin.settings.openAiCompatibleApiKey).onChange((value) => { this.plugin.settings.openAiCompatibleApiKey = value; void this.plugin.saveSettings(); }); });
+			new Setting(translate).setName('Request format').setDesc('Select PLaMo 3 for its PFML3 translation prompt, vLLM or llama.cpp Completions API.').addDropdown((dropdown) => dropdown
+				.addOption('chat-completions', 'Chat Completions')
+				.addOption('plamo-3-completions', 'PLaMo 3 Completions')
+				.setValue(this.plugin.settings.openAiCompatibleProtocol)
+				.onChange((value) => { this.plugin.settings.openAiCompatibleProtocol = value === 'plamo-3-completions' ? 'plamo-3-completions' : 'chat-completions'; void this.plugin.saveSettings(); }));
+		}
+		new Setting(translate).setName('Test connection').setDesc('Send a short phrase to the selected provider.').addButton((button) => button.setButtonText('Test connection').onClick(() => void this.plugin.testTranslationConnection()));
+		new Setting(translate).setName('Translation source language').setDesc('Use the current dictionary language or let the provider detect the source language.').addDropdown((dropdown) => dropdown.addOption('current', 'Current dictionary language').addOption('auto', 'Auto detect').setValue(this.plugin.settings.mtranSourceLanguage).onChange((value) => { this.plugin.settings.mtranSourceLanguage = value === 'auto' ? 'auto' : 'current'; void this.plugin.saveSettings(); }));
 		const translationSourceLanguage = this.plugin.settings.defaultLanguage;
 		new Setting(translate).setName(`Default target for ${translationSourceLanguage.toUpperCase()}`).setDesc('Saved separately by source dictionary language; the translation panel can override it per request.').addDropdown((dropdown) => {
-			for (const language of MTRAN_LANGUAGE_OPTIONS) dropdown.addOption(language.code, `${language.name} (${language.code})`);
+			for (const language of LANGUAGES) dropdown.addOption(language.code, `${language.name} (${language.code})`);
 			dropdown.setValue(this.plugin.settings.mtranTargetLanguages[translationSourceLanguage] ?? this.plugin.settings.mtranTargetLanguage);
 			dropdown.onChange((value) => {
 				this.plugin.settings.mtranTargetLanguage = value;
@@ -1707,7 +1891,7 @@ class DictionarySettingTab extends PluginSettingTab {
 				void this.plugin.saveSettings();
 			});
 		});
-		new Setting(translate).setName('Translation request timeout').setDesc('Maximum wait time in seconds for the local server.').addText((text) => text.setValue(String(this.plugin.settings.mtranServerTimeoutMs / 1000)).onChange((value: string) => { const seconds = Math.min(120, Math.max(1, Number(value) || 15)); this.plugin.settings.mtranServerTimeoutMs = Math.round(seconds * 1000); void this.plugin.saveSettings(); }));
+		new Setting(translate).setName('Translation request timeout').setDesc('Maximum wait time in seconds for the selected server.').addText((text) => text.setValue(String(this.plugin.settings.mtranServerTimeoutMs / 1000)).onChange((value: string) => { const seconds = Math.min(120, Math.max(1, Number(value) || 15)); this.plugin.settings.mtranServerTimeoutMs = Math.round(seconds * 1000); void this.plugin.saveSettings(); }));
 
 		const tts = createGroup('TTS', 'Read using voices installed on this device, or connect a local Supertonic server.', false);
 		new Setting(tts).setName('Enable offline speech').setDesc('Uses offline voices exposed through this app’s Web Speech API. Mynary does not download voices; some Android WebViews do not expose Android system voices.').addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsEnabled).onChange((value) => { this.plugin.settings.ttsEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
@@ -1776,7 +1960,8 @@ class DictionarySettingTab extends PluginSettingTab {
 			const details = row.createDiv('mynary-pack-details');
 			details.createEl('strong', { text: pack.name || pack.id });
 			const active = this.plugin.settings.offlineDictionaryEnabled !== false && pack.language === this.plugin.settings.defaultLanguage;
-			details.createDiv({ text: `${pack.language.toUpperCase()}${pack.targetLanguage ? ` → ${pack.targetLanguage.toUpperCase()}` : ''} · ${pack.entryCount.toLocaleString()} entries · ${pack.version}${active ? ' · Used for current lookup language' : ''}` });
+			const state = pack.filesReady ? 'Files available' : 'Files missing; reinstall this pack';
+			details.createDiv({ text: `${pack.language.toUpperCase()}${pack.targetLanguage ? ` → ${pack.targetLanguage.toUpperCase()}` : ' · core'} · ${pack.entryCount.toLocaleString()} entries · ${pack.version}${active ? ' · Used for current lookup language' : ''} · ${state}` });
 			const actions = row.createDiv('mynary-pack-actions');
 			actions.createEl('button', { text: 'Check for updates' }).addEventListener('click', () => void this.plugin.updateDictionaryPack(pack));
 			actions.createEl('button', { text: 'Remove' }).addEventListener('click', () => {

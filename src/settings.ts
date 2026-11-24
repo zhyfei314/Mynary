@@ -29,7 +29,17 @@ export interface DictionarySettings {
 	supertonicSteps: number;
 	supertonicSpeed: number;
 	offlineDictionaryEnabled?: boolean;
-	mtranServerEnabled: boolean;
+	offlineDictionaryFallback?: 'online' | 'offline-only';
+	translationEnabled: boolean;
+	translationProvider: 'mtranserver' | 'libretranslate' | 'openai-compatible';
+	libreTranslateEndpoint: string;
+	libreTranslateApiKey: string;
+	openAiCompatibleEndpoint: string;
+	openAiCompatibleModel: string;
+	openAiCompatibleApiKey: string;
+	openAiCompatibleProtocol: 'chat-completions' | 'plamo-3-completions';
+	/** Legacy enable toggle retained for settings migration. */
+	mtranServerEnabled?: boolean;
 	mtranServerEndpoint: string;
 	mtranServerToken: string;
 	mtranServerTimeoutMs: number;
@@ -253,7 +263,7 @@ export function migrateTemplates(templates: TemplateDefinition[]): boolean {
 	return changed;
 }
 
-export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', doubleClickLookup: false, languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', bilingualNotes: false, vocabularyFolder: 'Vocabulary', defaultVocabularyDeck: 'General', newCardsPerDay: 20, vocabularyAnswerLanguage: '', defaultVocabularyTemplateId: 'flashcard-basic', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'system', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, offlineDictionaryEnabled: true, mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'en', mtranTargetLanguages: {} };
+export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', doubleClickLookup: false, languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', bilingualNotes: false, vocabularyFolder: 'Vocabulary', defaultVocabularyDeck: 'General', newCardsPerDay: 20, vocabularyAnswerLanguage: '', defaultVocabularyTemplateId: 'flashcard-basic', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'system', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, offlineDictionaryEnabled: true, offlineDictionaryFallback: 'online', translationEnabled: false, translationProvider: 'mtranserver', libreTranslateEndpoint: 'http://127.0.0.1:5000', libreTranslateApiKey: '', openAiCompatibleEndpoint: 'http://127.0.0.1:8000/v1', openAiCompatibleModel: '', openAiCompatibleApiKey: '', openAiCompatibleProtocol: 'chat-completions', mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'en', mtranTargetLanguages: {} };
 
 export function normalizeSettings(raw: unknown): DictionarySettings {
 	const data = isRecord(raw) ? raw : {};
@@ -264,11 +274,13 @@ export function normalizeSettings(raw: unknown): DictionarySettings {
 	const defaultTemplateId = typeof data.defaultTemplateId === 'string' && templates.some((template) => template.id === data.defaultTemplateId) ? data.defaultTemplateId : templates[0]?.id ?? 'basic';
 	const existingNoteBehavior = data.existingNoteBehavior === 'overwrite' || data.existingNoteBehavior === 'update-section' ? data.existingNoteBehavior : 'ask';
 	const requestedMtranTarget = typeof data.mtranTargetLanguage === 'string' ? data.mtranTargetLanguage.trim().toLowerCase() : '';
-	const mtranTargetLanguage = MTRAN_LANGUAGE_OPTIONS.some((language) => language.code === requestedMtranTarget) ? requestedMtranTarget : DEFAULT_SETTINGS.mtranTargetLanguage;
+	const mtranTargetLanguage = LANGUAGES.some((language) => language.code === requestedMtranTarget) ? requestedMtranTarget : DEFAULT_SETTINGS.mtranTargetLanguage;
 	const mtranTargetLanguages = isRecord(data.mtranTargetLanguages)
-		? Object.fromEntries(Object.entries(data.mtranTargetLanguages).filter(([source, target]) => /^[a-z]{2,3}$/u.test(source) && typeof target === 'string' && MTRAN_LANGUAGE_OPTIONS.some((language) => language.code === target)).map(([source, target]) => [source, target as string]))
+		? Object.fromEntries(Object.entries(data.mtranTargetLanguages).filter(([source, target]) => /^[a-z]{2,3}$/u.test(source) && typeof target === 'string' && LANGUAGES.some((language) => language.code === target)).map(([source, target]) => [source, target as string]))
 		: {};
 	const requestedMtranTimeout = typeof data.mtranServerTimeoutMs === 'number' && Number.isFinite(data.mtranServerTimeoutMs) && data.mtranServerTimeoutMs > 0 ? data.mtranServerTimeoutMs : DEFAULT_SETTINGS.mtranServerTimeoutMs;
+	const translationProvider = data.translationProvider === 'libretranslate' || data.translationProvider === 'openai-compatible' ? data.translationProvider : 'mtranserver';
+	const translationEnabled = typeof data.translationEnabled === 'boolean' ? data.translationEnabled : data.mtranServerEnabled === true;
 
 	return {
 		defaultLanguage,
@@ -299,6 +311,15 @@ export function normalizeSettings(raw: unknown): DictionarySettings {
 		supertonicSteps: Math.min(16, Math.max(4, Math.floor(positiveNumber(data.supertonicSteps, DEFAULT_SETTINGS.supertonicSteps)))),
 		supertonicSpeed: Math.min(2, Math.max(0.7, positiveNumber(data.supertonicSpeed, DEFAULT_SETTINGS.supertonicSpeed))),
 		offlineDictionaryEnabled: data.offlineDictionaryEnabled !== false,
+		offlineDictionaryFallback: data.offlineDictionaryFallback === 'offline-only' ? 'offline-only' : 'online',
+		translationEnabled,
+		translationProvider,
+		libreTranslateEndpoint: normalizeEndpoint(data.libreTranslateEndpoint, DEFAULT_SETTINGS.libreTranslateEndpoint),
+		libreTranslateApiKey: typeof data.libreTranslateApiKey === 'string' ? data.libreTranslateApiKey : '',
+		openAiCompatibleEndpoint: normalizeEndpoint(data.openAiCompatibleEndpoint, DEFAULT_SETTINGS.openAiCompatibleEndpoint),
+		openAiCompatibleModel: typeof data.openAiCompatibleModel === 'string' ? data.openAiCompatibleModel.trim() : '',
+		openAiCompatibleApiKey: typeof data.openAiCompatibleApiKey === 'string' ? data.openAiCompatibleApiKey : '',
+		openAiCompatibleProtocol: data.openAiCompatibleProtocol === 'plamo-3-completions' ? 'plamo-3-completions' : 'chat-completions',
 		mtranServerEnabled: data.mtranServerEnabled === true,
 		mtranServerEndpoint: typeof data.mtranServerEndpoint === 'string' && data.mtranServerEndpoint.trim() ? data.mtranServerEndpoint.trim().replace(/\/+$/u, '') : DEFAULT_SETTINGS.mtranServerEndpoint,
 		mtranServerToken: typeof data.mtranServerToken === 'string' ? data.mtranServerToken : '',
@@ -311,6 +332,17 @@ export function normalizeSettings(raw: unknown): DictionarySettings {
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function normalizeEndpoint(value: unknown, fallback: string) {
+	if (typeof value !== 'string' || !value.trim()) return fallback;
+	const endpoint = value.trim().replace(/\/+$/u, '');
+	try {
+		const parsed = new URL(endpoint);
+		return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? endpoint : fallback;
+	} catch {
+		return fallback;
+	}
 }
 
 function normalizeLanguages(value: unknown): LanguageOption[] {

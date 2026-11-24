@@ -4,6 +4,8 @@ import { join, resolve } from 'node:path';
 const releaseDir = resolve(process.argv[2] || 'release');
 const output = resolve(process.argv[3] || 'dictionary-catalog/catalog.json');
 const baseUrl = (process.argv[4] || 'https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main').replace(/\/+$/u, '');
+const packPath = (process.argv[5] || 'release').replace(/^\/+|\/+$/gu, '');
+if (!packPath.split('/').every((part) => /^[a-zA-Z0-9._-]+$/u.test(part) && part !== '.' && part !== '..')) throw new Error('Pack path must contain only safe path segments.');
 const packs = [];
 
 for (const entry of await readdir(releaseDir, { withFileTypes: true })) {
@@ -27,7 +29,9 @@ for (const entry of await readdir(releaseDir, { withFileTypes: true })) {
 			entriesSizeBytes,
 			sizeBytes: indexSizeBytes + entriesSizeBytes,
 			compressed: manifest.compressed === true,
-			manifestUrl: `${baseUrl}/release/${entry.name}/manifest.json`,
+			indexSha256: manifest.indexSha256,
+			entriesSha256: manifest.entriesSha256 ?? manifest.sha256,
+			manifestUrl: `${baseUrl}/${packPath}/${entry.name}/manifest.json`,
 		});
 	} catch {
 		// Ignore incomplete folders.

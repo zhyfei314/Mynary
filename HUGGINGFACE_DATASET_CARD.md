@@ -7,12 +7,16 @@ task_categories:
 language:
 - ar
 - bg
+- bn
+- ca
 - cs
 - da
 - de
+- el
 - en
 - es
 - et
+- fa
 - fi
 - fr
 - he
@@ -24,6 +28,7 @@ language:
 - ko
 - lt
 - lv
+- ms
 - nl
 - pl
 - pt
@@ -32,10 +37,15 @@ language:
 - sk
 - sl
 - sv
+- sw
+- ta
 - th
+- tl
 - tr
 - uk
+- ur
 - vi
+- yue
 - zh
 pretty_name: Mynary Offline Dictionary
 tags:
@@ -59,20 +69,26 @@ intended for training or benchmarking without additional preprocessing.
 
 ## Repository layout
 
-Each pack is stored under `release/<pack-id>/` and contains only the files
-needed by the plugin:
+The 1.4.0 snapshot is stored under `release/1.4.0/<pack-id>/`. Each pack
+folder contains only the files needed by the plugin:
 
 ```text
-release/<pack-id>/
+release/1.4.0/<pack-id>/
 ├── manifest.json
 ├── index.json
 └── entries.jsonl.gz
 ```
 
-The current catalog contains 50 packs covering core dictionaries and selected
-bilingual dictionaries. Large compressed entry files are kept in this Dataset
-repository; the small catalog used by the plugin is maintained separately in
-the GitHub repository under `dictionary-catalog/catalog.json`.
+The 1.4.0 catalog contains 490 packs: 42 core dictionaries and 448 bilingual
+dictionaries. It covers 42 headword languages and 18 translation target
+languages. The snapshot contains 1,470 manifest and asset files totaling about
+1.85 GB. Pack manifests record the source snapshot date (`2026-11-24`); 1.4.0
+is the matching Mynary plugin version. Large compressed entry files are kept
+in this Dataset repository. The active `catalog.json` is mirrored in the
+GitHub plugin repository at `dictionary-catalog/catalog.json`; every pack URL
+in both catalogs points to this versioned snapshot. Legacy top-level pack
+folders are retired only after the new snapshot is verified and both catalogs
+are synchronized.
 
 ## Pack format
 
@@ -85,8 +101,8 @@ packs share the same fields:
   "id": "en-core",
   "language": "en",
   "name": "English Core Dictionary",
-  "version": "2026-09-09",
-  "entryCount": 1355096,
+  "version": "2026-11-24",
+  "entryCount": 1360384,
   "indexFile": "index.json",
   "entriesFile": "entries.jsonl.gz",
   "compressed": true,

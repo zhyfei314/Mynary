@@ -2,7 +2,7 @@
 
 Look up words in Obsidian, save definitions as notes, and study them as flashcards. Mynary uses Wiktionary by default and can also use optional local dictionary packs, translation, and speech services.
 
-Current release: [**1.3.1**](https://github.com/zhyfei314/Mynary/releases/tag/1.3.1).
+Target release: **1.4.0**.
 
 ## Install
 
@@ -62,11 +62,19 @@ In **Settings → Mynary Dictionary → Vocabulary study**, select **Create Anki
 
 Install packs in **Settings → Mynary Dictionary → Offline dictionary** with **Choose language** or **Install from URL**. Core packs provide definitions and pronunciation; bilingual packs add translations. Mynary verifies downloaded files against their SHA-256 checksums and stores them in the vault. Installed packs are checked before Wiktionary; missing entries fall back to Wiktionary when online.
 
-Packs are published separately in the [Mynary Offline Dictionary dataset](https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary). Dictionary data comes from Wiktionary extracts supplied by [Kaikki.org](https://kaikki.org/). Data is distributed under the terms identified by each pack, including [CC BY-SA 3.0](LICENSE-CC-BY-SA-3.0.txt), [CC BY-SA 4.0](LICENSE-CC-BY-SA-4.0.txt), or [GFDL 1.3](LICENSE-GFDL-1.3.txt). The plugin source is MIT-licensed.
+Packs are published separately in the [Mynary Offline Dictionary dataset](https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary). The 1.4.0 catalog release contains 42 core packs and 448 bilingual packs (490 total), covering 42 headword languages and 18 translation target languages. Its assets are stored under the versioned snapshot `release/1.4.0/`; each catalog URL points directly to that snapshot. Dictionary data comes from Wiktionary extracts supplied by [Kaikki.org](https://kaikki.org/). Data is distributed under the terms identified by each pack, including [CC BY-SA 3.0](LICENSE-CC-BY-SA-3.0.txt), [CC BY-SA 4.0](LICENSE-CC-BY-SA-4.0.txt), or [GFDL 1.3](LICENSE-GFDL-1.3.txt). The plugin source is MIT-licensed.
+
+Pack maintainers can rebuild the current language set and validate pack compatibility with the streaming builder. See [PACK_BUILDING.md](PACK_BUILDING.md) for Kaikki source URLs and the Google Colab workflow.
 
 ## Optional translation and speech
 
-**Translation** uses a locally running [MTranServer](https://github.com/xxnuo/MTranServer). Enable it in **Settings → Mynary Dictionary → Translate**, set the local endpoint, and use **Translate selected text with MTranServer** or a translate action in the lookup UI. Text is sent only when you request a translation. You can set source and target languages, an optional bearer token, and a timeout.
+**Translation** is optional and disabled by default. Enable it in **Settings → Mynary Dictionary → Translate**, choose a provider, then use **Translate selected text** or a translate action in the lookup UI. Mynary supports:
+
+- **MTranServer**: a local [MTranServer](https://github.com/xxnuo/MTranServer) instance. Existing MTranServer endpoint, token, languages, timeout, and enabled state are retained when older settings are migrated.
+- **LibreTranslate**: a local or remote [LibreTranslate API](https://docs.libretranslate.com/api/operations/translate/). Set the server base URL (for example, `http://127.0.0.1:5000`) and optional API key.
+- **OpenAI-compatible server**: configure the server's `/v1` base URL, model name, and optional API key. The standard profile uses Chat Completions. The **PLaMo 3 Completions** profile sends the PFML3 translation prompt to `/completions`, for PLaMo 3 Translate served by [vLLM](https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/) or [llama.cpp](https://huggingface.co/pfnet/plamo-3-translate-2b-GGUF). Install and run the model server separately; Mynary does not download models. Review the [PLaMo 3 model card and license](https://huggingface.co/pfnet/plamo-3-translate-2b) before use.
+
+Use **Test connection** in settings to send a short sample request through the selected provider. Requests have a configurable timeout.
 
 **Speech** is off by default. Enable it in **Settings → Mynary Dictionary → TTS** and choose a runtime:
 
@@ -77,7 +85,7 @@ Use **Mynary Dictionary: Read selected text with offline speech** or **Mod + Shi
 
 ## Privacy
 
-There is no telemetry, advertising, or account system. Online lookups send the searched word and selected language to Wiktionary; an installed pack can answer without a network lookup. Mynary scans Markdown files in the configured vocabulary folder to sync flashcards. It does not send vault content automatically. Translation text is sent to your configured MTranServer only on request; speech text goes to the configured Supertonic endpoint only when you use that runtime.
+There is no telemetry, advertising, or account system. Online lookups send the searched word and selected language to Wiktionary; an installed pack can answer without a network lookup. Mynary scans Markdown files in the configured vocabulary folder to sync flashcards. It does not send vault content automatically. Translation sends only the text you submit (or the short sample used by **Test connection**) to the selected MTranServer, LibreTranslate, or OpenAI-compatible endpoint. A remote endpoint receives that text and the source/target language codes; configure a local endpoint if you want the translation server to run on your device or network. API keys are stored with this plugin's settings in the vault and sent only to the corresponding configured provider as its API key or bearer token. Speech text goes to the configured Supertonic endpoint only when you use that runtime.
 
 ## Development
 
@@ -90,7 +98,7 @@ npm run lint
 npm run build
 ```
 
-`npm run dev` starts esbuild watch mode. Pushing a version tag such as `1.3.1` starts the release workflow, which runs tests, lint, and the production build, checks that the tag matches the manifest and package versions, then attaches `main.js`, `manifest.json`, and `styles.css` to the GitHub release.
+`npm run dev` starts esbuild watch mode. Pushing a version tag such as `1.4.0` starts the release workflow, which runs tests, lint, and the production build, checks that the tag matches the manifest and package versions, then attaches `main.js`, `manifest.json`, and `styles.css` to the GitHub release.
 
 ## License
 
