@@ -5,6 +5,9 @@ on:
         tags:
             - '*.*.*'
 
+permissions:
+    contents: read
+
 jobs:
     build:
         runs-on: ubuntu-latest
@@ -35,11 +38,8 @@ jobs:
                   package_version=$(node -p "require('./package.json').version")
                   test "$tag" = "$version"
                   test "$tag" = "$package_version"
-
-            - name: Check for optional styles
-              id: styles
-              run: |
-                  [ -f styles.css ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+                  test -s manifest.json
+                  test -s styles.css
 
             - name: Attest release assets
               uses: actions/attest@v4
@@ -47,15 +47,15 @@ jobs:
                   subject-path: |
                       main.js
                       manifest.json
-                      ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
+                      styles.css
 
             - name: Create release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   tag="${GITHUB_REF#refs/tags/}"
-
                   gh release create "$tag" \
-                    --title="$tag" \
-                    --notes "Mynary $tag includes offline speech, vocabulary and Anki improvements, security fixes, and Obsidian review warning fixes." \
-                    main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
+                    --verify-tag \
+                    --title="Mynary $tag" \
+                    --notes-file RELEASE_NOTES_1.4.0.md \
+                    main.js manifest.json styles.css
