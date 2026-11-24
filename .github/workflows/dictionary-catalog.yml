@@ -2,9 +2,6 @@ name: Refresh dictionary catalog
 
 on:
     workflow_dispatch:
-    push:
-        tags:
-            - '*.*.*'
     schedule:
         - cron: '23 4 * * 1'
 
@@ -18,28 +15,71 @@ jobs:
             - uses: actions/setup-node@v6
               with:
                   node-version: 24
+            - name: Check Hugging Face publishing token
+              id: hf-auth
+              env:
+                  HF_TOKEN: ${{ secrets.HF_TOKEN }}
+              run: |
+                  if [[ -n "$HF_TOKEN" ]]; then
+                    echo "configured=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "configured=false" >> "$GITHUB_OUTPUT"
+                    echo "::notice::HF_TOKEN is missing; skipping catalog refresh to keep the HF and GitHub catalogs in sync."
+                  fi
             - name: Install Hugging Face client
+              if: steps.hf-auth.outputs.configured == 'true'
               run: python -m pip install 'huggingface_hub>=0.30'
             - name: Download pack manifests and build catalog
+              if: steps.hf-auth.outputs.configured == 'true'
               env:
                   HF_TOKEN: ${{ secrets.HF_TOKEN }}
               run: |
                   python - <<'PY'
                   import os
-                  from huggingface_hub import snapshot_download
+                  import json
+                  from pathlib import Path
+                  from urllib.parse import urlsplit
+                  from huggingface_hub import hf_hub_download, snapshot_download
+
+                  repo_id = 'zhyfei314/Mynary-Offline-Dictionary'
+                  token = os.environ['HF_TOKEN']
+                  catalog_path = hf_hub_download(
+                      repo_id=repo_id,
+                      filename='catalog.json',
+                      repo_type='dataset',
+                      token=token,
+                  )
+                  catalog = json.loads(Path(catalog_path).read_text(encoding='utf-8'))
+                  url_prefix = f'/datasets/{repo_id}/resolve/main/'
+                  pack_roots = set()
+                  for pack in catalog.get('packs', []):
+                      url = urlsplit(pack.get('manifestUrl', ''))
+                      if url.netloc != 'huggingface.co' or not url.path.startswith(url_prefix):
+                          raise ValueError(f"Unexpected manifest URL: {pack.get('manifestUrl')}")
+                      parts = url.path[len(url_prefix):].split('/')
+                      if len(parts) < 4 or parts[0] != 'release' or parts[-1] != 'manifest.json':
+                          raise ValueError(f"Manifest URL does not point inside a versioned release: {url.geturl()}")
+                      pack_roots.add('/'.join(parts[:-2]))
+                  if not catalog.get('packs') or len(pack_roots) != 1:
+                      raise ValueError(f'Expected one active snapshot path, found: {sorted(pack_roots)}')
+                  pack_root = pack_roots.pop()
 
                   snapshot_download(
-                      repo_id='zhyfei314/Mynary-Offline-Dictionary',
+                      repo_id=repo_id,
                       repo_type='dataset',
-                      allow_patterns='release/**',
+                      allow_patterns=f'{pack_root}/**',
                       local_dir='hf-dataset',
-                      token=os.environ.get('HF_TOKEN') or None,
+                      token=token,
                   )
+                  Path('pack-root.txt').write_text(pack_root, encoding='utf-8')
                   PY
-                  node scripts/verify-dictionary-packs.mjs hf-dataset/release
-                  node scripts/build-pack-catalog.mjs hf-dataset/release dictionary-catalog/catalog.json
+                  pack_root=$(cat pack-root.txt)
+                  node scripts/verify-dictionary-packs.mjs "hf-dataset/$pack_root"
+                  node scripts/build-pack-catalog.mjs "hf-dataset/$pack_root" dictionary-catalog/catalog.json \
+                    "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main" "$pack_root"
                   cp dictionary-catalog/catalog.json /tmp/mynary-pack-catalog.json
             - name: Upload catalog to Dataset repository
+              if: steps.hf-auth.outputs.configured == 'true'
               env:
                   HF_TOKEN: ${{ secrets.HF_TOKEN }}
               run: |
@@ -47,19 +87,16 @@ jobs:
                   import os
                   from huggingface_hub import HfApi
 
-                  token = os.environ.get('HF_TOKEN')
-                  if token:
-                      HfApi(token=token).upload_file(
-                          path_or_fileobj='dictionary-catalog/catalog.json',
-                          path_in_repo='catalog.json',
-                          repo_id='zhyfei314/Mynary-Offline-Dictionary',
-                          repo_type='dataset',
-                          commit_message='Refresh offline dictionary pack catalog',
-                      )
-                  else:
-                      print('HF_TOKEN is not configured; the GitHub catalog will still be refreshed.')
+                  HfApi(token=os.environ['HF_TOKEN']).upload_file(
+                      path_or_fileobj='dictionary-catalog/catalog.json',
+                      path_in_repo='catalog.json',
+                      repo_id='zhyfei314/Mynary-Offline-Dictionary',
+                      repo_type='dataset',
+                      commit_message='Refresh offline dictionary pack catalog',
+                  )
                   PY
             - name: Update GitHub catalog copy
+              if: steps.hf-auth.outputs.configured == 'true'
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
