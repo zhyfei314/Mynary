@@ -8,8 +8,9 @@
 .mynary-entry-metadata { color: var(--text-muted); font-size: var(--font-ui-smaller); margin-bottom: 8px; }
 .mynary-phonetics { color: var(--text-muted); margin-bottom: 12px; }
 .mynary-pronunciation-heading, .mynary-tts-heading { color: var(--text-normal); font-size: var(--font-ui-small); margin: 8px 0 4px; }
-.mynary-pronunciation { margin: 6px 0 10px; }
-.mynary-ipa { display: block; }
+.mynary-ipa-list { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; }
+.mynary-pronunciation { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0; }
+.mynary-ipa { display: inline-block; }
 .mynary-pronunciation-audio { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
 .mynary-tts-section { border-top: 1px solid var(--background-modifier-border); margin-top: 12px; padding-top: 8px; }
 .mynary-tts-row { margin: 8px 0; }
@@ -244,6 +245,38 @@
 .mynary-rating-easy { background: #377fbd; }
 .mynary-rating-label { font-weight: var(--font-semibold); }
 .mynary-rating-interval { font-size: var(--font-ui-smaller); opacity: .92; }
+.mynary-offline-toolbar { align-items: flex-start; display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
+.mynary-offline-toggle, .mynary-online-search-btn { align-items: center; display: inline-flex; gap: 5px; height: 30px; padding: 0 10px; font-size: var(--font-ui-small); }
+.mynary-offline-toggle svg, .mynary-online-search-btn svg { height: 14px; width: 14px; }
+.mynary-offline-toggle.is-active { background: var(--interactive-accent); color: var(--text-on-accent); }
+.mynary-pack-picker { flex: 1 1 160px; min-width: 0; position: relative; }
+.mynary-pack-picker-summary { align-items: center; background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); cursor: pointer; display: inline-flex; font-size: var(--font-ui-small); height: 30px; list-style: none; max-width: 100%; overflow: hidden; padding: 0 10px; text-overflow: ellipsis; white-space: nowrap; }
+.mynary-pack-picker-summary::-webkit-details-marker { display: none; }
+.mynary-pack-picker-panel { background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); box-shadow: var(--shadow-s); display: grid; gap: 8px; margin-top: 6px; padding: 10px; }
+.mynary-pack-picker-row { display: grid; gap: 4px; }
+.mynary-pack-picker-row label { color: var(--text-muted); font-size: var(--font-ui-smaller); font-weight: var(--font-semibold); }
+.mynary-pack-picker-row select { box-sizing: border-box; max-width: 100%; width: 100%; }
+.mynary-pack-picker-actions { display: flex; gap: 6px; }
+.mynary-pack-picker-actions button { font-size: var(--font-ui-smaller); padding: 3px 8px; }
+.mynary-pack-picker-list { display: grid; gap: 5px; max-height: 180px; overflow-y: auto; }
+.mynary-pack-picker-item { align-items: center; cursor: pointer; display: flex; gap: 6px; font-size: var(--font-ui-small); min-width: 0; }
+.mynary-pack-picker-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mynary-pack-picker-badge { background: var(--background-secondary); border-radius: var(--radius-s); color: var(--text-muted); flex: 0 0 auto; font-size: var(--font-ui-smaller); padding: 1px 6px; }
+.mynary-pack-results { display: grid; gap: 10px; margin: 8px 0; }
+.mynary-pack-result { background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); overflow: hidden; }
+.mynary-pack-result-summary { align-items: center; background: var(--background-secondary); cursor: pointer; display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 9px 12px; }
+.mynary-pack-result-summary::-webkit-details-marker { display: none; }
+.mynary-pack-result-name { font-weight: var(--font-semibold); }
+.mynary-pack-result-lang { background: var(--background-modifier-border); border-radius: var(--radius-s); color: var(--text-muted); font-size: var(--font-ui-smaller); padding: 1px 6px; }
+.mynary-pack-result-preview { color: var(--text-muted); flex: 1 1 140px; font-size: var(--font-ui-smaller); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mynary-pack-result-body { border-top: 1px solid var(--background-modifier-border); padding: 10px 12px; }
+.mynary-combined-pack-actions { background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); display: grid; gap: 8px; margin: 12px 0; padding: 10px 12px; }
+.mynary-combined-pack-actions h4 { font-size: var(--font-ui-small); margin: 0; }
+.mynary-combined-pack-checks { display: flex; flex-wrap: wrap; gap: 10px; }
+.mynary-combined-pack-check { align-items: center; cursor: pointer; display: inline-flex; gap: 5px; font-size: var(--font-ui-small); }
+.mynary-combined-pack-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.mynary-pack-select-check { align-items: center; display: inline-flex; margin-right: 8px; }
+
 @media (max-width: 600px) {
 	.mynary-settings-group .setting-item { align-items: stretch; flex-direction: column; gap: 8px; }
 	.mynary-settings-group .setting-item-info { max-width: none; }
@@ -253,6 +286,13 @@
 	.mynary-settings-group .setting-item-control > input { max-width: 100%; }
 }
 @media (max-width: 600px) {
+	.mynary-offline-toolbar { gap: 8px; }
+	.mynary-offline-toggle, .mynary-online-search-btn { min-height: 36px; padding: 0 12px; }
+	.mynary-pack-picker { flex: 1 1 100%; }
+	.mynary-pack-picker-summary { min-height: 36px; width: 100%; }
+	.mynary-pack-picker-item, .mynary-combined-pack-check { min-height: 32px; }
+	.mynary-pack-result-summary { min-height: 40px; }
+	.mynary-combined-pack-buttons button { flex: 1 1 140px; min-height: 36px; }
 	.mynary-offline-actions { align-items: stretch; flex-direction: column; }
 	.mynary-offline-actions button { width: 100%; }
 	.mynary-history-row { min-width: 0; }

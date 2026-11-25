@@ -23,13 +23,23 @@ export interface DictionarySettings {
 	vocabularyDecks?: string[];
 	ttsEnabled: boolean;
 	ttsAutoGenerate: boolean;
-	ttsRuntime: 'system' | 'server';
+	ttsRuntime: 'system' | 'server' | 'openai-compatible';
 	supertonicEndpoint: string;
 	supertonicVoice: string;
 	supertonicSteps: number;
 	supertonicSpeed: number;
+	openAiTtsEndpoint?: string;
+	openAiTtsApiKey?: string;
+	openAiTtsModel?: string;
+	openAiTtsVoice?: string;
+	openAiTtsSpeed?: number;
 	offlineDictionaryEnabled?: boolean;
 	offlineDictionaryFallback?: 'online' | 'offline-only';
+	offlineDictionaryPackMode?: 'auto' | 'custom';
+	offlineDictionarySelectedPacks?: string[];
+	offlineDictionarySourceLanguage?: string;
+	offlineDictionaryPriority?: 'bilingual-first' | 'input-language' | 'alphabetical';
+	offlineDictionarySessionOnly?: boolean;
 	translationEnabled: boolean;
 	translationProvider: 'mtranserver' | 'libretranslate' | 'openai-compatible';
 	libreTranslateEndpoint: string;
@@ -263,7 +273,7 @@ export function migrateTemplates(templates: TemplateDefinition[]): boolean {
 	return changed;
 }
 
-export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', doubleClickLookup: false, languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', bilingualNotes: false, vocabularyFolder: 'Vocabulary', defaultVocabularyDeck: 'General', newCardsPerDay: 20, vocabularyAnswerLanguage: '', defaultVocabularyTemplateId: 'flashcard-basic', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'system', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, offlineDictionaryEnabled: true, offlineDictionaryFallback: 'online', translationEnabled: false, translationProvider: 'mtranserver', libreTranslateEndpoint: 'http://127.0.0.1:5000', libreTranslateApiKey: '', openAiCompatibleEndpoint: 'http://127.0.0.1:8000/v1', openAiCompatibleModel: '', openAiCompatibleApiKey: '', openAiCompatibleProtocol: 'chat-completions', mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'en', mtranTargetLanguages: {} };
+export const DEFAULT_SETTINGS: DictionarySettings = { defaultLanguage: 'en', doubleClickLookup: false, languages: LANGUAGES, noteFolder: '', filenameTemplate: '{{word}}', cacheTtlDays: 7, maxCacheEntries: 100, defaultTemplateId: 'basic', templates: DEFAULT_TEMPLATES, existingNoteBehavior: 'ask', bilingualNotes: false, vocabularyFolder: 'Vocabulary', defaultVocabularyDeck: 'General', newCardsPerDay: 20, vocabularyAnswerLanguage: '', defaultVocabularyTemplateId: 'flashcard-basic', ttsEnabled: false, ttsAutoGenerate: false, ttsRuntime: 'system', supertonicEndpoint: 'http://127.0.0.1:7788/v1/tts', supertonicVoice: 'M1', supertonicSteps: 8, supertonicSpeed: 1.05, openAiTtsEndpoint: 'http://127.0.0.1:8000/v1', openAiTtsApiKey: '', openAiTtsModel: 'tts-1', openAiTtsVoice: 'alloy', openAiTtsSpeed: 1, offlineDictionaryEnabled: true, offlineDictionaryFallback: 'online', offlineDictionaryPackMode: 'auto', offlineDictionarySelectedPacks: [], offlineDictionarySourceLanguage: '', offlineDictionaryPriority: 'bilingual-first', offlineDictionarySessionOnly: false, translationEnabled: false, translationProvider: 'mtranserver', libreTranslateEndpoint: 'http://127.0.0.1:5000', libreTranslateApiKey: '', openAiCompatibleEndpoint: 'http://127.0.0.1:8000/v1', openAiCompatibleModel: '', openAiCompatibleApiKey: '', openAiCompatibleProtocol: 'chat-completions', mtranServerEnabled: false, mtranServerEndpoint: 'http://127.0.0.1:8989', mtranServerToken: '', mtranServerTimeoutMs: 15000, mtranSourceLanguage: 'current', mtranTargetLanguage: 'en', mtranTargetLanguages: {} };
 
 export function normalizeSettings(raw: unknown): DictionarySettings {
 	const data = isRecord(raw) ? raw : {};
@@ -305,13 +315,25 @@ export function normalizeSettings(raw: unknown): DictionarySettings {
 		vocabularyDecks: Array.isArray(data.vocabularyDecks) ? [...new Set(data.vocabularyDecks.filter((deck): deck is string => typeof deck === 'string').map((deck) => deck.trim()).filter(Boolean))] : ['General'],
 		ttsEnabled: isEnabledSetting(data.ttsEnabled),
 		ttsAutoGenerate: isEnabledSetting(data.ttsAutoGenerate),
-		ttsRuntime: data.ttsRuntime === 'server' ? 'server' : 'system',
+		ttsRuntime: data.ttsRuntime === 'server' || data.ttsRuntime === 'openai-compatible' ? data.ttsRuntime : 'system',
 		supertonicEndpoint: typeof data.supertonicEndpoint === 'string' && data.supertonicEndpoint.trim() ? data.supertonicEndpoint.trim() : DEFAULT_SETTINGS.supertonicEndpoint,
 		supertonicVoice: typeof data.supertonicVoice === 'string' && data.supertonicVoice.trim() ? data.supertonicVoice.trim() : DEFAULT_SETTINGS.supertonicVoice,
 		supertonicSteps: Math.min(16, Math.max(4, Math.floor(positiveNumber(data.supertonicSteps, DEFAULT_SETTINGS.supertonicSteps)))),
 		supertonicSpeed: Math.min(2, Math.max(0.7, positiveNumber(data.supertonicSpeed, DEFAULT_SETTINGS.supertonicSpeed))),
+		openAiTtsEndpoint: normalizeEndpoint(data.openAiTtsEndpoint, DEFAULT_SETTINGS.openAiTtsEndpoint ?? 'http://127.0.0.1:8000/v1'),
+		openAiTtsApiKey: typeof data.openAiTtsApiKey === 'string' ? data.openAiTtsApiKey : '',
+		openAiTtsModel: typeof data.openAiTtsModel === 'string' && data.openAiTtsModel.trim() ? data.openAiTtsModel.trim() : DEFAULT_SETTINGS.openAiTtsModel,
+		openAiTtsVoice: typeof data.openAiTtsVoice === 'string' && data.openAiTtsVoice.trim() ? data.openAiTtsVoice.trim() : DEFAULT_SETTINGS.openAiTtsVoice,
+		openAiTtsSpeed: Math.min(4, Math.max(0.25, positiveNumber(data.openAiTtsSpeed, DEFAULT_SETTINGS.openAiTtsSpeed ?? 1))),
 		offlineDictionaryEnabled: data.offlineDictionaryEnabled !== false,
 		offlineDictionaryFallback: data.offlineDictionaryFallback === 'offline-only' ? 'offline-only' : 'online',
+		offlineDictionaryPackMode: data.offlineDictionaryPackMode === 'custom' ? 'custom' : 'auto',
+		offlineDictionarySelectedPacks: Array.isArray(data.offlineDictionarySelectedPacks)
+			? [...new Set(data.offlineDictionarySelectedPacks.filter((id): id is string => typeof id === 'string' && id.trim().length > 0))]
+			: [],
+		offlineDictionarySourceLanguage: typeof data.offlineDictionarySourceLanguage === 'string' ? data.offlineDictionarySourceLanguage.trim().toLowerCase() : '',
+		offlineDictionaryPriority: data.offlineDictionaryPriority === 'input-language' || data.offlineDictionaryPriority === 'alphabetical' ? data.offlineDictionaryPriority : 'bilingual-first',
+		offlineDictionarySessionOnly: data.offlineDictionarySessionOnly === true,
 		translationEnabled,
 		translationProvider,
 		libreTranslateEndpoint: normalizeEndpoint(data.libreTranslateEndpoint, DEFAULT_SETTINGS.libreTranslateEndpoint),

@@ -67,10 +67,10 @@ export class WiktionaryProvider {
 		throw new Error(`No entry found for “${word}”.`);
 	}
 
-	async lookupOffline(word: string, language: string): Promise<DictionaryEntry | undefined> {
+	async lookupOfflineEntries(word: string, language: string): Promise<DictionaryEntry[]> {
 		const offlineResult = await this.offlineForLanguage?.(language);
 		const offlinePacks = offlineResult ? (Array.isArray(offlineResult) ? offlineResult : [offlineResult]) : [];
-		let combined: DictionaryEntry | undefined;
+		const entries: DictionaryEntry[] = [];
 		for (const pack of offlinePacks) {
 			let entry: DictionaryEntry | undefined;
 			try {
@@ -81,16 +81,23 @@ export class WiktionaryProvider {
 			} finally {
 				pack.releaseEntriesBuffer();
 			}
-			if (!entry || entry.language !== language) continue;
-			if (!combined) combined = entry;
+			if (entry) entries.push(entry);
+		}
+		return entries;
+	}
+
+	async lookupOffline(word: string, language: string): Promise<DictionaryEntry | undefined> {
+		const entries = await this.lookupOfflineEntries(word, language);
+		let combined: DictionaryEntry | undefined;
+		for (const entry of entries) {
+			if (!combined) combined = { ...entry, translations: [...entry.translations], meanings: [...entry.meanings], phonetics: [...entry.phonetics] };
 			else {
 				combined.translations = uniqueTranslations([...combined.translations, ...entry.translations]);
 				if (!combined.meanings.length && entry.meanings.length) combined.meanings = entry.meanings;
 				if (!combined.phonetics.length && entry.phonetics.length) combined.phonetics = entry.phonetics;
 			}
 		}
-		if (combined) return combined;
-		return undefined;
+		return combined;
 	}
 
 	private async fetchPage(baseUrl: string, title: string): Promise<{ title?: string; html?: string }> {

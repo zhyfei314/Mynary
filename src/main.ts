@@ -23,13 +23,16 @@ import type { WiktionaryHttpResponse, WiktionaryRequester } from './providers/wi
 import { CacheManager } from './services/cache';
 import { SupertonicProvider } from './providers/supertonic';
 import type { SupertonicRequester } from './providers/supertonic';
+import { OpenAiCompatibleTtsProvider } from './providers/openai-tts';
+import type { TtsBinaryRequester } from './providers/openai-tts';
 import { hasSpeechSynthesis, SystemSpeechProvider, systemSpeechSetupInstructions } from './providers/system-speech';
 import { OfflineDictionaryProvider } from './providers/offline-dictionary';
+import { selectOfflinePacks, type OfflinePackPriority } from './providers/offline-pack-selection';
 import { MTranServerProvider } from './providers/mtranserver';
 import { LibreTranslateProvider, OpenAiCompatibleTranslationProvider } from './providers/translation-providers';
 import type { TranslationRequester } from './providers/translation-providers';
 import { AssetManager } from './services/asset-manager';
-import { renderEntry } from './utils/format';
+import { renderLookupEntries, renderOfflineToolbar } from './ui/offline-controls';
 import { createVocabularyNote, renderTemplate } from './templates/template';
 import { prepareFlashcardNote } from './templates/flashcard-renderer';
 import { analyzeSelection, normalizeSelection } from './utils/selection';
@@ -57,6 +60,10 @@ const requestWiktionary: WiktionaryRequester = async (url): Promise<WiktionaryHt
 };
 const requestSupertonic: SupertonicRequester = async (url, body) => {
 	const response = await requestUrl({ url, method: 'POST', headers: { 'content-type': 'application/json' }, body });
+	return { status: response.status, arrayBuffer: response.arrayBuffer, mimeType: response.headers['content-type'] };
+};
+const requestTtsBinary: TtsBinaryRequester = async (url, body, headers) => {
+	const response = await requestUrl({ url, method: 'POST', headers, body, throw: false });
 	return { status: response.status, arrayBuffer: response.arrayBuffer, mimeType: response.headers['content-type'] };
 };
 const requestMTranServer = async (url: string, body: string, token: string) => {
@@ -157,6 +164,8 @@ export default class MynaryPlugin extends Plugin {
 	cache!: CacheManager;
 	provider!: WiktionaryProvider;
 	lastEntry?: DictionaryEntry;
+	lastEntries: DictionaryEntry[] = [];
+	private sessionOfflineOnly?: boolean;
 	private history: string[] = [];
 	private vocabulary: VocabularyCard[] = [];
 	private lookupListeners = new Set<LookupListener>();
@@ -317,7 +326,9 @@ export default class MynaryPlugin extends Plugin {
 		const tts = this.settings.ttsEnabled
 			? this.settings.ttsRuntime === 'server'
 				? new SupertonicProvider(requestSupertonic, this.settings.supertonicEndpoint, this.settings.supertonicVoice, this.settings.supertonicSteps, this.settings.supertonicSpeed)
-				: new SystemSpeechProvider()
+				: this.settings.ttsRuntime === 'openai-compatible'
+					? new OpenAiCompatibleTtsProvider(requestTtsBinary, this.settings.openAiTtsEndpoint, this.settings.openAiTtsModel, this.settings.openAiTtsVoice, this.settings.openAiTtsApiKey, this.settings.openAiTtsSpeed)
+					: new SystemSpeechProvider()
 			: undefined;
 		const offline = this.settings.offlineDictionaryEnabled
 			? async (language: string) => {
@@ -325,16 +336,21 @@ export default class MynaryPlugin extends Plugin {
 					this.offlinePackProviders.clear();
 					this.offlineProviderLanguage = language;
 				}
-				return (await this.getInstalledDictionaryPacks())
-					.filter((pack) => pack.filesReady && pack.language === language)
-					.map((pack) => {
-						let provider = this.offlinePackProviders.get(pack.storagePath);
-						if (!provider) {
-							provider = new OfflineDictionaryProvider(this.app.vault.adapter, pack.storagePath);
-							this.offlinePackProviders.set(pack.storagePath, provider);
-						}
-						return provider;
-					});
+				const installed = await this.getInstalledDictionaryPacks();
+				return selectOfflinePacks(installed, {
+					activeLanguage: language,
+					mode: this.settings.offlineDictionaryPackMode ?? 'auto',
+					selectedPackIds: this.settings.offlineDictionarySelectedPacks ?? [],
+					sourceLanguage: this.settings.offlineDictionarySourceLanguage ?? '',
+					priority: this.settings.offlineDictionaryPriority ?? 'bilingual-first',
+				}).map((pack) => {
+					let provider = this.offlinePackProviders.get(pack.storagePath);
+					if (!provider) {
+						provider = new OfflineDictionaryProvider(this.app.vault.adapter, pack.storagePath);
+						this.offlinePackProviders.set(pack.storagePath, provider);
+					}
+					return provider;
+				});
 			}
 			: undefined;
 		this.provider = new WiktionaryProvider(requestWiktionary, tts, this.settings.ttsAutoGenerate, offline);
@@ -439,8 +455,43 @@ export default class MynaryPlugin extends Plugin {
 			|| right.version.localeCompare(left.version));
 	}
 
+	isOfflineOnly(): boolean {
+		if (this.settings.offlineDictionarySessionOnly && this.sessionOfflineOnly !== undefined) {
+			return this.sessionOfflineOnly;
+		}
+		return this.settings.offlineDictionaryEnabled !== false && this.settings.offlineDictionaryFallback === 'offline-only';
+	}
+
+	async setOfflineOnly(value: boolean) {
+		if (this.settings.offlineDictionarySessionOnly) {
+			this.sessionOfflineOnly = value;
+		} else {
+			this.settings.offlineDictionaryFallback = value ? 'offline-only' : 'online';
+			if (value && this.settings.offlineDictionaryEnabled === false) {
+				this.settings.offlineDictionaryEnabled = true;
+				this.rebuildProvider();
+			}
+			await this.saveSettings();
+		}
+		this.notifyLookupListeners();
+	}
+
+	async updateOfflinePackPreferences() {
+		this.rebuildProvider();
+		await this.saveSettings();
+		this.notifyLookupListeners();
+	}
+
 	async hasInstalledOfflinePack(language = this.activeLanguage) {
-		return this.settings.offlineDictionaryEnabled !== false && (await this.getInstalledDictionaryPacks()).some((pack) => pack.filesReady && pack.language === language);
+		if (this.settings.offlineDictionaryEnabled === false) return false;
+		const installed = await this.getInstalledDictionaryPacks();
+		return selectOfflinePacks(installed, {
+			activeLanguage: language,
+			mode: this.settings.offlineDictionaryPackMode ?? 'auto',
+			selectedPackIds: this.settings.offlineDictionarySelectedPacks ?? [],
+			sourceLanguage: this.settings.offlineDictionarySourceLanguage ?? '',
+			priority: this.settings.offlineDictionaryPriority ?? 'bilingual-first',
+		}).length > 0;
 	}
 
 	async lookupFromOfflinePack(word: string, pack: DictionaryPackManifest & { storagePath: string }) {
@@ -448,6 +499,7 @@ export default class MynaryPlugin extends Plugin {
 		if (!query) return;
 		const requestId = ++this.lookupSequence;
 		this.lastEntry = undefined;
+		this.lastEntries = [];
 		this.currentQuery = query;
 		this.lookupStatus = 'loading';
 		this.lookupError = '';
@@ -458,6 +510,7 @@ export default class MynaryPlugin extends Plugin {
 			const entry = await provider.lookup(query);
 			if (requestId !== this.lookupSequence) return;
 			if (!entry) throw new Error(`“${query}” is not available in ${pack.name}.`);
+			this.lastEntries = [entry];
 			await this.setEntry(entry, query);
 		} catch (error) {
 			if (requestId !== this.lookupSequence) return;
@@ -1032,29 +1085,45 @@ export default class MynaryPlugin extends Plugin {
 		return new MTranServerProvider(requestMTranServer, this.settings.mtranServerEndpoint, this.settings.mtranServerToken, this.settings.mtranServerTimeoutMs).translate(text, sourceLanguage, targetLanguage);
 	}
 
-	async lookup(word: string, language = this.activeLanguage, forceRefresh = false, offlineOnly = false): Promise<DictionaryEntry | undefined> {
+	async lookup(word: string, language = this.activeLanguage, forceRefresh = false, offlineOnly = false, forceOnline = false): Promise<DictionaryEntry | undefined> {
 		const normalized = normalizeSelection(word);
 		if (!normalized) return undefined;
 		const requestId = ++this.lookupSequence;
 		this.lastEntry = undefined;
+		this.lastEntries = [];
 		this.currentQuery = normalized;
 		this.lookupStatus = 'loading';
 		this.lookupError = '';
 		this.lastLookupWasCached = false;
 		this.notifyLookupListeners();
-		const forceOffline = offlineOnly || (this.settings.offlineDictionaryEnabled !== false && this.settings.offlineDictionaryFallback === 'offline-only');
-		const key = `${CACHE_FORMAT_VERSION}:${forceOffline ? 'offline:' : ''}${language}:${normalized.toLowerCase()}`;
+		const forceOffline = !forceOnline && (offlineOnly || this.isOfflineOnly());
+		const key = `${CACHE_FORMAT_VERSION}:${language}:${normalized.toLowerCase()}`;
 		try {
+			if (!forceOnline && this.settings.offlineDictionaryEnabled !== false) {
+				const offlineEntries = await this.provider.lookupOfflineEntries(normalized, language);
+				if (requestId !== this.lookupSequence) return undefined;
+				if (offlineEntries.length > 0) {
+					this.lastEntries = offlineEntries;
+					await this.setEntry(offlineEntries[0]!, normalized);
+					return offlineEntries[0];
+				}
+				if (forceOffline) {
+					throw new Error(`No offline entry found for “${normalized}”. Adjust pack selection or disable Packs only to search online.`);
+				}
+			} else if (forceOffline) {
+				throw new Error('Offline dictionary packs are disabled in Settings.');
+			}
 			const cached = await this.cache.get(key);
 			if (requestId !== this.lookupSequence) return undefined;
-			if (cached && !forceRefresh) { this.lastLookupWasCached = true; await this.setEntry(cached, normalized); return cached; }
-			const entry = forceOffline
-				? await this.provider.lookupOffline(normalized, language).then((result) => {
-					if (!result) throw new Error(`No offline entry found for “${normalized}” in ${language.toUpperCase()}. Install a matching pack or use regular lookup.`);
-					return result;
-				})
-				: await this.provider.lookup(normalized, language);
+			if (cached && !forceRefresh) {
+				this.lastLookupWasCached = true;
+				this.lastEntries = [cached];
+				await this.setEntry(cached, normalized);
+				return cached;
+			}
+			const entry = await this.provider.lookup(normalized, language, true);
 			if (requestId !== this.lookupSequence) return undefined;
+			this.lastEntries = [entry];
 			await this.cache.set(key, entry);
 			if (requestId !== this.lookupSequence) return undefined;
 			await this.setEntry(entry, normalized);
@@ -1168,16 +1237,16 @@ export default class MynaryPlugin extends Plugin {
 		iconButton('bookmark-plus', 'Add to vocabulary', () => void this.addVocabulary(entry));
 		const offline = iconButton('hard-drive-download', 'Choose an installed offline pack', (button) => {
 			void this.getInstalledDictionaryPacks().then((packs) => {
-				const matching = packs.filter((pack) => pack.language === entry.language);
+				const matching = packs.filter((pack) => pack.filesReady);
 				if (!matching.length) { button.disabled = true; return; }
 				const menu = new Menu();
-				matching.forEach((pack) => menu.addItem((item) => item.setTitle(`${pack.name} (${pack.language.toUpperCase()}${pack.targetLanguage ? ` → ${pack.targetLanguage.toUpperCase()}` : ''})`).onClick(() => void this.lookupFromOfflinePack(entry.word, pack))));
+				matching.forEach((pack) => menu.addItem((item) => item.setTitle(`${pack.name} (${pack.language.toUpperCase()}${pack.targetLanguage ? ` → ${pack.targetLanguage.toUpperCase()}` : ' · Core'})`).onClick(() => void this.lookupFromOfflinePack(entry.word, pack))));
 				const bounds = button.getBoundingClientRect();
 				menu.showAtPosition({ x: bounds.left, y: bounds.bottom, width: bounds.width });
 			});
 		});
 		offline.disabled = true;
-		void this.getInstalledDictionaryPacks().then((packs) => { offline.disabled = !packs.some((pack) => pack.language === entry.language); });
+		void this.getInstalledDictionaryPacks().then((packs) => { offline.disabled = !packs.some((pack) => pack.filesReady); });
 	}
 }
 
@@ -1211,14 +1280,10 @@ export class LookupModal extends Modal {
 		const el = this.contentEl;
 		el.empty();
 		el.createEl('h2', { text: `Lookup: ${this.word}` });
-		const offline = el.createEl('button', { text: 'Look up using offline packs only', cls: 'mynary-secondary-action' });
-		offline.disabled = true;
-		void this.plugin.hasInstalledOfflinePack().then((available) => {
-			if (!offline.isConnected) return;
-			offline.disabled = !available;
-			offline.title = available ? 'Search installed packs without contacting Wiktionary.' : 'Install and enable a matching offline dictionary pack first.';
+		renderOfflineToolbar(el, this.plugin, {
+			onRelookup: () => void this.plugin.lookup(this.word),
+			onOnlineLookup: () => void this.plugin.lookup(this.word, this.plugin.activeLanguage, true, false, true),
 		});
-		offline.addEventListener('click', () => void this.plugin.lookup(this.word, this.plugin.activeLanguage, false, true));
 		if (this.selectionChoice) {
 			el.createDiv({ cls: 'mynary-state', text: 'The selected text is longer than 80 characters or 8 words.' });
 			el.createDiv({ cls: 'mynary-selection-preview', text: this.word });
@@ -1241,8 +1306,9 @@ export class LookupModal extends Modal {
 			retry.addEventListener('click', () => void this.plugin.lookup(this.word));
 			return;
 		}
-		if (this.plugin.lastEntry) {
-			renderEntry(el, this.plugin.lastEntry, this.plugin);
+		const entries = this.plugin.lastEntries.length ? this.plugin.lastEntries : (this.plugin.lastEntry ? [this.plugin.lastEntry] : []);
+		if (entries.length) {
+			renderLookupEntries(el, entries, this.plugin);
 			const sidebar = el.createEl('button', { text: 'Open in sidebar', cls: 'mynary-secondary-action' });
 			sidebar.addEventListener('click', () => { this.close(); void this.plugin.activateView(); });
 		} else {
@@ -1622,7 +1688,13 @@ class DictionaryPackManagerModal extends Modal {
 			const row = list.createDiv('mynary-pack-row');
 			const details = row.createDiv('mynary-pack-details');
 			details.createEl('strong', { text: pack.name || pack.id });
-			const active = this.plugin.settings.offlineDictionaryEnabled !== false && pack.language === this.plugin.settings.defaultLanguage;
+			const mode = this.plugin.settings.offlineDictionaryPackMode ?? 'auto';
+			const selectedIds = new Set(this.plugin.settings.offlineDictionarySelectedPacks ?? []);
+			const active = this.plugin.settings.offlineDictionaryEnabled !== false && (
+				mode === 'custom'
+					? selectedIds.has(pack.id)
+					: pack.kind === 'core' || pack.targetLanguage === this.plugin.settings.defaultLanguage
+			);
 			const latest = catalog?.packs.find((candidate) => candidate.id === pack.id);
 			const packState = !pack.filesReady ? 'Files missing; reinstall this pack'
 				: !catalog ? 'Catalog unavailable; update status unknown'
@@ -1675,14 +1747,19 @@ export class DictionaryView extends ItemView {
 			language.setAttribute('title', this.plugin.settings.languages.find((item) => item.code === language.value)?.name ?? language.value.toUpperCase());
 			void this.plugin.saveSettings();
 		});
+		renderOfflineToolbar(el, this.plugin, {
+			onRelookup: () => void this.plugin.lookup(this.plugin.currentQuery || input.value),
+			onOnlineLookup: () => void this.plugin.lookup(this.plugin.currentQuery || input.value, this.plugin.activeLanguage, true, false, true),
+		});
+		const entries = this.plugin.lastEntries.length ? this.plugin.lastEntries : (this.plugin.lastEntry ? [this.plugin.lastEntry] : []);
 		if (this.plugin.lookupStatus === 'loading') {
 			el.createDiv({ text: `Looking up “${this.plugin.currentQuery}”…`, cls: 'mynary-state mynary-loading' });
 		} else if (this.plugin.lookupStatus === 'error') {
 			el.createDiv({ text: this.plugin.lookupError, cls: 'mynary-state mynary-error' });
 			const retry = el.createEl('button', { text: 'Try again' });
 			retry.addEventListener('click', submitLookup);
-		} else if (this.plugin.lastEntry) {
-			renderEntry(el, this.plugin.lastEntry, this.plugin);
+		} else if (entries.length) {
+			renderLookupEntries(el, entries, this.plugin);
 		} else {
 			el.createDiv({ text: 'Select a word in a note or search above.', cls: 'mynary-empty' });
 		}
@@ -1782,7 +1859,7 @@ class DictionarySettingTab extends PluginSettingTab {
 				name: 'Speech runtime',
 				desc: 'System voices need no setup; the local server can generate reusable audio.',
 				aliases: ['tts runtime', 'offline voices', 'local tts server'],
-				control: { type: 'dropdown', key: 'ttsRuntime', options: { system: 'Offline system voices', server: 'Local Supertonic server' }, defaultValue: this.plugin.settings.ttsRuntime },
+				control: { type: 'dropdown', key: 'ttsRuntime', options: { system: 'Offline system voices', server: 'Local Supertonic server', 'openai-compatible': 'OpenAI-compatible TTS server' }, defaultValue: this.plugin.settings.ttsRuntime },
 			},
 			{
 				name: 'Supertonic endpoint',
@@ -1845,7 +1922,37 @@ class DictionarySettingTab extends PluginSettingTab {
 
 		const offline = createGroup('Offline dictionary', 'Install, verify, and manage local dictionary packs.');
 		new Setting(offline).setName('Use installed packs').setDesc('Installed packs are checked before Wiktionary. Core packs provide definitions; bilingual packs add translations.').addToggle((toggle) => toggle.setValue(this.plugin.settings.offlineDictionaryEnabled !== false).onChange((value) => { this.plugin.settings.offlineDictionaryEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
-		new Setting(offline).setName('When an offline pack has no entry').setDesc('Choose whether a missing word may be requested from Wiktionary.').addDropdown((dropdown) => dropdown.addOption('online', 'Search Wiktionary online').addOption('offline-only', 'Stay offline and show a miss').setValue(this.plugin.settings.offlineDictionaryFallback ?? 'online').setDisabled(this.plugin.settings.offlineDictionaryEnabled === false).onChange((value) => { this.plugin.settings.offlineDictionaryFallback = value === 'offline-only' ? 'offline-only' : 'online'; void this.plugin.saveSettings(); }));
+		new Setting(offline).setName('When an offline pack has no entry').setDesc('Choose whether a missing word may be requested from Wiktionary.').addDropdown((dropdown) => dropdown.addOption('online', 'Search Wiktionary online').addOption('offline-only', 'Stay offline and show a miss').setValue(this.plugin.settings.offlineDictionaryFallback ?? 'online').setDisabled(this.plugin.settings.offlineDictionaryEnabled === false).onChange((value) => { void this.plugin.setOfflineOnly(value === 'offline-only'); }));
+		new Setting(offline).setName('Keep "packs only" for current session only').setDesc('When enabled, toggling packs only in the popup or sidebar will not overwrite your saved setting above.').addToggle((toggle) => toggle.setValue(this.plugin.settings.offlineDictionarySessionOnly === true).setDisabled(this.plugin.settings.offlineDictionaryEnabled === false).onChange((value) => { this.plugin.settings.offlineDictionarySessionOnly = value; void this.plugin.saveSettings(); }));
+		new Setting(offline).setName('Pack selection mode').setDesc('Auto matches bilingual packs by target language and allows all core packs. Custom searches only the packs you check below.').addDropdown((dropdown) => dropdown
+			.addOption('auto', 'Auto (target language + core)')
+			.addOption('custom', 'Custom (only selected packs)')
+			.setValue(this.plugin.settings.offlineDictionaryPackMode ?? 'auto')
+			.setDisabled(this.plugin.settings.offlineDictionaryEnabled === false)
+			.onChange((value) => {
+				this.plugin.settings.offlineDictionaryPackMode = value === 'custom' ? 'custom' : 'auto';
+				void this.plugin.updateOfflinePackPreferences().then(() => this.display());
+			}));
+		new Setting(offline).setName('Filter by source language').setDesc('Optional: restrict offline lookups to packs of a specific source language.').addDropdown((dropdown) => {
+			dropdown.addOption('', 'All source languages');
+			for (const item of this.plugin.settings.languages) dropdown.addOption(item.code, `${item.name} (${item.code.toUpperCase()})`);
+			dropdown.setValue(this.plugin.settings.offlineDictionarySourceLanguage ?? '')
+				.setDisabled(this.plugin.settings.offlineDictionaryEnabled === false)
+				.onChange((value) => {
+					this.plugin.settings.offlineDictionarySourceLanguage = value;
+					void this.plugin.updateOfflinePackPreferences().then(() => this.display());
+				});
+		});
+		new Setting(offline).setName('Pack priority order').setDesc('Choose the order in which matching offline packs are searched and displayed.').addDropdown((dropdown) => dropdown
+			.addOption('bilingual-first', 'Bilingual matching target first')
+			.addOption('input-language', 'Input language first')
+			.addOption('alphabetical', 'Alphabetical')
+			.setValue(this.plugin.settings.offlineDictionaryPriority ?? 'bilingual-first')
+			.setDisabled(this.plugin.settings.offlineDictionaryEnabled === false)
+			.onChange((value) => {
+				this.plugin.settings.offlineDictionaryPriority = value as OfflinePackPriority;
+				void this.plugin.updateOfflinePackPreferences().then(() => this.display());
+			}));
 		const offlineActions = offline.createDiv('mynary-offline-actions');
 		offlineActions.createEl('button', { text: 'Choose language' }).addEventListener('click', () => void this.plugin.installDictionaryPackFromCatalog(() => this.display()));
 		offlineActions.createEl('button', { text: 'Install from URL' }).addEventListener('click', () => void this.plugin.installDictionaryPackFromUrl(() => this.display()));
@@ -1893,23 +2000,40 @@ class DictionarySettingTab extends PluginSettingTab {
 		});
 		new Setting(translate).setName('Translation request timeout').setDesc('Maximum wait time in seconds for the selected server.').addText((text) => text.setValue(String(this.plugin.settings.mtranServerTimeoutMs / 1000)).onChange((value: string) => { const seconds = Math.min(120, Math.max(1, Number(value) || 15)); this.plugin.settings.mtranServerTimeoutMs = Math.round(seconds * 1000); void this.plugin.saveSettings(); }));
 
-		const tts = createGroup('TTS', 'Read using voices installed on this device, or connect a local Supertonic server.', false);
+		const tts = createGroup('TTS', 'Read using voices installed on this device, Supertonic, or an OpenAI-compatible TTS server.', false);
 		new Setting(tts).setName('Enable offline speech').setDesc('Uses offline voices exposed through this app’s Web Speech API. Mynary does not download voices; some Android WebViews do not expose Android system voices.').addToggle((toggle) => toggle.setValue(this.plugin.settings.ttsEnabled).onChange((value) => { this.plugin.settings.ttsEnabled = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
-		new Setting(tts).setName('Speech runtime').setDesc('System voices need no extra setup. A local server can generate reusable audio files.').addDropdown((dropdown) => dropdown.addOption('system', 'Offline system voices').addOption('server', 'Local Supertonic server').setValue(this.plugin.settings.ttsRuntime).onChange((value) => { this.plugin.settings.ttsRuntime = value === 'server' ? 'server' : 'system'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); this.display(); }));
-		new Setting(tts).setName('Auto-generate TTS audio').setDesc('Creates and attaches audio during lookup. Available with the local Supertonic server.').addToggle((toggle) => { toggle.setValue(this.plugin.settings.ttsAutoGenerate).setDisabled(this.plugin.settings.ttsRuntime !== 'server').onChange((value) => { this.plugin.settings.ttsAutoGenerate = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }); });
+		new Setting(tts).setName('Speech runtime').setDesc('System voices need no extra setup. Server runtimes can generate reusable audio files.').addDropdown((dropdown) => dropdown
+			.addOption('system', 'Offline system voices')
+			.addOption('server', 'Local Supertonic server')
+			.addOption('openai-compatible', 'OpenAI-compatible TTS server')
+			.setValue(this.plugin.settings.ttsRuntime)
+			.onChange((value) => {
+				this.plugin.settings.ttsRuntime = value === 'server' || value === 'openai-compatible' ? value : 'system';
+				this.plugin.rebuildProvider();
+				void this.plugin.saveSettings();
+				this.display();
+			}));
+		new Setting(tts).setName('Auto-generate TTS audio').setDesc('Creates and attaches audio during lookup. Available with a server TTS runtime.').addToggle((toggle) => { toggle.setValue(this.plugin.settings.ttsAutoGenerate).setDisabled(this.plugin.settings.ttsRuntime === 'system').onChange((value) => { this.plugin.settings.ttsAutoGenerate = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }); });
 		if (this.plugin.settings.ttsRuntime === 'system') {
 			new Setting(tts).setName('System voices on this device').setDesc(systemSpeechSetupInstructions(Platform)).addButton((button) => button.setButtonText('Refresh voices').onClick(() => {
-				if (!hasSpeechSynthesis()) { new Notice('This Obsidian app does not expose system speech synthesis. Update Obsidian or use the local server runtime.'); return; }
+				if (!hasSpeechSynthesis()) { new Notice('This Obsidian app does not expose system speech synthesis. Update Obsidian or use a server runtime.'); return; }
 				const voices = this.plugin.provider.refreshLocalTtsVoices();
 				const summary = voices.length ? voices.map((voice) => `${voice.name} (${voice.lang})`).join(', ') : 'No local voices are currently exposed to Obsidian.';
 				new Notice(summary, 8000);
 			}));
 		}
 		if (this.plugin.settings.ttsRuntime === 'server') {
-		new Setting(tts).setName('Supertonic endpoint').setDesc('Used only by the local server runtime.').addText((text) => text.setValue(this.plugin.settings.supertonicEndpoint).onChange((value) => { this.plugin.settings.supertonicEndpoint = value.trim() || 'http://127.0.0.1:7788/v1/tts'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(tts).setName('Supertonic voice').addText((text) => text.setValue(this.plugin.settings.supertonicVoice).onChange((value) => { this.plugin.settings.supertonicVoice = value.trim() || 'M1'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(tts).setName('Supertonic steps').addText((text) => text.setValue(String(this.plugin.settings.supertonicSteps)).onChange((value) => { this.plugin.settings.supertonicSteps = Math.min(16, Math.max(4, Math.floor(Number(value) || 8))); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
-		new Setting(tts).setName('Supertonic speed').addText((text) => text.setValue(String(this.plugin.settings.supertonicSpeed)).onChange((value) => { this.plugin.settings.supertonicSpeed = Math.min(2, Math.max(0.7, Number(value) || 1.05)); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+			new Setting(tts).setName('Supertonic endpoint').setDesc('Used only by the local Supertonic server runtime.').addText((text) => text.setValue(this.plugin.settings.supertonicEndpoint).onChange((value) => { this.plugin.settings.supertonicEndpoint = value.trim() || 'http://127.0.0.1:7788/v1/tts'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+			new Setting(tts).setName('Supertonic voice').addText((text) => text.setValue(this.plugin.settings.supertonicVoice).onChange((value) => { this.plugin.settings.supertonicVoice = value.trim() || 'M1'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+			new Setting(tts).setName('Supertonic steps').addText((text) => text.setValue(String(this.plugin.settings.supertonicSteps)).onChange((value) => { this.plugin.settings.supertonicSteps = Math.min(16, Math.max(4, Math.floor(Number(value) || 8))); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+			new Setting(tts).setName('Supertonic speed').addText((text) => text.setValue(String(this.plugin.settings.supertonicSpeed)).onChange((value) => { this.plugin.settings.supertonicSpeed = Math.min(2, Math.max(0.7, Number(value) || 1.05)); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+		}
+		if (this.plugin.settings.ttsRuntime === 'openai-compatible') {
+			new Setting(tts).setName('TTS server endpoint').setDesc('Base URL (for example http://127.0.0.1:8000/v1) or full /v1/audio/speech URL.').addText((text) => text.setValue(this.plugin.settings.openAiTtsEndpoint ?? 'http://127.0.0.1:8000/v1').onChange((value) => { this.plugin.settings.openAiTtsEndpoint = value.trim() || 'http://127.0.0.1:8000/v1'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+			new Setting(tts).setName('TTS server API key').setDesc('Optional bearer token if your server requires authentication.').addText((text) => { text.inputEl.type = 'password'; text.inputEl.autocomplete = 'off'; text.setPlaceholder('Optional token').setValue(this.plugin.settings.openAiTtsApiKey ?? '').onChange((value) => { this.plugin.settings.openAiTtsApiKey = value; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }); });
+			new Setting(tts).setName('TTS model').setDesc('Model name sent in the speech request (for example tts-1 or kokoro).').addText((text) => text.setValue(this.plugin.settings.openAiTtsModel ?? 'tts-1').onChange((value) => { this.plugin.settings.openAiTtsModel = value.trim() || 'tts-1'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+			new Setting(tts).setName('TTS voice').setDesc('Voice ID sent in the speech request (for example alloy or af_heart).').addText((text) => text.setValue(this.plugin.settings.openAiTtsVoice ?? 'alloy').onChange((value) => { this.plugin.settings.openAiTtsVoice = value.trim() || 'alloy'; this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
+			new Setting(tts).setName('TTS speed').setDesc('Playback speed multiplier (0.25 to 4.0).').addText((text) => text.setValue(String(this.plugin.settings.openAiTtsSpeed ?? 1)).onChange((value) => { this.plugin.settings.openAiTtsSpeed = Math.min(4, Math.max(0.25, Number(value) || 1)); this.plugin.rebuildProvider(); void this.plugin.saveSettings(); }));
 		}
 
 		const vocabulary = createGroup('Vocabulary study', 'Add looked-up words to nested decks, review flashcards, and export them for Anki or spreadsheets.', false);
@@ -1955,13 +2079,33 @@ class DictionarySettingTab extends PluginSettingTab {
 			panel.createDiv({ cls: 'mynary-empty', text: 'No offline dictionary packs installed.' });
 			return;
 		}
+		const selectedIds = new Set(this.plugin.settings.offlineDictionarySelectedPacks ?? []);
+		const mode = this.plugin.settings.offlineDictionaryPackMode ?? 'auto';
 		for (const pack of packs) {
 			const row = panel.createDiv('mynary-pack-row');
+			const checkWrap = row.createEl('label', { cls: 'mynary-pack-select-check' });
+			const checkbox = checkWrap.createEl('input', { type: 'checkbox' });
+			checkbox.checked = selectedIds.has(pack.id);
+			checkbox.setAttribute('aria-label', `Select ${pack.name || pack.id} for custom offline lookup`);
+			checkbox.addEventListener('change', () => {
+				const next = new Set(this.plugin.settings.offlineDictionarySelectedPacks ?? []);
+				if (checkbox.checked) next.add(pack.id);
+				else next.delete(pack.id);
+				this.plugin.settings.offlineDictionarySelectedPacks = [...next];
+				if (this.plugin.settings.offlineDictionaryPackMode !== 'custom') {
+					this.plugin.settings.offlineDictionaryPackMode = 'custom';
+				}
+				void this.plugin.updateOfflinePackPreferences().then(() => this.display());
+			});
 			const details = row.createDiv('mynary-pack-details');
 			details.createEl('strong', { text: pack.name || pack.id });
-			const active = this.plugin.settings.offlineDictionaryEnabled !== false && pack.language === this.plugin.settings.defaultLanguage;
+			const active = this.plugin.settings.offlineDictionaryEnabled !== false && (
+				mode === 'custom'
+					? selectedIds.has(pack.id)
+					: pack.kind === 'core' || pack.targetLanguage === this.plugin.settings.defaultLanguage
+			);
 			const state = pack.filesReady ? 'Files available' : 'Files missing; reinstall this pack';
-			details.createDiv({ text: `${pack.language.toUpperCase()}${pack.targetLanguage ? ` → ${pack.targetLanguage.toUpperCase()}` : ' · core'} · ${pack.entryCount.toLocaleString()} entries · ${pack.version}${active ? ' · Used for current lookup language' : ''} · ${state}` });
+			details.createDiv({ text: `${pack.language.toUpperCase()}${pack.targetLanguage ? ` → ${pack.targetLanguage.toUpperCase()}` : ' · core'} · ${pack.entryCount.toLocaleString()} entries · ${pack.version}${active ? ' · Active' : ''} · ${state}` });
 			const actions = row.createDiv('mynary-pack-actions');
 			actions.createEl('button', { text: 'Check for updates' }).addEventListener('click', () => void this.plugin.updateDictionaryPack(pack));
 			actions.createEl('button', { text: 'Remove' }).addEventListener('click', () => {
