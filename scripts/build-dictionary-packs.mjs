@@ -41,6 +41,11 @@ const selectedPairs = selectLanguages(options.pairs, ALL_BILINGUAL, 'pairs');
 const selectedSources = options.sources === undefined
 	? (selectedPairs.length ? [...ALL_CORE] : [])
 	: selectLanguages(options.sources, ALL_CORE, 'sources');
+// Core packs for languages that have a native Wiktionary are built from that
+// native edition (true monolingual: vi words defined in vi, de words in de…).
+// English core and languages without a native edition still use English Wiktionary.
+const nativeCoreLangs = selectedCore.filter((lang) => lang !== 'en' && AVAILABLE_EDITIONS.has(lang));
+const englishOnlyCoreLangs = selectedCore.filter((lang) => lang === 'en' || !AVAILABLE_EDITIONS.has(lang));
 const sourceOverrides = new Map((options.source ?? []).map(parseSourceOverride));
 const version = options.version ?? new Date().toISOString().slice(0, 10);
 const minimumEntries = Number(options['min-entries'] ?? 1000);
@@ -51,25 +56,28 @@ if (!/^\d{4}-\d{2}-\d{2}$/u.test(version)) throw new Error('--version must be YY
 if (!Number.isSafeInteger(minimumEntries) || minimumEntries < 1) throw new Error('--min-entries must be a positive integer.');
 if (!selectedCore.length && !selectedSources.length) throw new Error('Select at least one core language or bilingual source language.');
 
+console.log(`Core strategy: ${englishOnlyCoreLangs.length} from English Wiktionary (${englishOnlyCoreLangs.join(', ') || 'none'}); ${nativeCoreLangs.length} from native Wiktionaries (${nativeCoreLangs.join(', ') || 'none'})`);
+
 await mkdir(ROOT, { recursive: true });
 await mkdir(cacheRoot, { recursive: true });
 await mkdir(workBase, { recursive: true });
 const workRoot = await mkdtemp(join(workBase, 'mynary-pack-build-'));
 
-console.log(`Building ${selectedCore.length} core packs and a bilingual matrix from ${selectedSources.length} source languages across ${selectedPairs.length} target editions in ${ROOT}`);
+console.log(`Building ${selectedCore.length} core packs (${nativeCoreLangs.length} from native Wiktionaries, ${englishOnlyCoreLangs.length} from English Wiktionary) and a bilingual matrix from ${selectedSources.length} source languages across ${selectedPairs.length} target editions in ${ROOT}`);
 console.log(`Headword languages: ${selectedSources.join(', ') || '(none)'}`);
 console.log(`Gloss editions: en${selectedPairs.length ? `, ${selectedPairs.join(', ')}` : ''}`);
 
 try {
-	const englishRoutes = new Set([...selectedCore, ...selectedSources]);
+	// ── 1. English Wiktionary: en-core + languages without a native edition (core) + bilingual-en sources ──
+	const englishRoutes = new Set([...englishOnlyCoreLangs, ...selectedSources]);
 	if (englishRoutes.size) {
 		const englishSource = await getSource(ENWIKTIONARY);
 		await routeSource(englishSource, ENWIKTIONARY, englishRoutes, async (language, artifacts, build) => {
 			if (!build) {
-				if (selectedCore.includes(language)) throw new Error(`${language}-core: no usable entries were found.`);
+				if (englishOnlyCoreLangs.includes(language)) throw new Error(`${language}-core: no usable entries were found.`);
 				return;
 			}
-			if (selectedCore.includes(language)) {
+			if (englishOnlyCoreLangs.includes(language)) {
 				if (build.entryCount < minimumEntries) throw new Error(`${language}-core: only ${build.entryCount} entries (minimum ${minimumEntries}).`);
 				await publishPack(artifacts, coreSpec(language), englishSource, build);
 			}
@@ -79,6 +87,23 @@ try {
 					console.warn(`  skipping ${language}-en: ${build.entryCount} entries (minimum ${minimumEntries})`);
 				} else await publishPack(artifacts, bilingualSpec(language, 'en'), englishSource, build);
 			}
+		});
+	}
+
+	// ── 2. Native Wiktionaries: true monolingual core packs (vi-vi, de-de, …) ──
+	for (const language of nativeCoreLangs) {
+		const sourceKey = `${language}wiktionary`;
+		const nativeSource = await getSource(sourceKey);
+		await routeSource(nativeSource, sourceKey, new Set([language]), async (lang, artifacts, build) => {
+			if (!build) {
+				console.warn(`  skipping ${lang}-core: no usable entries in native Wiktionary.`);
+				return;
+			}
+			if (build.entryCount < minimumEntries) {
+				console.warn(`  skipping ${lang}-core: only ${build.entryCount} entries in native Wiktionary (minimum ${minimumEntries}).`);
+				return;
+			}
+			await publishPack(artifacts, coreSpec(lang), nativeSource, build);
 		});
 	}
 
@@ -97,7 +122,8 @@ try {
 		});
 	}
 
-	console.log(`\nBilingual matrix: ${builtFolders.size - selectedCore.filter((code) => builtFolders.has(code)).length} packs created, ${skippedPairs} candidates skipped below the ${minimumEntries}-entry floor.`);
+	const coreBuilt = selectedCore.filter((code) => builtFolders.has(code)).length;
+	console.log(`\nSummary: ${coreBuilt} core packs built, ${builtFolders.size - coreBuilt} bilingual packs built, ${skippedPairs} candidates skipped below the ${minimumEntries}-entry floor.`);
 	console.log('\nVerifying the generated pack files before returning success.');
 	await runVerifier([...builtFolders]);
 	console.log('Pack generation and compatibility verification finished.');
@@ -136,6 +162,12 @@ Default rebuild: 42 core packs and a headword-language × gloss-edition matrix.
   --min-entries N            Core packs fail below N; sparse bilingual pairs skip (default: 1000)
   --refresh                  Download sources again, replacing cached downloads
 
+Core pack strategy:
+  - Languages with a native Wiktionary edition (${[...AVAILABLE_EDITIONS].join(', ')}) build their
+    core pack from that edition: headwords AND definitions are in the same language (true monolingual).
+  - English core always uses the English Wiktionary (it IS the English Wiktionary).
+  - Other languages (no native edition) fall back to English Wiktionary entries for that language.
+
 Sources: ${ENWIKTIONARY}, plus <language-code>wiktionary for each selected target edition.
 The default sources are linked from https://kaikki.org/dictionary/rawdata.html.`);
 }
@@ -161,7 +193,8 @@ function parseSourceOverride(value) {
 function sourceUrl(key) {
 	if (DEFAULT_SOURCES[key]) return DEFAULT_SOURCES[key];
 	const match = /^([a-z]{2,3})wiktionary$/u.exec(key);
-	if (!match || !LANGUAGES[match[1]] || !AVAILABLE_EDITIONS.has(match[1])) throw new Error(`No Kaikki source is configured for ${key}.`);
+	if (!match || !LANGUAGES[match[1]]) throw new Error(`No Kaikki source is configured for ${key}.`);
+	if (!AVAILABLE_EDITIONS.has(match[1])) throw new Error(`Kaikki has no configured non-English Wiktionary edition for ${match[1]}.`);
 	return `https://kaikki.org/dictionary/downloads/${match[1]}/${match[1]}-extract.jsonl.gz`;
 }
 
