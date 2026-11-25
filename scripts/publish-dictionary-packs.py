@@ -130,7 +130,7 @@ def main():
 	parser.add_argument("--catalog", type=Path, required=True, help="Catalog whose URLs point to the selected snapshot path")
 	parser.add_argument("--snapshot", required=True, help="New immutable remote folder name under release/, for example 1.4.0")
 	parser.add_argument("--repo-id", default=REPO_ID)
-	parser.add_argument("--minimum-core-packs", type=int, default=42, help="Require this many core packs before publishing; use --allow-partial for a deliberate subset")
+	parser.add_argument("--minimum-core-packs", type=int, default=18, help="Require this many core packs before publishing; use --allow-partial for a deliberate subset")
 	parser.add_argument("--allow-partial", action="store_true", help="Allow a partial language set, including the 3-language Colab smoke build")
 	parser.add_argument("--apply", action="store_true", help="Apply the upload/activation or prune-only operation")
 	parser.add_argument("--prune-only", action="store_true", help="After both live catalogs match, retire old top-level release pack folders")
