@@ -109,20 +109,16 @@ function renderPronunciations(container: HTMLElement, pronunciations: Dictionary
 	ttsSection.createEl('h4', { text: createsAudio ? 'TTS audio' : 'Offline system speech', cls: 'mynary-tts-heading' });
 	if (!plugin.provider.ttsAvailable) ttsSection.createDiv({ text: 'Enable offline speech in settings to read words aloud.', cls: 'mynary-tts-note' });
 	else if (!plugin.provider.ttsAvailableFor(language)) ttsSection.createDiv({ text: `No local system voice is installed for ${language.toUpperCase()}; IPA and Wiktionary audio remain available.`, cls: 'mynary-tts-note' });
-	pronunciations.forEach((pronunciation, pronunciationIndex) => {
-		const audio = dedupeAudioSources(pronunciation.audio ?? []);
-		const ttsAudio = audio.filter((source) => source.provider === 'tts');
-		const row = ttsSection.createDiv('mynary-tts-row');
-		row.createSpan({ text: `IPA: ${pronunciation.text} · input: ${word}`, cls: 'mynary-tts-target' });
-		const controls = row.createDiv('mynary-pronunciation-audio');
-		if (ttsAudio.length) renderAudioPlayer(controls, ttsAudio, `Play Supertonic pronunciation ${pronunciation.text}`, 'Audio');
-		const generate = controls.createEl('button', { text: createsAudio ? (ttsAudio.length ? 'Regenerate TTS' : 'Generate TTS') : 'Speak pronunciation', cls: 'mynary-audio-generate' });
-		const ttsSupported = plugin.provider.ttsAvailableFor(language);
-		generate.disabled = !ttsSupported;
-		if (!plugin.provider.ttsAvailable) generate.title = 'Enable offline speech in Mynary settings first.';
-		else if (!ttsSupported) generate.title = `No local voice is installed for ${language.toUpperCase()}.`;
-		generate.addEventListener('click', () => { generate.disabled = true; void plugin.generateTts(pronunciationIndex, word, language).finally(() => { generate.disabled = false; }); });
-	});
+	const ttsAudio = dedupeAudioSources(pronunciations.flatMap((pronunciation) => pronunciation.audio ?? []).filter((source) => source.provider === 'tts'));
+	const row = ttsSection.createDiv('mynary-tts-row');
+	const controls = row.createDiv('mynary-pronunciation-audio');
+	if (ttsAudio.length) renderAudioPlayer(controls, ttsAudio, `Play TTS pronunciation for ${word}`, 'Audio');
+	const generate = controls.createEl('button', { text: createsAudio ? (ttsAudio.length ? 'Regenerate TTS' : 'Generate TTS') : 'Speak pronunciation', cls: 'mynary-audio-generate' });
+	const ttsSupported = plugin.provider.ttsAvailableFor(language);
+	generate.disabled = !ttsSupported;
+	if (!plugin.provider.ttsAvailable) generate.title = 'Enable offline speech in Mynary settings first.';
+	else if (!ttsSupported) generate.title = `No local voice is installed for ${language.toUpperCase()}.`;
+	generate.addEventListener('click', () => { generate.disabled = true; void plugin.generateTts(0, word, language).finally(() => { generate.disabled = false; }); });
 }
 
 function renderAudioPlayer(row: HTMLElement, sources: AudioSource[], label: string, title?: string) {

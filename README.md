@@ -2,7 +2,7 @@
 
 Look up words in Obsidian, save definitions as notes, and study them as flashcards. Mynary uses Wiktionary by default and can also use optional local dictionary packs, translation, and speech services.
 
-Target release: **1.4.0**.
+Target release: **1.4.1**.
 
 ## Install
 
@@ -62,6 +62,10 @@ In **Settings → Mynary Dictionary → Vocabulary study**, select **Create Anki
 
 Install packs in **Settings → Mynary Dictionary → Offline dictionary** with **Choose language** or **Install from URL**. Core packs provide definitions and pronunciation; bilingual packs add translations. Mynary verifies downloaded files against their SHA-256 checksums and stores them in the vault. Installed packs are checked before Wiktionary; missing entries fall back to Wiktionary when online.
 
+- **Smart matching & custom pack selection**: In **Auto** mode, bilingual packs match your active lookup/target language (for example, `en-vi` matches `vi`) while core packs remain available regardless of the selected lookup language. Switch to **Custom** mode, filter by source language, or set pack priority order in **Settings** or directly from the **Packs** picker in the lookup popup and sidebar.
+- **Multi-pack results**: When multiple packs contain an entry, each pack's result is shown in its own collapsible section with per-pack note and vocabulary actions, plus a combined selector at the bottom to merge selected packs into a note or flashcard.
+- **Synced Packs only & Online lookup**: Toggle **Packs only** in either the popup or sidebar (stays in sync across both, with an optional **session-only** setting), or click **Online** to search Wiktionary directly without disabling offline packs.
+
 Packs are published separately in the [Mynary Offline Dictionary dataset](https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary). The 1.4.0 catalog release contains 42 core packs and 448 bilingual packs (490 total), covering 42 headword languages and 18 translation target languages. Its assets are stored under the versioned snapshot `release/1.4.0/`; each catalog URL points directly to that snapshot. Dictionary data comes from Wiktionary extracts supplied by [Kaikki.org](https://kaikki.org/). Data is distributed under the terms identified by each pack, including [CC BY-SA 3.0](LICENSE-CC-BY-SA-3.0.txt), [CC BY-SA 4.0](LICENSE-CC-BY-SA-4.0.txt), or [GFDL 1.3](LICENSE-GFDL-1.3.txt). The plugin source is MIT-licensed.
 
 Pack maintainers can rebuild the current language set and validate pack compatibility with the streaming builder. See [PACK_BUILDING.md](PACK_BUILDING.md) for Kaikki source URLs and the Google Colab workflow.
@@ -78,14 +82,15 @@ Use **Test connection** in settings to send a short sample request through the s
 
 **Speech** is off by default. Enable it in **Settings → Mynary Dictionary → TTS** and choose a runtime:
 
-- **Offline system voices** uses local voices exposed through Obsidian's Web Speech API. Mynary does not download voice data. Voice availability varies by device; some Android WebViews do not expose installed system voices. Use **Refresh voices** to check, or choose the server runtime if no voice is available.
+- **Offline system voices** uses local voices exposed through Obsidian's Web Speech API. Mynary does not download voice data. Voice availability varies by device; some Android WebViews do not expose installed system voices. Use **Refresh voices** to check, or choose a server runtime if no voice is available.
 - **Local Supertonic server** sends speech text to the endpoint you configure, can generate audio files, and supports optional auto-generation during lookup. Install and start the server separately; the default endpoint is `http://127.0.0.1:7788/v1/tts`.
+- **OpenAI-compatible TTS server** sends speech text to any `/v1/audio/speech` endpoint (such as OpenAI TTS, Kokoro-FastAPI, OpenedAI-Speech, or Edge-TTS proxies). Configure the endpoint URL, optional API key, model, voice, and speed in settings.
 
 Use **Mynary Dictionary: Read selected text with offline speech** or **Mod + Shift + R** to read selected text. Lookups can also play Wiktionary audio when provided.
 
 ## Privacy
 
-There is no telemetry, advertising, or account system. Online lookups send the searched word and selected language to Wiktionary; an installed pack can answer without a network lookup. Mynary scans Markdown files in the configured vocabulary folder to sync flashcards. It does not send vault content automatically. Translation sends only the text you submit (or the short sample used by **Test connection**) to the selected MTranServer, LibreTranslate, or OpenAI-compatible endpoint. A remote endpoint receives that text and the source/target language codes; configure a local endpoint if you want the translation server to run on your device or network. API keys are stored with this plugin's settings in the vault and sent only to the corresponding configured provider as its API key or bearer token. Speech text goes to the configured Supertonic endpoint only when you use that runtime.
+There is no telemetry, advertising, or account system. Online lookups send the searched word and selected language to Wiktionary; an installed pack can answer without a network lookup. Mynary scans Markdown files in the configured vocabulary folder to sync flashcards. It does not send vault content automatically. Translation sends only the text you submit (or the short sample used by **Test connection**) to the selected MTranServer, LibreTranslate, or OpenAI-compatible endpoint. A remote endpoint receives that text and the source/target language codes; configure a local endpoint if you want the translation server to run on your device or network. API keys are stored with this plugin's settings in the vault and sent only to the corresponding configured provider as its API key or bearer token. Speech text goes to the configured Supertonic or OpenAI-compatible TTS endpoint only when you use that runtime.
 
 ## Development
 
