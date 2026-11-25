@@ -1489,6 +1489,21 @@
       "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/1.4.0/el-zh/manifest.json"
     },
     {
+      "id": "en-core",
+      "kind": "core",
+      "language": "en",
+      "name": "English Core Dictionary",
+      "version": "2026-11-25",
+      "entryCount": 1360384,
+      "indexSizeBytes": 74313352,
+      "entriesSizeBytes": 108504134,
+      "sizeBytes": 182817486,
+      "compressed": true,
+      "indexSha256": "7a92c24c06c62b8d514332c41da050d47f32475c1e90266d0396bca921b480e0",
+      "entriesSha256": "507242d82e59ea826ba6daf4a990018d3c5404aef3817475baefed89122c594b",
+      "manifestUrl": "https://huggingface.co/datasets/zhyfei314/Mynary-Offline-Dictionary/resolve/main/release/1.4.0/en/manifest.json"
+    },
+    {
       "id": "en-cs-bilingual",
       "kind": "bilingual",
       "language": "en",
